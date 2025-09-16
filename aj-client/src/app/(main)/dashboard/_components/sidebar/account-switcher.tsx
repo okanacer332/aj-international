@@ -14,7 +14,7 @@ import {
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { cn, getInitials } from "@/lib/utils";
-
+import { logout } from "@/lib/auth";
 export function AccountSwitcher({
   users,
 }: {
@@ -71,10 +71,15 @@ export function AccountSwitcher({
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <LogOut />
-          Log out
-        </DropdownMenuItem>
+        <DropdownMenuItem
+  onSelect={(e) => {
+    e.preventDefault(); // Radix seçim davranışını iptal et
+    logout();           // cookie'yi sil ve /auth/v1/login'e yönlendir
+  }}
+>
+  <LogOut />
+  Log out
+</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

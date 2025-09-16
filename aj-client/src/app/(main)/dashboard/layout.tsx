@@ -1,6 +1,11 @@
 import { ReactNode } from "react";
-
 import { cookies } from "next/headers";
+import { unstable_noStore as noStore } from "next/cache";
+
+// Bu segmenti her zaman dinamik tut (cache'leme)
+export const dynamic = "force-dynamic";
+
+import AuthGuard from "./_components/auth-guard"; // client guard
 
 import { AppSidebar } from "@/app/(main)/dashboard/_components/sidebar/app-sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -23,6 +28,9 @@ import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
+  // Server-side cache'leme kapalı
+  noStore();
+
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
 
@@ -40,13 +48,15 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
+      {/* Geri tuşu/bfcache durumlarında token yoksa anında login'e atar */}
+      <AuthGuard />
+
       <AppSidebar variant={sidebarVariant} collapsible={sidebarCollapsible} />
+
       <SidebarInset
         data-content-layout={contentLayout}
         className={cn(
           "data-[content-layout=centered]:!mx-auto data-[content-layout=centered]:max-w-screen-2xl",
-          // Adds right margin for inset sidebar in centered layout up to 113rem.
-          // On wider screens with collapsed sidebar, removes margin and sets margin auto for alignment.
           "max-[113rem]:peer-data-[variant=inset]:!mr-2 min-[101rem]:peer-data-[variant=inset]:peer-data-[state=collapsed]:!mr-auto",
         )}
       >
@@ -64,6 +74,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             </div>
           </div>
         </header>
+
         <div className="h-full p-4 md:p-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>
