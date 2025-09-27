@@ -1,5 +1,6 @@
 package com.ajinternational.ajserver.modules.iam.controller;
 
+import com.ajinternational.ajserver.modules.iam.dto.CreateUserRequest;
 import com.ajinternational.ajserver.modules.iam.model.User;
 import com.ajinternational.ajserver.modules.iam.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -13,10 +14,17 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api/iam/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')") // Bu sınıftaki tüm endpoint'ler sadece ADMIN rolü gerektirir.
+@PreAuthorize("hasRole('ADMIN')")
 public class UserController {
 
     private final UserService userService;
+
+    // YENİ EKLENEN KULLANICI OLUŞTURMA ENDPOINT'İ
+    @PostMapping
+    public ResponseEntity<User> createUser(@RequestBody CreateUserRequest request) {
+        User createdUser = userService.createUser(request);
+        return ResponseEntity.ok(createdUser);
+    }
 
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
