@@ -9,39 +9,18 @@ import { Button } from "@/components/ui/button";
 import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { AddUserForm } from "./add-user-form";
 import { EditUserForm } from "./edit-user-form";
 
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // YENİ IMPORT
+import { getInitials } from "@/lib/utils"; // YENİ IMPORT
+import { API_BASE } from "@/lib/api"; // YENİ IMPORT
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -52,7 +31,6 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      // Fetch anlık görünsün diye true'ya çekiyoruz tekrar
       setIsLoading(true);
       const res = await apiFetchAuth("/api/iam/users");
       const data = await res.json();
@@ -68,12 +46,8 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
-  const handleUserAdded = () => {
+  const handleSuccess = () => {
     setIsAddDialogOpen(false);
-    fetchUsers();
-  };
-
-  const handleUserUpdated = () => {
     setIsEditDialogOpen(false);
     setSelectedUser(null);
     fetchUsers();
@@ -83,7 +57,7 @@ export default function UsersPage() {
     setSelectedUser(user);
     setIsEditDialogOpen(true);
   };
-
+  
   const handleDeleteUser = async (userId: string) => {
     try {
       await apiFetchAuth(`/api/iam/users/${userId}`, { method: 'DELETE' });
@@ -95,6 +69,22 @@ export default function UsersPage() {
   };
 
   const columns = useMemo<ColumnDef<User>[]>(() => [
+    // YENİ EKLENEN FOTOĞRAF SÜTUNU
+    {
+      id: "avatar",
+      header: "", // Başlık boş olacak
+      cell: ({ row }) => {
+        const user = row.original;
+        const avatarSrc = user.avatarUrl ? `${API_BASE}${user.avatarUrl}` : undefined;
+        return (
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={avatarSrc} alt={user.fullName} />
+            <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
+          </Avatar>
+        );
+      },
+      size: 32, // Sütun genişliğini ayarla
+    },
     { accessorKey: "fullName", header: "Ad Soyad" },
     { accessorKey: "username", header: "Kullanıcı Adı" },
     { accessorKey: "email", header: "Email", cell: ({ row }) => row.getValue("email") || "---" },
@@ -114,7 +104,7 @@ export default function UsersPage() {
                 <DropdownMenuItem onClick={() => openEditDialog(row.original)}>Düzenle</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full justify-start font-normal text-destructive hover:bg-destructive/10">Sil</Button>
+                  <Button variant="ghost" className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors w-full justify-start font-normal text-destructive hover:bg-destructive/10 focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">Sil</Button>
                 </AlertDialogTrigger>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -150,7 +140,7 @@ export default function UsersPage() {
                 Yeni kullanıcı için bilgileri girin. Varsayılan şifre "1234" olarak atanacaktır.
               </DialogDescription>
             </DialogHeader>
-            <AddUserForm onSuccess={handleUserAdded} />
+            <AddUserForm onSuccess={handleSuccess} />
           </DialogContent>
         </Dialog>
       </div>
@@ -176,7 +166,7 @@ export default function UsersPage() {
               <DialogTitle>Kullanıcıyı Düzenle</DialogTitle>
               <DialogDescription>{selectedUser.fullName} kullanıcısının bilgilerini güncelleyin.</DialogDescription>
             </DialogHeader>
-            <EditUserForm user={selectedUser} onSuccess={handleUserUpdated} />
+            <EditUserForm user={selectedUser} onSuccess={handleSuccess} />
           </DialogContent>
         </Dialog>
       )}
