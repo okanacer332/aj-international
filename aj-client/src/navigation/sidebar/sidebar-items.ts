@@ -12,6 +12,7 @@ import {
   Briefcase, // Yeni ikon
   HeartHandshake, // Yeni ikon
   AreaChart, // Yeni ikon
+  FileClock,
   type LucideIcon,
 } from "lucide-react";
 
@@ -85,6 +86,8 @@ export const sidebarItems: NavGroup[] = [
         subItems: [
           { title: "Kullanıcı Yönetimi", url: "/dashboard/iam/users", icon: UserCog },
           { title: "Rol Yönetimi", url: "/dashboard/iam/roles", icon: ShieldCheck, comingSoon: true },
+          // YENİ EKLENEN SATIR
+          { title: "Log Kayıtları", url: "/dashboard/audit/logs", icon: FileClock },
           { title: "Genel Tanımlar", url: "/dashboard/definitions", icon: BookText, comingSoon: true },
         ],
       },

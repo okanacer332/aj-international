@@ -3,6 +3,7 @@ package com.ajinternational.ajserver.modules.auth.service;
 import com.ajinternational.ajserver.config.JwtUtil;
 import com.ajinternational.ajserver.modules.auth.dto.AuthResponse;
 import com.ajinternational.ajserver.modules.auth.dto.LoginRequest;
+import com.ajinternational.ajserver.modules.audit.service.AuditLogService; // Log servisini import et
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,24 +15,31 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-    // AuthenticationManager'ı SecurityConfig'de bean olarak oluşturup buraya enjekte edeceğiz.
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
+    private final AuditLogService auditLogService; // Log servisini enjekte et
 
     public AuthResponse login(LoginRequest request) {
-        // 1. Spring Security'nin AuthenticationManager'ını kullanarak kimlik doğrulaması yap.
-        // Bu, arka planda CustomUserDetailsService'i ve PasswordEncoder'ı kullanır.
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.username(), request.password())
-        );
+        try {
+            // Kimlik doğrulama denemesi
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.username(), request.password())
+            );
 
-        // 2. Kimlik doğrulama başarılıysa, token oluşturmak için UserDetails'i al.
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(request.username());
+            // Başarılı olursa, token üret
+            final UserDetails userDetails = userDetailsService.loadUserByUsername(request.username());
+            final String accessToken = jwtUtil.generateToken(userDetails);
 
-        // 3. JWT'yi oluştur.
-        final String accessToken = jwtUtil.generateToken(userDetails);
+            // Başarılı giriş logu oluştur
+            auditLogService.logAction(request.username(), "USER_LOGIN_SUCCESS", "Kullanıcı başarıyla giriş yaptı.");
 
-        return new AuthResponse(accessToken);
+            return new AuthResponse(accessToken);
+        } catch (Exception e) {
+            // Başarısız giriş denemesi logu oluştur
+            auditLogService.logAction(request.username(), "USER_LOGIN_FAILURE", "Hatalı giriş denemesi.");
+            // Hatayı tekrar fırlatarak frontend'in haberdar olmasını sağla
+            throw e;
+        }
     }
 }
