@@ -1,6 +1,7 @@
 package com.ajinternational.ajserver.modules.iam.controller;
 
 import com.ajinternational.ajserver.modules.iam.dto.CreateUserRequest;
+import com.ajinternational.ajserver.modules.iam.dto.UpdateUserRequest;
 import com.ajinternational.ajserver.modules.iam.model.User;
 import com.ajinternational.ajserver.modules.iam.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -47,5 +48,10 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable String id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable String id, @RequestBody UpdateUserRequest request) {
+        return ResponseEntity.ok(userService.updateUser(id, request));
     }
 }

@@ -1,6 +1,7 @@
 package com.ajinternational.ajserver.modules.iam.service;
 
 import com.ajinternational.ajserver.modules.iam.dto.CreateUserRequest;
+import com.ajinternational.ajserver.modules.iam.dto.UpdateUserRequest;
 import com.ajinternational.ajserver.modules.iam.model.User;
 import com.ajinternational.ajserver.modules.iam.repository.RoleRepository;
 import com.ajinternational.ajserver.modules.iam.repository.UserRepository;
@@ -74,5 +75,23 @@ public class UserService {
                 .replace("ö", "o")
                 .replace("ç", "c")
                 .replaceAll("\\s+", ".");
+    }
+
+    public User updateUser(String userId, UpdateUserRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + userId));
+
+        // Rollerin geçerliliğini kontrol et
+        long foundRoles = roleRepository.countByIdIn(request.roleIds());
+        if (foundRoles != request.roleIds().size()) {
+            throw new IllegalArgumentException("Geçersiz veya bulunamayan rol ID'leri gönderildi.");
+        }
+
+        user.setFullName(request.fullName());
+        user.setEmail(request.email());
+        user.setActive(request.active());
+        user.setRoleIds(request.roleIds());
+
+        return userRepository.save(user);
     }
 }
