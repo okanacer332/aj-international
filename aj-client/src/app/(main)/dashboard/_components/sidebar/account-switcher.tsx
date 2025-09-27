@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { BadgeCheck, Bell, CreditCard, LogOut } from "lucide-react";
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -13,73 +12,65 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
-import { cn, getInitials } from "@/lib/utils";
+import { getInitials } from "@/lib/utils";
 import { logout } from "@/lib/auth";
-export function AccountSwitcher({
-  users,
-}: {
-  readonly users: ReadonlyArray<{
-    readonly id: string;
-    readonly name: string;
-    readonly email: string;
-    readonly avatar: string;
-    readonly role: string;
-  }>;
-}) {
-  const [activeUser, setActiveUser] = useState(users[0]);
+import { User } from "@/types/user";
+import { apiFetchAuth } from "@/lib/api-auth";
+import { API_BASE } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export function AccountSwitcher() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    apiFetchAuth('/api/account/me')
+      .then(res => res.json())
+      .then(data => setUser(data))
+      .catch(() => console.error("Kullanıcı verisi alınamadı."));
+  }, []);
+
+  if (!user) {
+    return <Skeleton className="h-9 w-9 rounded-lg" />;
+  }
+  
+  // DEĞİŞİKLİK BURADA: Aradaki fazladan '/' kaldırıldı.
+  const avatarSrc = user.avatarUrl ? `${API_BASE}${user.avatarUrl}` : undefined;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Avatar className="size-9 rounded-lg">
-          <AvatarImage src={activeUser.avatar || undefined} alt={activeUser.name} />
-          <AvatarFallback className="rounded-lg">{getInitials(activeUser.name)}</AvatarFallback>
+        <Avatar className="size-9 cursor-pointer rounded-lg">
+          <AvatarImage src={avatarSrc} alt={user.fullName} />
+          <AvatarFallback className="rounded-lg">{getInitials(user.fullName)}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="min-w-56 space-y-1 rounded-lg" side="bottom" align="end" sideOffset={4}>
-        {users.map((user) => (
-          <DropdownMenuItem
-            key={user.email}
-            className={cn("p-0", user.id === activeUser.id && "bg-accent/50 border-l-primary border-l-2")}
-            onClick={() => setActiveUser(user)}
-          >
-            <div className="flex w-full items-center justify-between gap-2 px-1 py-1.5">
-              <Avatar className="size-9 rounded-lg">
-                <AvatarImage src={user.avatar || undefined} alt={user.name} />
-                <AvatarFallback className="rounded-lg">{getInitials(user.name)}</AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{user.name}</span>
-                <span className="truncate text-xs capitalize">{user.role}</span>
-              </div>
-            </div>
-          </DropdownMenuItem>
-        ))}
+        <div className="p-2">
+            <p className="font-semibold">{user.fullName}</p>
+            <p className="text-xs text-muted-foreground">{user.email}</p>
+        </div>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          <Link href="/dashboard/account/settings" passHref>
+            <DropdownMenuItem>
+              <BadgeCheck className="mr-2 h-4 w-4" />
+              Hesabım
+            </DropdownMenuItem>
+          </Link>
           <DropdownMenuItem>
-            <BadgeCheck />
-            Account
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <CreditCard />
+            <CreditCard className="mr-2 h-4 w-4" />
             Billing
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <Bell />
+            <Bell className="mr-2 h-4 w-4" />
             Notifications
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-  onSelect={(e) => {
-    e.preventDefault(); // Radix seçim davranışını iptal et
-    logout();           // cookie'yi sil ve /auth/v1/login'e yönlendir
-  }}
->
-  <LogOut />
-  Log out
-</DropdownMenuItem>
+        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); logout(); }}>
+          <LogOut className="mr-2 h-4 w-4" />
+          Çıkış Yap
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

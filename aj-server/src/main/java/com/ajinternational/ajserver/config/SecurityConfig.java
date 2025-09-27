@@ -3,6 +3,7 @@ package com.ajinternational.ajserver.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // HttpMethod'u import et
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -19,7 +20,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Metot bazlı yetkilendirme (@PreAuthorize) için gerekli
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -32,13 +33,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Auth endpoint'lerine herkese izin ver
+                        // GİRİŞ ve KAYIT yollarına herkese açık izin ver
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // YENİ EKLENEN KURAL: IAM (Kullanıcı/Rol Yönetimi) endpoint'lerine sadece ADMIN rolüyle izin ver
-                        .requestMatchers("/api/iam/**").hasRole("ADMIN")
+                        // YENİ VE EN ÖNEMLİ KURAL:
+                        // Yüklenen dosyalara (avatarlar) GET isteğiyle gelen herkese izin ver
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
 
-                        // Geriye kalan tüm istekler için sadece giriş yapmış olmak yeterli
+                        // Geriye kalan tüm istekler için kimlik doğrulaması iste
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

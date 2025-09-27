@@ -19,13 +19,13 @@ public class User {
     private String id;
 
     @Indexed(unique = true)
-    private String username; // YENİ: Giriş için kullanılacak.
+    private String username;
 
-    private String fullName; // YENİ: "Okan Umut Acer" gibi.
+    private String fullName;
 
-    private String email; // İsteğe bağlı, iletişim için tutulabilir.
+    private String email;
 
-    private String password; // Hashlenmiş şifre
+    private String password;
 
     private String tenantId;
 
@@ -33,4 +33,6 @@ public class User {
     private Set<String> roleIds = new HashSet<>();
 
     private boolean active = true;
+
+    private String avatarUrl; // YENİ EKLENEN ALAN
 }
