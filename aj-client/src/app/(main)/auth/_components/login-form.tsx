@@ -1,76 +1,106 @@
 "use client";
 
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { User, Lock, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+// Checkbox kaldırıldı
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const FormSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-  remember: z.boolean().optional(),
+  username: z.string().min(1, "Kullanıcı adı boş bırakılamaz."),
+  password: z.string().min(1, "Şifre boş bırakılamaz."),
+  // remember alanı kaldırıldı
 });
 
 export function LoginForm() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
-    defaultValues: { email: "", password: "", remember: false },
+    // defaultValues'dan remember kaldırıldı
+    defaultValues: { username: "", password: "" },
   });
 
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+    setIsLoading(true);
     try {
       const res = await apiFetch("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email: data.email, password: data.password }),
+        body: JSON.stringify({ username: data.username, password: data.password }),
       });
-      const json = await res.json(); // { accessToken, refreshToken }
+      const json = await res.json();
 
-      // Token'ı cookie'ye yaz (middleware bunu okuyacak)
-      const maxAge = data.remember ? 60 * 60 * 24 * 30 : undefined; // 30 gün
-      document.cookie = `auth-token=${encodeURIComponent(json.accessToken)}; Path=/; SameSite=Lax${maxAge ? `; Max-Age=${maxAge}` : ""}`;
+      // remember mantığı ve maxAge kaldırıldı, cookie her zaman session bazlı olacak veya default kalacak
+      document.cookie = `auth-token=${encodeURIComponent(json.accessToken)}; Path=/; SameSite=Lax`;
 
       toast.success("Giriş başarılı");
       router.replace("/dashboard/default");
     } catch (e: any) {
-      toast.error("Giriş başarısız", { description: e?.message ?? "Bilinmeyen hata" });
+      toast.error("Giriş başarısız", { description: "Kullanıcı adı veya şifre hatalı." });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField name="email" control={form.control} render={({ field }) => (
-          <FormItem>
-            <FormLabel>Email Address</FormLabel>
-            <FormControl><Input type="email" autoComplete="email" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )}/>
-        <FormField name="password" control={form.control} render={({ field }) => (
-          <FormItem>
-            <FormLabel>Password</FormLabel>
-            <FormControl><Input type="password" autoComplete="current-password" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )}/>
-        <FormField name="remember" control={form.control} render={({ field }) => (
-          <FormItem className="flex items-center gap-2">
-            <FormControl>
-              <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-            </FormControl>
-            <FormLabel className="text-sm">Remember me for 30 days</FormLabel>
-          </FormItem>
-        )}/>
-        <Button className="w-full" type="submit">Login</Button>
-      </form>
-    </Form>
+    <Card className="w-full max-w-sm">
+      <CardHeader>
+        <CardTitle className="text-2xl">Giriş Yap</CardTitle>
+        {/* CardDescription kaldırıldı */}
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              name="username"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Kullanıcı Adı</FormLabel>
+                  <div className="relative">
+                    <User className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <FormControl>
+                      <Input type="text" placeholder="kullanici.adi" autoComplete="username" {...field} className="pl-8" />
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="password"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Şifre</FormLabel>
+                   <div className="relative">
+                    <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <FormControl>
+                        <Input type="password" placeholder="••••••••" autoComplete="current-password" {...field} className="pl-8" />
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* Remember me Checkbox kaldırıldı */}
+            <Button className="w-full" type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Giriş Yap
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }
