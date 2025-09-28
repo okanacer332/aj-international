@@ -40,7 +40,6 @@ export default function RolesPage() {
   const handleSuccess = () => {
     setIsAddDialogOpen(false);
     fetchRoles().then(() => {
-        // Eğer bir rol güncelleniyorsa, güncel halini tekrar seçili hale getir
         if(selectedRole) {
             setSelectedRole(prev => roles.find(r => r.id === prev?.id) || null);
         }
@@ -53,7 +52,7 @@ export default function RolesPage() {
       await apiFetchAuth(`/api/iam/roles/${roleToDelete.id}`, { method: 'DELETE' });
       toast.success("Rol başarıyla silindi.");
       setRoleToDelete(null);
-      setSelectedRole(null); // Silinen rol seçili olamaz
+      setSelectedRole(null);
       fetchRoles();
     } catch (error) {
       toast.error("Rol silinirken bir hata oluştu.");
@@ -70,7 +69,6 @@ export default function RolesPage() {
       </div>
       
       <ResizablePanelGroup direction="horizontal" className="rounded-lg border flex-1">
-        {/* SOL PANEL: Rol Listesi */}
         <ResizablePanel defaultSize={30} minSize={20}>
           <div className="flex flex-col h-full">
             <div className="p-4 flex justify-between items-center border-b">
@@ -82,7 +80,8 @@ export default function RolesPage() {
                             Yeni Rol
                         </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    {/* YENİ CLASSNAME EKLEMESİ BURADA YAPILDI */}
+                    <DialogContent className="sm:max-w-xl md:max-w-2xl">
                         <DialogHeader>
                             <DialogTitle>Yeni Rol Oluştur</DialogTitle>
                             <DialogDescription>Yeni bir rol oluşturun ve yetkilerini atayın.</DialogDescription>
@@ -116,7 +115,6 @@ export default function RolesPage() {
 
         <ResizableHandle withHandle />
 
-        {/* SAĞ PANEL: Yetki Formu */}
         <ResizablePanel defaultSize={70}>
             {selectedRole ? (
                 <div className="p-6 h-full overflow-y-auto">
@@ -134,7 +132,6 @@ export default function RolesPage() {
         </ResizablePanel>
       </ResizablePanelGroup>
 
-      {/* Silme Onay Dialog'u */}
       <AlertDialog open={!!roleToDelete} onOpenChange={() => setRoleToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

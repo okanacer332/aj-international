@@ -9,9 +9,9 @@ import {
   UserCog,
   ShieldCheck,
   BookText,
-  Briefcase, // Yeni ikon
-  HeartHandshake, // Yeni ikon
-  AreaChart, // Yeni ikon
+  Briefcase,
+  HeartHandshake,
+  AreaChart,
   FileClock,
   type LucideIcon,
 } from "lucide-react";
@@ -21,11 +21,12 @@ export interface NavSubItem {
   url: string;
   icon?: LucideIcon;
   comingSoon?: boolean;
+  permission?: string; // Her bir sayfanın gerektirdiği yetki anahtarı
 }
 
 export interface NavMainItem {
   title: string;
-  url: string; // Tıklanabilir ana menüler için URL'ler artık '#' veya üst sayfa linki olacak
+  url: string;
   icon?: LucideIcon;
   subItems?: NavSubItem[];
   comingSoon?: boolean;
@@ -55,10 +56,10 @@ export const sidebarItems: NavGroup[] = [
     items: [
       {
         title: "Operasyon",
-        url: "#", // Bu bir açılır menü olduğu için direkt linki yok
+        url: "#",
         icon: Briefcase,
         subItems: [
-          { title: "Görev Yönetimi", url: "/dashboard/tasks", icon: ClipboardList, comingSoon: true },
+          { title: "Görev Yönetimi", url: "/dashboard/tasks", icon: ClipboardList, comingSoon: true, permission: "PAGE_TASKS:READ" },
         ],
       },
       {
@@ -66,9 +67,9 @@ export const sidebarItems: NavGroup[] = [
         url: "#",
         icon: HeartHandshake,
         subItems: [
-          { title: "Personel Yönetimi", url: "/dashboard/personnel", icon: Users, comingSoon: true },
-          { title: "İzin Yönetimi", url: "/dashboard/leaves", icon: Calendar, comingSoon: true },
-          { title: "Vardiya Yönetimi", url: "/dashboard/shifts", icon: Clock, comingSoon: true },
+          { title: "Personel Yönetimi", url: "/dashboard/personnel", icon: Users, comingSoon: true, permission: "PAGE_PERSONNEL:READ" },
+          { title: "İzin Yönetimi", url: "/dashboard/leaves", icon: Calendar, comingSoon: true, permission: "PAGE_LEAVES:READ" },
+          { title: "Vardiya Yönetimi", url: "/dashboard/shifts", icon: Clock, comingSoon: true, permission: "PAGE_SHIFTS:READ" },
         ],
       },
       {
@@ -76,7 +77,7 @@ export const sidebarItems: NavGroup[] = [
         url: "#",
         icon: AreaChart,
         subItems: [
-            { title: "Raporlar", url: "/dashboard/reports", icon: FileText, comingSoon: true },
+            { title: "Raporlar", url: "/dashboard/reports", icon: FileText, comingSoon: true, permission: "PAGE_REPORTS:READ" },
         ]
       },
       {
@@ -84,11 +85,10 @@ export const sidebarItems: NavGroup[] = [
         url: "#",
         icon: Settings,
         subItems: [
-          { title: "Kullanıcı Yönetimi", url: "/dashboard/iam/users", icon: UserCog },
-          { title: "Rol Yönetimi", url: "/dashboard/iam/roles", icon: ShieldCheck, comingSoon: true },
-          // YENİ EKLENEN SATIR
-          { title: "Log Kayıtları", url: "/dashboard/audit/logs", icon: FileClock },
-          { title: "Genel Tanımlar", url: "/dashboard/definitions", icon: BookText, comingSoon: true },
+          { title: "Kullanıcı Yönetimi", url: "/dashboard/iam/users", icon: UserCog, permission: "PAGE_USERS:READ" },
+          { title: "Rol Yönetimi", url: "/dashboard/iam/roles", icon: ShieldCheck, comingSoon: true, permission: "PAGE_ROLES:READ" },
+          { title: "Log Kayıtları", url: "/dashboard/audit/logs", icon: FileClock, permission: "PAGE_LOGS:READ" },
+          { title: "Genel Tanımlar", url: "/dashboard/definitions", icon: BookText, comingSoon: true, permission: "PAGE_DEFINITIONS:READ" },
         ],
       },
     ],

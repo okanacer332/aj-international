@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type NavGroup, type NavMainItem } from "@/navigation/sidebar/sidebar-items";
+import { type NavGroup } from "@/navigation/sidebar/sidebar-items";
 import { useSidebar } from "@/components/ui/sidebar";
 import {
   Accordion,
@@ -21,6 +21,9 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { useAuthStore } from "@/stores/auth-store"; // GERÇEK STORE'U IMPORT EDİYORUZ
+
+// --- GEÇİCİ KOD KALDIRILDI ---
 
 interface NavMainProps {
   readonly items: readonly NavGroup[];
@@ -29,9 +32,23 @@ interface NavMainProps {
 export function NavMain({ items }: NavMainProps) {
   const path = usePathname();
   const { state, isMobile } = useSidebar();
+  const { permissions: userPermissions } = useAuthStore(); // Gerçek store'dan yetkileri alıyoruz
+
+  // Menü elemanlarını kullanıcının yetkilerine göre filtrele
+  const filteredItems = items.map(group => ({
+    ...group,
+    items: group.items.map(item => ({
+      ...item,
+      subItems: item.subItems?.filter(subItem => 
+        !subItem.permission || userPermissions.has(subItem.permission)
+      ),
+    })).filter(item => {
+      return !item.subItems || item.subItems.length > 0;
+    }),
+  })).filter(group => group.items.length > 0);
 
   if (state === "collapsed" && !isMobile) {
-    return <CollapsedNav items={items} />;
+    return <CollapsedNav items={filteredItems} />;
   }
 
   const getActiveAccordionItem = () => {
@@ -47,7 +64,7 @@ export function NavMain({ items }: NavMainProps) {
 
   return (
     <>
-      {items.map((group) => (
+      {filteredItems.map((group) => (
         <SidebarGroup key={group.id}>
           {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
           <SidebarGroupContent className="flex flex-col gap-1">
@@ -58,7 +75,6 @@ export function NavMain({ items }: NavMainProps) {
                     <AccordionTrigger
                       className={`px-2 py-1.5 rounded-md hover:no-underline 
                       ${item.subItems.some(sub => path.startsWith(sub.url))
-                        // DEĞİŞİKLİK BURADA YAPILDI: Aktif ana menüye de primary stili verildi.
                         ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                         : 'hover:bg-sidebar-accent'
                       }`}
@@ -105,7 +121,6 @@ export function NavMain({ items }: NavMainProps) {
   );
 }
 
-// Yalnızca ikonların göründüğü daraltılmış menü
 function CollapsedNav({ items }: NavMainProps) {
     const path = usePathname();
     return (

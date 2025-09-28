@@ -5,12 +5,13 @@ import { unstable_noStore as noStore } from "next/cache";
 // Bu segmenti her zaman dinamik tut (cache'leme)
 export const dynamic = "force-dynamic";
 
-import AuthGuard from "./_components/auth-guard"; // client guard
+import AuthGuard from "./_components/auth-guard";
+import { AuthProvider } from "./_components/auth-provider";
 
 import { AppSidebar } from "@/app/(main)/dashboard/_components/sidebar/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { users } from "@/data/users";
+// import { users } from "@/data/users"; // BU SATIRI SİLİYORUZ, ARTIK İHTİYAÇ YOK
 import { cn } from "@/lib/utils";
 import { getPreference } from "@/server/server-actions";
 import {
@@ -48,11 +49,8 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      {/* Geri tuşu/bfcache durumlarında token yoksa anında login'e atar */}
       <AuthGuard />
-
       <AppSidebar variant={sidebarVariant} collapsible={sidebarCollapsible} />
-
       <SidebarInset
         data-content-layout={contentLayout}
         className={cn(
@@ -70,12 +68,16 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             <div className="flex items-center gap-2">
               <LayoutControls {...layoutPreferences} />
               <ThemeSwitcher />
-              <AccountSwitcher users={users} />
+              {/* users={users} PROP'UNU SİLİYORUZ */}
+              <AccountSwitcher />
             </div>
           </div>
         </header>
 
-        <div className="h-full p-4 md:p-6">{children}</div>
+        <AuthProvider>
+          <div className="h-full p-4 md:p-6">{children}</div>
+        </AuthProvider>
+
       </SidebarInset>
     </SidebarProvider>
   );

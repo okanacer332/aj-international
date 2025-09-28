@@ -5,6 +5,7 @@ import com.ajinternational.ajserver.modules.iam.dto.ChangePasswordRequest;
 import com.ajinternational.ajserver.modules.iam.dto.CreateUserRequest;
 import com.ajinternational.ajserver.modules.iam.dto.UpdateProfileRequest;
 import com.ajinternational.ajserver.modules.iam.dto.UpdateUserRequest;
+import com.ajinternational.ajserver.modules.iam.model.Role; // YENİ IMPORT
 import com.ajinternational.ajserver.modules.iam.model.User;
 import com.ajinternational.ajserver.modules.iam.repository.RoleRepository;
 import com.ajinternational.ajserver.modules.iam.repository.UserRepository;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors; // YENİ IMPORT
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +28,8 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
+
+    // ... (diğer metotlar aynı kalacak) ...
 
     private String getCurrentUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -106,21 +110,34 @@ public class UserService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
 
-        // Mevcut şifre doğru mu diye kontrol et
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Mevcut şifre hatalı.");
         }
 
-        // Yeni şifreyi hash'leyerek kaydet
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
 
         auditLogService.logAction(username, "USER_PASSWORD_CHANGED", "Kullanıcı kendi şifresini değiştirdi.");
     }
 
+    // --- BURASI DEĞİŞİYOR ---
     public Optional<User> getUserByUsername(String username) {
-        return userRepository.findByUsername(username);
+        Optional<User> userOptional = userRepository.findByUsername(username);
+
+        userOptional.ifPresent(user -> {
+            // Kullanıcının sahip olduğu rol ID'leri üzerinden rolleri bul.
+            List<Role> roles = roleRepository.findAllById(user.getRoleIds());
+
+            // Bu rollerdeki tüm yetkileri toplayıp, kullanıcının `permissions` set'ine ekle.
+            Set<String> permissions = roles.stream()
+                    .flatMap(role -> role.getPermissions().stream())
+                    .collect(Collectors.toSet());
+            user.setPermissions(permissions);
+        });
+
+        return userOptional;
     }
+    // --- DEĞİŞİKLİK BİTTİ ---
 
     public void updateAvatarUrl(String username, String avatarUrl) {
         User user = userRepository.findByUsername(username)

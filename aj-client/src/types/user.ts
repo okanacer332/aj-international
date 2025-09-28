@@ -6,5 +6,6 @@ export type User = {
     tenantId: string;
     roleIds: string[];
     active: boolean;
-    avatarUrl: string | null; // EKSİK OLAN SATIR BURAYA EKLENDİ
+    avatarUrl: string | null;
+    permissions?: string[]; // Frontend'in kullanması için backend'den gelen yetki listesi
 };
