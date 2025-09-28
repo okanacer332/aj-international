@@ -59,7 +59,6 @@ export const sidebarItems: NavGroup[] = [
         url: "#",
         icon: Briefcase,
         subItems: [
-          // "comingSoon: true" buradan kaldırıldı
           { title: "Görev Yönetimi", url: "/dashboard/tasks", icon: ClipboardList, permission: "PAGE_TASKS:READ" },
         ],
       },
@@ -68,7 +67,8 @@ export const sidebarItems: NavGroup[] = [
         url: "#",
         icon: HeartHandshake,
         subItems: [
-          { title: "Personel Yönetimi", url: "/dashboard/personnel", icon: Users, comingSoon: true, permission: "PAGE_PERSONNEL:READ" },
+          // "comingSoon: true" buradan kaldırıldı
+          { title: "Personel Yönetimi", url: "/dashboard/personnel", icon: Users, permission: "PAGE_PERSONNEL:READ" },
           { title: "İzin Yönetimi", url: "/dashboard/leaves", icon: Calendar, comingSoon: true, permission: "PAGE_LEAVES:READ" },
           { title: "Vardiya Yönetimi", url: "/dashboard/shifts", icon: Clock, comingSoon: true, permission: "PAGE_SHIFTS:READ" },
         ],
@@ -87,7 +87,7 @@ export const sidebarItems: NavGroup[] = [
         icon: Settings,
         subItems: [
           { title: "Kullanıcı Yönetimi", url: "/dashboard/iam/users", icon: UserCog, permission: "PAGE_USERS:READ" },
-          { title: "Rol Yönetimi", url: "/dashboard/iam/roles", icon: ShieldCheck, permission: "PAGE_ROLES:READ" }, // Buradaki comingSoon'u da kaldıralım.
+          { title: "Rol Yönetimi", url: "/dashboard/iam/roles", icon: ShieldCheck, permission: "PAGE_ROLES:READ" },
           { title: "Log Kayıtları", url: "/dashboard/audit/logs", icon: FileClock, permission: "PAGE_LOGS:READ" },
           { title: "Genel Tanımlar", url: "/dashboard/definitions", icon: BookText, comingSoon: true, permission: "PAGE_DEFINITIONS:READ" },
         ],
