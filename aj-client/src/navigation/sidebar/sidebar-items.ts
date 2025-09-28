@@ -21,7 +21,7 @@ export interface NavSubItem {
   url: string;
   icon?: LucideIcon;
   comingSoon?: boolean;
-  permission?: string; // Her bir sayfanın gerektirdiği yetki anahtarı
+  permission?: string;
 }
 
 export interface NavMainItem {
@@ -59,7 +59,8 @@ export const sidebarItems: NavGroup[] = [
         url: "#",
         icon: Briefcase,
         subItems: [
-          { title: "Görev Yönetimi", url: "/dashboard/tasks", icon: ClipboardList, comingSoon: true, permission: "PAGE_TASKS:READ" },
+          // "comingSoon: true" buradan kaldırıldı
+          { title: "Görev Yönetimi", url: "/dashboard/tasks", icon: ClipboardList, permission: "PAGE_TASKS:READ" },
         ],
       },
       {
@@ -86,7 +87,7 @@ export const sidebarItems: NavGroup[] = [
         icon: Settings,
         subItems: [
           { title: "Kullanıcı Yönetimi", url: "/dashboard/iam/users", icon: UserCog, permission: "PAGE_USERS:READ" },
-          { title: "Rol Yönetimi", url: "/dashboard/iam/roles", icon: ShieldCheck, comingSoon: true, permission: "PAGE_ROLES:READ" },
+          { title: "Rol Yönetimi", url: "/dashboard/iam/roles", icon: ShieldCheck, permission: "PAGE_ROLES:READ" }, // Buradaki comingSoon'u da kaldıralım.
           { title: "Log Kayıtları", url: "/dashboard/audit/logs", icon: FileClock, permission: "PAGE_LOGS:READ" },
           { title: "Genel Tanımlar", url: "/dashboard/definitions", icon: BookText, comingSoon: true, permission: "PAGE_DEFINITIONS:READ" },
         ],
