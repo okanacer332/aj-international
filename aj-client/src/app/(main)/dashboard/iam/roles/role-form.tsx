@@ -13,29 +13,32 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const formSchema = z.object({
   name: z.string().min(2, "Rol adı en az 2 karakter olmalıdır."),
-  permissions: z.array(z.string()).optional(),
+  permissions: z.array(z.string()),
 });
 
 type RoleFormProps = {
-  initialData?: Role | null; // Düzenleme için mevcut rol verisi
+  initialData?: Role | null;
   onSuccess: () => void;
 };
+
+// Sayfa anahtarlarını daha anlaşılır isimlere çeviren bir harita
+const pageNames: Record<string, string> = {
+    PAGE_USERS: "Kullanıcı Yönetimi",
+    PAGE_ROLES: "Rol Yönetimi",
+    PAGE_LOGS: "Log Kayıtları",
+    PAGE_TASKS: "Görev Yönetimi",
+    PAGE_REPORTS: "Raporlar",
+}
 
 export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
   const [allPermissions, setAllPermissions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Component yüklendiğinde tüm sistem yetkilerini backend'den çek
-  useEffect(() => {
-    apiFetchAuth("/api/iam/permissions")
-      .then(res => res.json())
-      .then(data => setAllPermissions(data.sort()));
-  }, []);
-  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -43,6 +46,20 @@ export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
       permissions: initialData?.permissions || [],
     },
   });
+
+  // HATA DÜZELTMESİ: initialData prop'u değiştiğinde formu resetle
+  useEffect(() => {
+    form.reset({
+      name: initialData?.name || "",
+      permissions: initialData?.permissions || [],
+    });
+  }, [initialData, form.reset]);
+
+  useEffect(() => {
+    apiFetchAuth("/api/iam/permissions")
+      .then(res => res.json())
+      .then(data => setAllPermissions(data.sort()));
+  }, []);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -54,7 +71,6 @@ export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
         method: method,
         body: JSON.stringify(values),
       });
-
       toast.success(initialData ? "Rol başarıyla güncellendi." : "Rol başarıyla oluşturuldu.");
       onSuccess();
     } catch (error: any) {
@@ -64,15 +80,26 @@ export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
     }
   };
   
-  const permissionGroups = allPermissions.reduce((acc, permission) => {
-    const group = permission.split(':')[0];
-    if (!acc[group]) {
-      acc[group] = [];
+  const pagePermissions = allPermissions.reduce((acc, permission) => {
+    const [pageKey, action] = permission.split(':');
+    if (!acc[pageKey]) {
+      acc[pageKey] = {};
     }
-    acc[group].push(permission);
+    acc[pageKey][action] = true;
     return acc;
-  }, {} as Record<string, string[]>);
+  }, {} as Record<string, Record<string, boolean>>);
 
+  const handlePermissionChange = (permission: string, checked: boolean) => {
+    const currentPermissions = form.getValues("permissions");
+    let newPermissions: string[];
+    if (checked) {
+      newPermissions = [...currentPermissions, permission];
+    } else {
+      newPermissions = currentPermissions.filter(p => p !== permission);
+    }
+    form.setValue("permissions", newPermissions, { shouldDirty: true });
+  };
+  
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -80,37 +107,43 @@ export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
           <FormItem><FormLabel>Rol Adı</FormLabel><FormControl><Input placeholder="Örn: Saha Operatörü" {...field} /></FormControl><FormMessage /></FormItem>
         )}/>
         
-        <div className="space-y-2">
-            <FormLabel>Yetkiler</FormLabel>
-            <div className="rounded-md border p-4 max-h-64 overflow-y-auto">
-                <Accordion type="multiple" className="w-full">
-                    {Object.entries(permissionGroups).map(([groupName, permissions]) => (
-                        <AccordionItem value={groupName} key={groupName}>
-                            <AccordionTrigger className="capitalize">{groupName.toLowerCase()} Yetkileri</AccordionTrigger>
-                            <AccordionContent>
-                                {permissions.map((permission) => (
-                                    <FormField key={permission} control={form.control} name="permissions" render={({ field }) => (
-                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 my-2">
-                                            <FormControl>
-                                                <Checkbox
-                                                    checked={field.value?.includes(permission)}
-                                                    onCheckedChange={(checked) => {
-                                                        return checked
-                                                            ? field.onChange([...(field.value || []), permission])
-                                                            : field.onChange(field.value?.filter((value) => value !== permission));
-                                                    }}
-                                                />
-                                            </FormControl>
-                                            <FormLabel className="font-normal">{permission.split(':')[1]}</FormLabel>
-                                        </FormItem>
-                                    )}/>
-                                ))}
-                            </AccordionContent>
-                        </AccordionItem>
-                    ))}
-                </Accordion>
-            </div>
-        </div>
+        <Card>
+            <CardHeader><CardTitle>Yetkiler</CardTitle></CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Sayfa / Modül</TableHead>
+                            <TableHead className="text-center">Okuma</TableHead>
+                            <TableHead className="text-center">Yazma (Ekleme/Düzenleme/Silme)</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {Object.keys(pagePermissions).map(pageKey => (
+                            <TableRow key={pageKey}>
+                                <TableCell className="font-medium">{pageNames[pageKey] || pageKey}</TableCell>
+                                <TableCell className="text-center">
+                                    {pagePermissions[pageKey]['READ'] && (
+                                        <Checkbox
+                                            checked={form.watch("permissions").includes(`${pageKey}:READ`)}
+                                            onCheckedChange={(checked) => handlePermissionChange(`${pageKey}:READ`, !!checked)}
+                                        />
+                                    )}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                    {pagePermissions[pageKey]['WRITE'] && (
+                                         <Checkbox
+                                            checked={form.watch("permissions").includes(`${pageKey}:WRITE`)}
+                                            onCheckedChange={(checked) => handlePermissionChange(`${pageKey}:WRITE`, !!checked)}
+                                        />
+                                    )}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
