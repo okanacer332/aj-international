@@ -24,7 +24,7 @@ jobs:
 
       - name: 3. Backend'i Maven ile Build Et
         run: ./mvnw clean package -DskipTests
-        working-directory: ./aj-server # <-- DÜZELTME BURADA
+        working-directory: ./aj-server
 
       # --- FRONTEND İŞLEMLERİ ---
       - name: 4. Node.js Kurulumu
@@ -36,11 +36,11 @@ jobs:
 
       - name: 5. Frontend Bağımlılıklarını Yükle
         run: npm install
-        working-directory: ./aj-client # <-- DÜZELTME BURADA
+        working-directory: ./aj-client
 
       - name: 6. Frontend'i Build Et
         run: npm run build
-        working-directory: ./aj-client # <-- DÜZELTME BURADA
+        working-directory: ./aj-client
 
       # --- SUNUCUYA KOPYALAMA VE DAĞITIM ---
       - name: 7. Dosyaları Geçici Klasöre Kopyala
