@@ -1,10 +1,16 @@
-// src/app/page.tsx
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default async function Home() {
-  const cookieStore = await cookies();            // <-- await
-  const token = cookieStore.get("auth-token")?.value;
+// Bu satır, Next.js'e bu sayfanın statik olarak oluşturulmaması gerektiğini söyler.
+export const dynamic = "force-dynamic";
 
-  redirect(token ? "/dashboard/default" : "/auth/v1/login");
+export default function Home() {
+    const router = useRouter();
+
+    useEffect(() => {
+        router.push("/dashboard/default");
+    }, [router]);
+
+    return null; // Bu sayfa hiçbir şey render etmeyecek, sadece yönlendirecek.
 }
