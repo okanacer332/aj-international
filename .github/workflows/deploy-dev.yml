@@ -6,42 +6,44 @@ on:
       - release
 
 jobs:
-  deploy:
+  build-and-deploy:
     name: Build and Deploy to Dev Server
     runs-on: ubuntu-latest
 
     steps:
-      # --- 1. Adım: Kodu GitHub Actions sunucusuna indir ---
-      - name: Checkout Code
+      - name: 1. Kodu İndir (Checkout)
         uses: actions/checkout@v4
 
-      # --- 2. Adım: Java (Backend) Kurulumu ve Build ---
-      - name: Set up JDK 17
+      # --- BACKEND İŞLEMLERİ ---
+      - name: 2. Java JDK 17 Kurulumu
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build Backend with Maven
-        run: ./mvnw -f aj-server/pom.xml clean package -DskipTests
+      - name: 3. Backend'i Maven ile Build Et
+        run: ./mvnw clean package -DskipTests
+        working-directory: ./aj-server # <-- DÜZELTME BURADA
 
-      # --- 3. Adım: Node.js (Frontend) Kurulumu ve Build ---
-      - name: Set up Node.js
+      # --- FRONTEND İŞLEMLERİ ---
+      - name: 4. Node.js Kurulumu
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # veya projenin kullandığı versiyon
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: aj-client/package-lock.json
 
-      - name: Install Frontend Dependencies
-        run: npm install --prefix aj-client
+      - name: 5. Frontend Bağımlılıklarını Yükle
+        run: npm install
+        working-directory: ./aj-client # <-- DÜZELTME BURADA
 
-      - name: Build Frontend
-        run: npm run build --prefix aj-client
+      - name: 6. Frontend'i Build Et
+        run: npm run build
+        working-directory: ./aj-client # <-- DÜZELTME BURADA
 
-      # --- 4. Adım: Dosyaları Sunucuya Kopyalama (SCP) ---
-      - name: Copy files to server
+      # --- SUNUCUYA KOPYALAMA VE DAĞITIM ---
+      - name: 7. Dosyaları Geçici Klasöre Kopyala
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.DEV_HOST }}
@@ -52,8 +54,7 @@ jobs:
           target: "~/apps/deployment-temp"
           strip_components: 1
 
-      # --- 5. Adım: Sunucuda Dağıtımı Tamamlama (SSH) ---
-      - name: Deploy on server
+      - name: 8. Sunucuda Dağıtımı Tamamla
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DEV_HOST }}
@@ -63,7 +64,7 @@ jobs:
           script: |
             # Backend'i güncelle
             mkdir -p ~/apps/aj-server-dev
-            mv ~/apps/deployment-temp/*.jar ~/apps/aj-server-dev/app.jar
+            mv -f ~/apps/deployment-temp/*.jar ~/apps/aj-server-dev/app.jar
             sudo systemctl restart aj-server-dev
             
             # Frontend'i güncelle
@@ -74,6 +75,7 @@ jobs:
             cp ~/apps/deployment-temp/next.config.mjs ~/apps/aj-client-dev/
             
             cd ~/apps/aj-client-dev
+            # Not: Frontend production build'i `npm start` ile çalışır, `npm dev` değil. Port 3011
             pm2 restart aj-client-dev || pm2 start npm --name "aj-client-dev" -- run start -- -p 3011
             
             # Geçici dosyaları temizle
