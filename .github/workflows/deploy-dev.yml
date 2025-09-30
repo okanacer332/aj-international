@@ -14,7 +14,6 @@ jobs:
       - name: 1. Kodu İndir (Checkout)
         uses: actions/checkout@v4
 
-      # --- BACKEND İŞLEMLERİ ---
       - name: 2. Java JDK 17 Kurulumu
         uses: actions/setup-java@v4
         with:
@@ -26,7 +25,6 @@ jobs:
         run: ./mvnw clean package -DskipTests
         working-directory: ./aj-server
 
-      # --- FRONTEND İŞLEMLERİ ---
       - name: 4. Node.js Kurulumu
         uses: actions/setup-node@v4
         with:
@@ -42,21 +40,15 @@ jobs:
         run: npm run build
         working-directory: ./aj-client
 
-      # --- YENİ ADIM: CLOUDFLARE TÜNEL İÇİN HAZIRLIK ---
-      - name: 7. Cloudflared Kurulumu
+      # --- YENİ ADIMLAR: CLOUDFLARE VE SSH HAZIRLIĞI ---
+      - name: 7. Cloudflared Aracını Kur
         run: |
-          wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared-linux-amd64.deb
 
-      - name: 8. SSH Konfigürasyonunu Tünel İçin Ayarla
-        run: |
-          mkdir -p ~/.ssh
-          echo "Host ${{ secrets.DEV_HOST }}" > ~/.ssh/config
-          echo "  ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h" >> ~/.ssh/config
-
-      # --- SUNUCUYA KOPYALAMA VE DAĞITIM (Artık Tünel Üzerinden) ---
-      - name: 9. Dosyaları Geçici Klasöre Kopyala
-        uses: appleboy/scp-action@master
+      # --- GÜNCELLENMİŞ DAĞITIM ADIMLARI ---
+      - name: 8. Dosyaları Sunucuya Kopyala (Tünel Üzerinden)
+        uses: appleboy/scp-action@v1.0.1
         with:
           host: ${{ secrets.DEV_HOST }}
           username: ${{ secrets.DEV_USERNAME }}
@@ -65,14 +57,18 @@ jobs:
           source: "aj-server/target/*.jar,aj-client/.next,aj-client/public,aj-client/package.json,aj-client/next.config.mjs"
           target: "~/apps/deployment-temp"
           strip_components: 1
+          # SSH komutuna tüneli kullanması için ek parametreler ekliyoruz
+          proxy_command: "/usr/local/bin/cloudflared access ssh --hostname ${{ secrets.DEV_HOST }}"
 
-      - name: 10. Sunucuda Dağıtımı Tamamla
-        uses: appleboy/ssh-action@master
+      - name: 9. Sunucuda Dağıtımı Tamamla (Tünel Üzerinden)
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DEV_HOST }}
           username: ${{ secrets.DEV_USERNAME }}
           key: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
           port: ${{ secrets.DEV_PORT }}
+          # SSH komutuna tüneli kullanması için ek parametreler ekliyoruz
+          proxy_command: "/usr/local/bin/cloudflared access ssh --hostname ${{ secrets.DEV_HOST }}"
           script: |
             # Backend'i güncelle
             mkdir -p ~/apps/aj-server-dev
