@@ -63,7 +63,7 @@ jobs:
           source: "aj-server/target/*.jar,aj-client/.next,aj-client/public,aj-client/package.json,aj-client/next.config.mjs"
           target: "~/apps/deployment-temp"
           strip_components: 1
-          command_timeout: "10m" # Süreyi uzattım
+          command_timeout: "10m"
 
       - name: 10. Sunucuda Dağıtımı Tamamla (Artık Tünel Üzerinden)
         uses: appleboy/ssh-action@master
