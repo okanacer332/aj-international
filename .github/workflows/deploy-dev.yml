@@ -40,15 +40,13 @@ jobs:
         run: npm run build
         working-directory: ./aj-client
 
-      # --- YENİ ADIMLAR: CLOUDFLARE VE SSH HAZIRLIĞI ---
       - name: 7. Cloudflared Aracını Kur
         run: |
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared-linux-amd64.deb
 
-      # --- GÜNCELLENMİŞ DAĞITIM ADIMLARI ---
       - name: 8. Dosyaları Sunucuya Kopyala (Tünel Üzerinden)
-        uses: appleboy/scp-action@v1.0.1
+        uses: appleboy/scp-action@master # <-- VERSİYON DÜZELTİLDİ
         with:
           host: ${{ secrets.DEV_HOST }}
           username: ${{ secrets.DEV_USERNAME }}
@@ -57,17 +55,17 @@ jobs:
           source: "aj-server/target/*.jar,aj-client/.next,aj-client/public,aj-client/package.json,aj-client/next.config.mjs"
           target: "~/apps/deployment-temp"
           strip_components: 1
-          # SSH komutuna tüneli kullanması için ek parametreler ekliyoruz
+          command_timeout: 2m # Zaman aşımı süresini uzatalım
           proxy_command: "/usr/local/bin/cloudflared access ssh --hostname ${{ secrets.DEV_HOST }}"
 
       - name: 9. Sunucuda Dağıtımı Tamamla (Tünel Üzerinden)
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@master # <-- VERSİYON DÜZELTİLDİ
         with:
           host: ${{ secrets.DEV_HOST }}
           username: ${{ secrets.DEV_USERNAME }}
           key: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
           port: ${{ secrets.DEV_PORT }}
-          # SSH komutuna tüneli kullanması için ek parametreler ekliyoruz
+          command_timeout: 2m # Zaman aşımı süresini uzatalım
           proxy_command: "/usr/local/bin/cloudflared access ssh --hostname ${{ secrets.DEV_HOST }}"
           script: |
             # Backend'i güncelle
