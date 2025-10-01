@@ -6,66 +6,12 @@ on:
       - release
 
 jobs:
-  build-and-deploy:
-    name: Build and Deploy to Dev Server
+  deploy:
+    name: Deploy to Dev Server
     runs-on: ubuntu-latest
 
     steps:
-      - name: 1. Kodu İndir (Checkout)
-        uses: actions/checkout@v4
-
-      - name: 2. Java JDK 17 Kurulumu
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: 3. Backend'i Maven ile Build Et
-        run: ./mvnw clean package -DskipTests
-        working-directory: ./aj-server
-
-      - name: 4. Node.js Kurulumu
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: aj-client/package-lock.json
-
-      - name: 5. Frontend Bağımlılıklarını Yükle
-        run: npm install
-        working-directory: ./aj-client
-
-      - name: 6. Frontend'i Build Et
-        run: npm run build
-        working-directory: ./aj-client
-
-      # --- YENİ ADIMLAR: CLOUDFLARE VE SSH HAZIRLIĞI ---
-      - name: 7. Cloudflared Aracını Kur
-        run: |
-          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-          sudo dpkg -i cloudflared-linux-amd64.deb
-      
-      - name: 8. SSH Konfigürasyonunu Tünel İçin Ayarla
-        run: |
-          mkdir -p ~/.ssh
-          echo "Host ${{ secrets.DEV_HOST }}" >> ~/.ssh/config
-          echo "  ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h" >> ~/.ssh/config
-
-      # --- GÜNCELLENMİŞ DAĞITIM ADIMLARI ---
-      - name: 9. Dosyaları Sunucuya Kopyala (Artık Tünel Üzerinden)
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.DEV_HOST }}
-          username: ${{ secrets.DEV_USERNAME }}
-          key: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
-          port: ${{ secrets.DEV_PORT }}
-          source: "aj-server/target/*.jar,aj-client/.next,aj-client/public,aj-client/package.json,aj-client/next.config.mjs"
-          target: "~/apps/deployment-temp"
-          strip_components: 1
-          command_timeout: "10m"
-
-      - name: 10. Sunucuda Dağıtımı Tamamla (Artık Tünel Üzerinden)
+      - name: Sunucuya Bağlan ve Dağıtımı Tetikle
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DEV_HOST }}
@@ -73,20 +19,27 @@ jobs:
           key: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
           port: ${{ secrets.DEV_PORT }}
           script: |
-            # Backend'i güncelle
-            mkdir -p ~/apps/aj-server-dev
-            mv -f ~/apps/deployment-temp/*.jar ~/apps/aj-server-dev/app.jar
+            # --- BACKEND DAĞITIMI ---
+            echo "====== BACKEND DAĞITIMI BAŞLIYOR ======"
+            cd /home/acrtech/apps/aj-server-dev
+            echo "1/4: Son değişiklikler 'release' branch'inden çekiliyor..."
+            git pull origin release
+            echo "2/4: Backend Maven ile build ediliyor..."
+            ./mvnw clean package -DskipTests
+            echo "3/4: Backend servisi yeniden başlatılıyor..."
             sudo systemctl restart aj-server-dev
+            echo "4/4: Backend dağıtımı tamamlandı."
+            echo ""
             
-            # Frontend'i güncelle
-            mkdir -p ~/apps/aj-client-dev
-            rsync -a --delete ~/apps/deployment-temp/.next/ ~/apps/aj-client-dev/.next/
-            rsync -a --delete ~/apps/deployment-temp/public/ ~/apps/aj-client-dev/public/
-            cp ~/apps/deployment-temp/package.json ~/apps/aj-client-dev/
-            cp ~/apps/deployment-temp/next.config.mjs ~/apps/aj-client-dev/
-            
-            cd ~/apps/aj-client-dev
+            # --- FRONTEND DAĞITIMI ---
+            echo "====== FRONTEND DAĞITIMI BAŞLIYOR ======"
+            cd /home/acrtech/apps/aj-client-dev
+            echo "1/5: Son değişiklikler 'release' branch'inden çekiliyor..."
+            git pull origin release
+            echo "2/5: Frontend bağımlılıkları yükleniyor..."
+            npm install
+            echo "3/5: Frontend Next.js ile build ediliyor..."
+            npm run build
+            echo "4/5: Frontend servisi yeniden başlatılıyor..."
             pm2 restart aj-client-dev || pm2 start npm --name "aj-client-dev" -- run start -- -p 3011
-            
-            # Geçici dosyaları temizle
-            rm -rf ~/apps/deployment-temp
+            echo "5/5: Frontend dağıtımı tamamlandı."
