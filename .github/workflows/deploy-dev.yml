@@ -14,14 +14,14 @@ jobs:
       - name: Sunucuya Bağlan ve Dağıtımı Tetikle
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.DEV_HOST }}
+          host: ${{ secrets.DEV_HOST }} # Artık ssh.okanacer.xyz'e bağlanacak
           username: ${{ secrets.DEV_USERNAME }}
           key: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
           port: ${{ secrets.DEV_PORT }}
           script: |
             # --- BACKEND DAĞITIMI ---
             echo "====== BACKEND DAĞITIMI BAŞLIYOR ======"
-            cd /home/acrtech/apps/aj-server-dev
+            cd /home/acrtech/apps/aj-server-dev || exit 1
             echo "1/4: Son değişiklikler 'release' branch'inden çekiliyor..."
             git pull origin release
             echo "2/4: Backend Maven ile build ediliyor..."
@@ -33,7 +33,7 @@ jobs:
             
             # --- FRONTEND DAĞITIMI ---
             echo "====== FRONTEND DAĞITIMI BAŞLIYOR ======"
-            cd /home/acrtech/apps/aj-client-dev
+            cd /home/acrtech/apps/aj-client-dev || exit 1
             echo "1/5: Son değişiklikler 'release' branch'inden çekiliyor..."
             git pull origin release
             echo "2/5: Frontend bağımlılıkları yükleniyor..."
