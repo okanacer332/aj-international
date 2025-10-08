@@ -89,6 +89,7 @@ export const sidebarItems: NavGroup[] = [
           { title: "Kullanıcı Yönetimi", url: "/dashboard/iam/users", icon: UserCog, permission: "PAGE_USERS:READ" },
           { title: "Rol Yönetimi", url: "/dashboard/iam/roles", icon: ShieldCheck, permission: "PAGE_ROLES:READ" },
           { title: "Log Kayıtları", url: "/dashboard/audit/logs", icon: FileClock, permission: "PAGE_LOGS:READ" },
+          { title: "Ürün Tanımları", url: "/dashboard/masterdata/products", icon: BookText, permission: "PAGE_MASTER_PRODUCT:READ" },
           { title: "Genel Tanımlar", url: "/dashboard/definitions", icon: BookText, comingSoon: true, permission: "PAGE_DEFINITIONS:READ" },
         ],
       },
