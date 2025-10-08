@@ -6,7 +6,8 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.5.5</version>
-		<relativePath/> </parent>
+		<relativePath/>
+	</parent>
 	<groupId>com.ajinternational</groupId>
 	<artifactId>aj-server</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -27,6 +28,7 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<dependencies>
 		<dependency>
