@@ -17,4 +17,7 @@ public interface MasterProductRepository extends MongoRepository<MasterProduct, 
     List<MasterProduct> findByParentProductId(String parentProductId);
 
     Optional<MasterProduct> findByTenantIdAndCode(String tenantId, String code);
+
+    long countByTenantIdAndParentProductIdIsNull(String tenantId); // BU SATIRI EKLE
+
 }
