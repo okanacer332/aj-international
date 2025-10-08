@@ -11,7 +11,6 @@ import { AuthProvider } from "./_components/auth-provider";
 import { AppSidebar } from "@/app/(main)/dashboard/_components/sidebar/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-// import { users } from "@/data/users"; // BU SATIRI SİLİYORUZ, ARTIK İHTİYAÇ YOK
 import { cn } from "@/lib/utils";
 import { getPreference } from "@/server/server-actions";
 import {
@@ -24,7 +23,7 @@ import {
 } from "@/types/preferences/layout";
 
 import { AccountSwitcher } from "./_components/sidebar/account-switcher";
-import { LayoutControls } from "./_components/sidebar/layout-controls";
+// import { LayoutControls } from "./_components/sidebar/layout-controls"; /* KALDIRILDI */
 import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 
@@ -41,11 +40,14 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
     getPreference<ContentLayout>("content_layout", CONTENT_LAYOUT_VALUES, "centered"),
   ]);
 
-  const layoutPreferences = {
-    contentLayout,
-    variant: sidebarVariant,
-    collapsible: sidebarCollapsible,
-  };
+  /*
+   // layoutPreferences objesi artık kullanılmadığı için kaldırıldı.
+   const layoutPreferences = {
+     contentLayout,
+     variant: sidebarVariant,
+     collapsible: sidebarCollapsible,
+   };
+  */
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
@@ -66,9 +68,8 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               <SearchDialog />
             </div>
             <div className="flex items-center gap-2">
-              <LayoutControls {...layoutPreferences} />
+              {/* <LayoutControls {...layoutPreferences} /> --- BU SATIR KALDIRILDI --- */}
               <ThemeSwitcher />
-              {/* users={users} PROP'UNU SİLİYORUZ */}
               <AccountSwitcher />
             </div>
           </div>
