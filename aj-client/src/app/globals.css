@@ -46,75 +46,96 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Default theme styles (used when no data-theme-preset is set or when 'default' is selected).
-These serve as the fallback; there is no separate default.css file. */
+/* Açık Tema */
 :root {
   --radius: 0.625rem;
+  --background: oklch(1 0 0); /* Bembeyaz arkaplan */
+  --foreground: oklch(0.145 0 0);      /* Koyu metin */
+  
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
+
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.75 0.15 85); /* DEĞİŞİKLİK: Altın Sarısı */
-  --primary-foreground: oklch(0.2 0 0); /* DEĞİŞİKLİK: Altın sarısı üstündeki yazı (Siyah/Koyu Gri) */
+
+  --primary: #B87F29; /* Altın Sarısının ortalama tonu */
+  --primary-foreground: #FFFFFF; /* Altın sarısı üstünde beyaz yazı */
+
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
+
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
+
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
+
   --destructive: oklch(0.577 0.245 27.325);
+
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.75 0.15 85); /* DEĞİŞİKLİK: Altın Sarısı (Focus halkası) */
+  --ring: #B87F29; /* Focus halkası için altın sarısı */
+
   --chart-1: oklch(0.3211 0 0);
   --chart-2: oklch(0.4495 0 0);
   --chart-3: oklch(0.5693 0 0);
   --chart-4: oklch(0.6830 0 0);
   --chart-5: oklch(0.7921 0 0);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  
+  /* Sidebar Renkleri (Açık Tema) */
+  --sidebar: oklch(0.985 0 0);               /* Sidebar arkaplanı: Çok açık gri/beyaz */
+  --sidebar-foreground: oklch(0.145 0 0);   /* Sidebar yazı rengi: Koyu */
+  --sidebar-primary: #B87F29;               /* Aktif menü arkaplanı: Altın Sarısı */
+  --sidebar-primary-foreground: #FFFFFF;     /* Aktif menü yazısı: Beyaz */
+  --sidebar-accent: oklch(0.922 0 0);       /* Hover rengi: Açık gri */
+  --sidebar-accent-foreground: oklch(0.145 0 0); /* Hover yazı rengi: Koyu */
+  --sidebar-border: oklch(0.922 0 0);       /* Kenarlık rengi: Açık gri */
+  --sidebar-ring: #B87F29;
 }
 
+/* Koyu Tema */
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: #1A1919; /* Marka siyahı arkaplan */
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  
+  --card: oklch(0.18 0.01 260);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+
+  --popover: oklch(0.18 0.01 260);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.75 0.15 85); /* DEĞİŞİKLİK: Altın Sarısı */
-  --primary-foreground: oklch(0.2 0 0); /* DEĞİŞİKLİK: Altın sarısı üstündeki yazı (Siyah/Koyu Gri) */
+
+  --primary: #C4962A; /* Daha canlı bir altın sarısı */
+  --primary-foreground: #1A1919; /* Altın sarısı üstünde siyah yazı */
+
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
+
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
+
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
+
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.75 0.15 85); /* DEĞİŞİKLİK: Altın Sarısı (Focus halkası) */
+  --border: oklch(0.3 0.01 260);
+  --input: oklch(0.3 0.01 260);
+  --ring: #C4962A;
+
   --chart-1: oklch(0.9521 0 0);
   --chart-2: oklch(0.8576 0 0);
   --chart-3: oklch(0.7572 0 0);
   --chart-4: oklch(0.6534 0 0);
   --chart-5: oklch(0.5452 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  
+  /* Sidebar Renkleri (Koyu Tema) */
+  --sidebar: #1A1919;
+  --sidebar-foreground: oklch(0.95 0 0);
+  --sidebar-primary: #C4962A;
+  --sidebar-primary-foreground: #1A1919;
+  --sidebar-accent: oklch(0.25 0.01 260);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.3 0.01 260);
+  --sidebar-ring: #C4962A;
 }
 
 @layer utilities {
@@ -148,6 +169,17 @@ These serve as the fallback; there is no separate default.css file. */
 
   [data-theme-preset]:not([data-theme-preset="default"]) .shadow-2xl {
     box-shadow: var(--shadow-2xl);
+  }
+
+  /* Özel Altın Geçişi Sınıfları */
+  .bg-gold-gradient {
+    background-image: linear-gradient(to right, #C4962A, #B87F29, #C9A02B);
+  }
+  .text-gold-gradient {
+    background-image: linear-gradient(to right, #C4962A, #B87F29, #C9A02B);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 }
 
