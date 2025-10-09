@@ -26,14 +26,20 @@ type RoleFormProps = {
   onSuccess: () => void;
 };
 
-// Sayfa anahtarlarını daha anlaşılır isimlere çeviren bir harita
-const pageNames: Record<string, string> = {
+// Yetki anahtarlarını Türkçe'ye çeviren harita
+const permissionTranslations: Record<string, string> = {
+    PAGE_DASHBOARD: "Ana Sayfa (Dashboard)",
     PAGE_USERS: "Kullanıcı Yönetimi",
     PAGE_ROLES: "Rol Yönetimi",
     PAGE_LOGS: "Log Kayıtları",
     PAGE_TASKS: "Görev Yönetimi",
+    PAGE_MASTER_PRODUCT: "Ürün Tanımları",
+    PAGE_PERSONNEL: "Personel Yönetimi",
     PAGE_REPORTS: "Raporlar",
-}
+    PAGE_LEAVES: "İzin Yönetimi",
+    PAGE_SHIFTS: "Vardiya Yönetimi",
+    PAGE_DEFINITIONS: "Genel Tanımlar",
+};
 
 export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
   const [allPermissions, setAllPermissions] = useState<string[]>([]);
@@ -47,7 +53,6 @@ export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
     },
   });
 
-  // HATA DÜZELTMESİ: initialData prop'u değiştiğinde formu resetle
   useEffect(() => {
     form.reset({
       name: initialData?.name || "",
@@ -121,7 +126,7 @@ export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
                     <TableBody>
                         {Object.keys(pagePermissions).map(pageKey => (
                             <TableRow key={pageKey}>
-                                <TableCell className="font-medium">{pageNames[pageKey] || pageKey}</TableCell>
+                                <TableCell className="font-medium">{permissionTranslations[pageKey] || pageKey}</TableCell>
                                 <TableCell className="text-center">
                                     {pagePermissions[pageKey]['READ'] && (
                                         <Checkbox

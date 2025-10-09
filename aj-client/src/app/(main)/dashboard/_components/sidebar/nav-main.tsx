@@ -21,9 +21,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { useAuthStore } from "@/stores/auth-store"; // GERÇEK STORE'U IMPORT EDİYORUZ
-
-// --- GEÇİCİ KOD KALDIRILDI ---
+import { useAuthStore } from "@/stores/auth-store";
 
 interface NavMainProps {
   readonly items: readonly NavGroup[];
@@ -31,8 +29,14 @@ interface NavMainProps {
 
 export function NavMain({ items }: NavMainProps) {
   const path = usePathname();
-  const { state, isMobile } = useSidebar();
-  const { permissions: userPermissions } = useAuthStore(); // Gerçek store'dan yetkileri alıyoruz
+  const { state, isMobile, setOpenMobile } = useSidebar();
+  const { permissions: userPermissions } = useAuthStore();
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   // Menü elemanlarını kullanıcının yetkilerine göre filtrele
   const filteredItems = items.map(group => ({
@@ -92,7 +96,7 @@ export function NavMain({ items }: NavMainProps) {
                               isActive={path === subItem.url}
                               asChild
                             >
-                              <Link href={subItem.url}>
+                              <Link href={subItem.url} onClick={handleLinkClick}>
                                 {subItem.icon && <subItem.icon />}
                                 <span>{subItem.title}</span>
                               </Link>
@@ -104,8 +108,16 @@ export function NavMain({ items }: NavMainProps) {
                   </AccordionItem>
                 ) : (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton isActive={path === item.url} asChild>
-                      <Link href={item.url}>
+                    <SidebarMenuButton
+                      isActive={path === item.url}
+                      className={
+                        path === item.url
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                          : "hover:bg-sidebar-accent"
+                      }
+                      asChild
+                    >
+                      <Link href={item.url} onClick={handleLinkClick}>
                         {item.icon && <item.icon />}
                         <span>{item.title}</span>
                       </Link>
