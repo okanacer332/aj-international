@@ -2,7 +2,7 @@ import Image from "next/image";
 import { LoginForm } from "../../_components/login-form";
 
 // Logoları import ediyoruz
-import ajLogo from "@/../public/logos/aj-international.jpeg";
+import ajLogo from "@/../public/logos/AJ-LOGO.png";
 import acrtechLogo from "@/../public/logos/acrtech.png";
 
 export default function LoginV1() {
