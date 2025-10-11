@@ -3,7 +3,7 @@ package com.ajinternational.ajserver.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod; // HttpMethod'u import et
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -33,14 +33,13 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // GİRİŞ ve KAYIT yollarına herkese açık izin ver
+                        // CORS preflight (ön uçuş) isteklerine kimlik doğrulaması olmadan izin ver.
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // GİRİŞ ve KAYIT yollarına herkese açık izin ver.
                         .requestMatchers("/api/auth/**").permitAll()
-
-                        // YENİ VE EN ÖNEMLİ KURAL:
-                        // Yüklenen dosyalara (avatarlar) GET isteğiyle gelen herkese izin ver
+                        // Yüklenen dosyalara (avatarlar) GET isteğiyle gelen herkese izin ver.
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
-
-                        // Geriye kalan tüm istekler için kimlik doğrulaması iste
+                        // Geriye kalan tüm istekler için kimlik doğrulaması iste.
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -51,10 +50,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*"));
+
+        // *** ANA DEĞİŞİKLİK BURADA ***
+        // "*" yerine, frontend'inizin çalıştığı adresleri açıkça belirtin.
+        // Müşterinizin IP'sini veya alan adını da buraya ekleyebilirsiniz.
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://213.74.252.238:7777"));
+
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(true); // Artık bu satır sorun yaratmayacak.
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -66,4 +70,3 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 }
-
