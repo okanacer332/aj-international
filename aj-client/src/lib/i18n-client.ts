@@ -2,45 +2,46 @@
 'use client';
 
 import { useEffect } from 'react';
-import i18next from 'i18next';
+import i18next, { i18n } from 'i18next';
 import { initReactI18next, useTranslation as useTranslationOrg } from 'react-i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
 import { fallbackLng, supportedLngs } from './i18n';
 
 const runsOnServerSide = typeof window === 'undefined';
+let i18nInstance: i18n;
 
-// i18next'i istemci tarafında sadece bir kez başlatıyoruz.
+// i18next'i sadece bir kez, istemci tarafında başlatıyoruz.
 if (!runsOnServerSide) {
-  i18next
+  i18nInstance = i18next
     .use(initReactI18next)
     .use(resourcesToBackend((language: string, namespace: string) =>
       import(`@/../locales/${language}/${namespace}.json`)
-    ))
-    .init({
-      supportedLngs,
-      fallbackLng,
-      lng: undefined, // Dili URL'den veya tarayıcıdan alacak şekilde ayarla
-      ns: ['common'],
-      defaultNS: 'common',
-      detection: {
-        order: ['path', 'htmlTag', 'cookie', 'navigator'],
-      },
-      debug: process.env.NODE_ENV === 'development',
-    });
+    ));
+  
+  // .init() çağrısını burada yapmıyoruz, hook içinde yapacağız.
 }
 
 export function useTranslation(lng: string, ns: string | string[] = 'common') {
-  const ret = useTranslationOrg(ns);
-  const { i18n } = ret;
-
-  // HATA YARATAN BLOK KALDIRILDI.
-  // Dil değiştirme işlemi artık sadece aşağıdaki useEffect içinde yapılacak.
-
-  // Client tarafında, URL'deki dil ile i18next'in dili farklıysa güncelle.
-  useEffect(() => {
-    if (runsOnServerSide || !lng || i18n.resolvedLanguage === lng) return;
-    i18n.changeLanguage(lng);
-  }, [lng, i18n]);
-
-  return ret;
+  // Dil zaten başlatılmışsa ve doğru dildeyse, mevcut hook'u kullan.
+  if (i18next.isInitialized && i18next.language === lng) {
+    return useTranslationOrg(ns);
+  }
+  
+  // Eğer başlatılmamışsa veya dil farklıysa, yeniden başlat.
+  // Bu genellikle sayfa ilk yüklendiğinde veya dil değiştiğinde olur.
+  if (!i18next.isInitialized) {
+    i18nInstance.init({
+        supportedLngs,
+        fallbackLng,
+        lng, // doğrudan doğru dili ayarla
+        ns,
+        defaultNS: 'common',
+        debug: process.env.NODE_ENV === 'development' && !runsOnServerSide,
+    });
+  } else {
+    // Zaten başlatılmış ama dil farklıysa, dili değiştir.
+    i18next.changeLanguage(lng);
+  }
+  
+  return useTranslationOrg(ns);
 }

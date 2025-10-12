@@ -1,4 +1,8 @@
+// src/lib/auth.ts
 "use client";
+
+// Dil sabitlerini import ederek kodu daha güvenli hale getiriyoruz
+import { supportedLngs, fallbackLng } from './i18n';
 
 /**
  * Tarayıcıdaki cookie'lerden 'auth-token' değerini okur.
@@ -6,7 +10,6 @@
  */
 export function getAuthToken(): string | null {
   if (typeof document === 'undefined') {
-    // Sunucu tarafında çalışıyorsa null dön
     return null;
   }
   const token = document.cookie
@@ -18,11 +21,24 @@ export function getAuthToken(): string | null {
 }
 
 /**
- * Kullanıcıyı sistemden çıkarır, token cookie'sini siler ve giriş sayfasına yönlendirir.
+ * Kullanıcıyı sistemden çıkarır, token cookie'sini siler ve
+ * o anki dildeki giriş sayfasına yönlendirir.
  */
 export function logout() {
+  // 1. Mevcut URL'den dil kodunu al
+  const pathname = window.location.pathname;
+  const segments = pathname.split('/');
+  let currentLng = segments[1]; // Örn: "tr" veya "en"
+
+  // 2. Alınan dil kodunun desteklenen bir dil olup olmadığını kontrol et.
+  // Eğer değilse, varsayılan dile (fallbackLng) ayarla. Bu bir güvenlik önlemidir.
+  if (!supportedLngs.includes(currentLng as any)) {
+    currentLng = fallbackLng;
+  }
+  
+  // 3. Token cookie'sini sil
   document.cookie = "auth-token=; Path=/; Max-Age=0; SameSite=Lax";
-  // localStorage'ı da temizlemek iyi bir pratiktir.
-  // localStorage.removeItem("auth-user");
-  window.location.href = "/auth/v1/login";
+  
+  // 4. Kullanıcıyı, o anki dilin login sayfasına yönlendir.
+  window.location.href = `/${currentLng}/auth/v1/login`;
 }

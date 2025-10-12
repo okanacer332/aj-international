@@ -7,9 +7,6 @@ export const dynamic = "force-dynamic";
 
 import AuthGuard from "./_components/auth-guard";
 import { AuthProvider } from "./_components/auth-provider";
-
-// HATA BURADAYDI: Import yolunu göreceli (relative) olarak düzeltiyoruz.
-// '@/[lng]/...' yerine './...' kullanıyoruz.
 import { AppSidebar } from "./_components/sidebar/app-sidebar"; 
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -23,15 +20,14 @@ import {
   type SidebarCollapsible,
   type ContentLayout,
 } from "@/types/preferences/layout";
-
 import { AccountSwitcher } from "./_components/sidebar/account-switcher";
 import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
+import { LanguageSwitcher } from "@/components/language-switcher"; 
 
-// Layout bileşeninin artık 'params' prop'unu alması gerekiyor
 export default async function Layout({ 
   children,
-  params: { lng } // lng parametresini burada yakalıyoruz (ileride alt bileşenlere aktarmak için)
+  params: { lng } 
 }: Readonly<{ 
   children: ReactNode;
   params: { lng: string }; 
@@ -48,9 +44,19 @@ export default async function Layout({
   ]);
 
   return (
+    // 'key' prop'unu buradan kaldırdık.
     <SidebarProvider defaultOpen={defaultOpen}>
       <AuthGuard />
-      <AppSidebar variant={sidebarVariant} collapsible={sidebarCollapsible} />
+      {/* DEĞİŞİKLİK BURADA: 'key' prop'unu doğrudan AppSidebar bileşenine ekledik.
+        Bu, dil değiştiğinde (lng değiştiğinde) sadece AppSidebar'ın yeniden mount edilmesini
+        ve state'inin sıfırlanmasını sağlayarak menünün doğru dilde render edilmesini garanti eder.
+      */}
+      <AppSidebar 
+        key={lng} 
+        variant={sidebarVariant} 
+        collapsible={sidebarCollapsible} 
+        lng={lng} 
+      />
       <SidebarInset
         data-content-layout={contentLayout}
         className={cn(
@@ -66,6 +72,7 @@ export default async function Layout({
               <SearchDialog />
             </div>
             <div className="flex items-center gap-2">
+              <LanguageSwitcher />
               <ThemeSwitcher />
               <AccountSwitcher />
             </div>

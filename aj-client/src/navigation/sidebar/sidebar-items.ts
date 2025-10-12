@@ -1,3 +1,4 @@
+// src/navigation/sidebar/sidebar-items.ts
 import {
   LayoutDashboard,
   ClipboardList,
@@ -8,7 +9,7 @@ import {
   Clock,
   UserCog,
   ShieldCheck,
-  BookText, // Bu ikon Tanımlar/Ürünler için kullanılacak
+  BookText,
   Briefcase,
   HeartHandshake,
   AreaChart,
@@ -17,7 +18,7 @@ import {
 } from "lucide-react";
 
 export interface NavSubItem {
-  title: string;
+  title: string; // Artık bu bir çeviri anahtarı olacak (örn: "sidebar.tasks.title")
   url: string;
   icon?: LucideIcon;
   comingSoon?: boolean;
@@ -25,7 +26,7 @@ export interface NavSubItem {
 }
 
 export interface NavMainItem {
-  title: string;
+  title: string; // Artık bu bir çeviri anahtarı olacak (örn: "sidebar.operation.title")
   url: string;
   icon?: LucideIcon;
   subItems?: NavSubItem[];
@@ -34,17 +35,17 @@ export interface NavMainItem {
 
 export interface NavGroup {
   id: number;
-  label?: string;
+  label?: string; // Artık bu bir çeviri anahtarı olacak (örn: "sidebar.management.label")
   items: NavMainItem[];
 }
 
 export const sidebarItems: NavGroup[] = [
   {
     id: 1,
-    label: "Yönetim Paneli",
+    label: "sidebar.managementPanel.label",
     items: [
       {
-        title: "Ana Sayfa",
+        title: "sidebar.managementPanel.home",
         url: "/dashboard/default",
         icon: LayoutDashboard,
       },
@@ -52,55 +53,51 @@ export const sidebarItems: NavGroup[] = [
   },
   {
     id: 2,
-    label: "Modüller",
+    label: "sidebar.modules.label",
     items: [
       {
-        title: "Operasyon",
+        title: "sidebar.modules.operation",
         url: "#",
         icon: Briefcase,
         subItems: [
-          { title: "Görev Yönetimi", url: "/dashboard/tasks", icon: ClipboardList, permission: "PAGE_TASKS:READ" },
+          { title: "sidebar.modules.taskManagement", url: "/dashboard/tasks", icon: ClipboardList, permission: "PAGE_TASKS:READ" },
         ],
       },
       {
-        title: "İnsan Kaynakları",
+        title: "sidebar.modules.humanResources",
         url: "#",
         icon: HeartHandshake,
         subItems: [
-          { title: "Personel Yönetimi", url: "/dashboard/personnel", icon: Users, permission: "PAGE_PERSONNEL:READ" },
-          { title: "İzin Yönetimi", url: "/dashboard/leaves", icon: Calendar, comingSoon: true, permission: "PAGE_LEAVES:READ" },
-          { title: "Vardiya Yönetimi", url: "/dashboard/shifts", icon: Clock, comingSoon: true, permission: "PAGE_SHIFTS:READ" },
+          { title: "sidebar.modules.personnelManagement", url: "/dashboard/personnel", icon: Users, permission: "PAGE_PERSONNEL:READ" },
+          { title: "sidebar.modules.leaveManagement", url: "/dashboard/leaves", icon: Calendar, comingSoon: true, permission: "PAGE_LEAVES:READ" },
+          { title: "sidebar.modules.shiftManagement", url: "/dashboard/shifts", icon: Clock, comingSoon: true, permission: "PAGE_SHIFTS:READ" },
         ],
       },
-      // YENİ TANIMLAR MODÜLÜ EKLENDİ (Masterdata'dan ayrıldı)
       {
-        title: "Tanımlar",
+        title: "sidebar.modules.definitions",
         url: "#",
-        icon: BookText, // Kitap ikonu tanımlar için uygun
+        icon: BookText,
         subItems: [
-          // Ürün Tanımları bu menüye taşındı. Yetki key'i aynı kaldı.
-          { title: "Ürün Tanımları", url: "/dashboard/masterdata/products", icon: BookText, permission: "PAGE_MASTER_PRODUCT:READ" },
-          { title: "Genel Tanımlar", url: "/dashboard/definitions", icon: FileText, comingSoon: true, permission: "PAGE_DEFINITIONS:READ" },
+          { title: "sidebar.modules.productDefinitions", url: "/dashboard/masterdata/products", icon: BookText, permission: "PAGE_MASTER_PRODUCT:READ" },
+          { title: "sidebar.modules.generalDefinitions", url: "/dashboard/definitions", icon: FileText, comingSoon: true, permission: "PAGE_DEFINITIONS:READ" },
         ],
       },
       {
-        title: "Raporlama",
+        title: "sidebar.modules.reporting",
         url: "#",
         icon: AreaChart,
         subItems: [
-            { title: "Raporlar", url: "/dashboard/reports", icon: FileText, comingSoon: true, permission: "PAGE_REPORTS:READ" },
+            { title: "sidebar.modules.reports", url: "/dashboard/reports", icon: FileText, comingSoon: true, permission: "PAGE_REPORTS:READ" },
         ]
       },
       {
-        title: "Sistem Yönetimi",
+        title: "sidebar.modules.systemManagement",
         url: "#",
         icon: Settings,
         subItems: [
-          { title: "Kullanıcı Yönetimi", url: "/dashboard/iam/users", icon: UserCog, permission: "PAGE_USERS:READ" },
-          { title: "Rol Yönetimi", url: "/dashboard/iam/roles", icon: ShieldCheck, permission: "PAGE_ROLES:READ" },
-          { title: "Log Kayıtları", url: "/dashboard/audit/logs", icon: FileClock, permission: "PAGE_LOGS:READ" },
-          // Eski yeri: { title: "Ürün Tanımları", url: "/dashboard/masterdata/products", icon: BookText, permission: "PAGE_MASTER_PRODUCT:READ" },
-          // Eski yeri: { title: "Genel Tanımlar", url: "/dashboard/definitions", icon: BookText, comingSoon: true, permission: "PAGE_DEFINITIONS:READ" },
+          { title: "sidebar.modules.userManagement", url: "/dashboard/iam/users", icon: UserCog, permission: "PAGE_USERS:READ" },
+          { title: "sidebar.modules.roleManagement", url: "/dashboard/iam/roles", icon: ShieldCheck, permission: "PAGE_ROLES:READ" },
+          { title: "sidebar.modules.auditLogs", url: "/dashboard/audit/logs", icon: FileClock, permission: "PAGE_LOGS:READ" },
         ],
       },
     ],

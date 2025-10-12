@@ -1,27 +1,30 @@
+// src/app/[lng]/(main)/dashboard/_components/sidebar/app-sidebar.tsx
 "use client";
 
-import { Sidebar, SidebarContent, SidebarFooter } from "@/components/ui/sidebar"; // SidebarFooter import edildi
+import { Sidebar, SidebarContent, SidebarFooter } from "@/components/ui/sidebar";
 import { sidebarItems } from "@/navigation/sidebar/sidebar-items";
 import { NavMain } from "./nav-main";
-// SidebarHeader, SidebarFooter, NavUser gibi importlar kaldırıldı
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+// DEĞİŞİKLİK BURADA: 'lng' prop'unu alacak şekilde tipi güncelliyoruz
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  lng: string;
+}
+
+export function AppSidebar({ lng, ...props }: AppSidebarProps) {
   return (
     <Sidebar {...props}>
-      {/* SidebarHeader kaldırıldı */}
       <SidebarContent>
-        {/* Burası ileride Tenant Switcher'ı ekleyeceğimiz yer olacak */}
         <div className="p-2">
-          {/* Boşluk veya Tenant Switcher */}
+          {/* Tenant Switcher future location */}
         </div>
-        <NavMain items={sidebarItems} />
+        {/* DEĞİŞİKLİK BURADA: NavMain'e 'lng' prop'unu aktarıyoruz */}
+        <NavMain items={sidebarItems} lng={lng} />
       </SidebarContent>
       
-      {/* YENİ EKLENEN KISIM: Sidebar Footer - acrtech imzası */}
       <SidebarFooter className="py-3 px-4 text-center">
-        <div className="flex flex-col items-center justify-center text-sidebar-foreground/50 text-[10px] font-medium">
+        <div className="flex flex-col items-center justify-center text-[10px] font-medium text-sidebar-foreground/50">
             Powered By
-            <span className="text-sm text-sidebar-foreground/80 font-semibold pt-0.5">
+            <span className="pt-0.5 text-sm font-semibold text-sidebar-foreground/80">
                 acrtech
             </span>
         </div>

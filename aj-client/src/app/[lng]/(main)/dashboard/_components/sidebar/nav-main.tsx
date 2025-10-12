@@ -2,8 +2,7 @@
 "use client";
 
 import Link from "next/link";
-// 'useParams' hook'unu import ediyoruz
-import { usePathname, useParams } from "next/navigation"; 
+import { usePathname } from "next/navigation"; 
 import { type NavGroup } from "@/navigation/sidebar/sidebar-items";
 import { useSidebar } from "@/components/ui/sidebar";
 import {
@@ -24,21 +23,24 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/stores/auth-store";
+import { useTranslation } from "@/lib/i18n-client"; 
 
+// DEĞİŞİKLİK BURADA: 'lng' prop'unu ekliyoruz
 interface NavMainProps {
   readonly items: readonly NavGroup[];
+  lng: string;
 }
 
-export function NavMain({ items }: NavMainProps) {
+export function NavMain({ items, lng }: NavMainProps) { // 'lng' artık prop'tan geliyor
   const path = usePathname();
-  const params = useParams(); // URL'deki parametreleri almak için
-  const lng = params.lng as string; // Dil kodunu alıyoruz ('tr', 'en' vb.)
+  // 'useParams' artık gerekli değil
+  const { t } = useTranslation(lng, 'common');
   const { state, isMobile, setOpenMobile } = useSidebar();
   const { permissions: userPermissions } = useAuthStore();
 
-  // URL'den dil kodunu çıkararak karşılaştırma için temiz bir yol elde ediyoruz
   const pathWithoutLng = path.replace(`/${lng}`, "") || "/";
 
+  // ... (handleLinkClick ve filteredItems aynı kalıyor) ...
   const handleLinkClick = () => {
     if (isMobile) {
       setOpenMobile(false);
@@ -58,13 +60,12 @@ export function NavMain({ items }: NavMainProps) {
   })).filter(group => group.items.length > 0);
 
   if (state === "collapsed" && !isMobile) {
-    return <CollapsedNav items={filteredItems} />;
+    return <CollapsedNav items={filteredItems} lng={lng} t={t} />;
   }
 
   const getActiveAccordionItem = () => {
     for (const group of items) {
       for (const item of group.items) {
-        // Kontrolü pathWithoutLng ile yapıyoruz
         if (item.subItems?.some(sub => pathWithoutLng.startsWith(sub.url))) {
           return item.title;
         }
@@ -73,11 +74,12 @@ export function NavMain({ items }: NavMainProps) {
     return "";
   };
 
+  // ... (JSX içeriği aynı, sadece t() fonksiyonunu kullanıyor)
   return (
     <>
       {filteredItems.map((group) => (
         <SidebarGroup key={group.id}>
-          {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
+          {group.label && <SidebarGroupLabel>{t(group.label)}</SidebarGroupLabel>}
           <SidebarGroupContent className="flex flex-col gap-1">
             <Accordion type="single" collapsible defaultValue={getActiveAccordionItem()} className="w-full">
               {group.items.map((item) =>
@@ -85,7 +87,7 @@ export function NavMain({ items }: NavMainProps) {
                   <AccordionItem key={item.title} value={item.title} className="border-none">
                     <AccordionTrigger
                       className={`px-2 py-1.5 rounded-md hover:no-underline 
-                      ${/* Kontrolü pathWithoutLng ile yapıyoruz */
+                      ${
                         item.subItems.some(sub => pathWithoutLng.startsWith(sub.url))
                         ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                         : 'hover:bg-sidebar-accent'
@@ -93,7 +95,7 @@ export function NavMain({ items }: NavMainProps) {
                     >
                       <div className="flex items-center gap-2">
                         {item.icon && <item.icon className="h-4 w-4" />}
-                        <span className="text-sm font-medium">{item.title}</span>
+                        <span className="text-sm font-medium">{t(item.title)}</span>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pt-1 pl-4">
@@ -101,14 +103,12 @@ export function NavMain({ items }: NavMainProps) {
                         {item.subItems.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton
-                              // Kontrolü pathWithoutLng ile yapıyoruz
                               isActive={pathWithoutLng === subItem.url}
                               asChild
                             >
-                              {/* Link'e dil kodunu ekliyoruz */}
                               <Link href={`/${lng}${subItem.url}`} onClick={handleLinkClick}>
                                 {subItem.icon && <subItem.icon />}
-                                <span>{subItem.title}</span>
+                                <span>{t(subItem.title)}</span>
                               </Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
@@ -119,7 +119,6 @@ export function NavMain({ items }: NavMainProps) {
                 ) : (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
-                      // Kontrolü pathWithoutLng ile yapıyoruz
                       isActive={pathWithoutLng === item.url}
                       className={
                         pathWithoutLng === item.url
@@ -128,10 +127,9 @@ export function NavMain({ items }: NavMainProps) {
                       }
                       asChild
                     >
-                      {/* Link'e dil kodunu ekliyoruz */}
                       <Link href={`/${lng}${item.url}`} onClick={handleLinkClick}>
                         {item.icon && <item.icon />}
-                        <span>{item.title}</span>
+                        <span>{t(item.title)}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -145,31 +143,27 @@ export function NavMain({ items }: NavMainProps) {
   );
 }
 
-function CollapsedNav({ items }: NavMainProps) {
+function CollapsedNav({ items, lng, t }: NavMainProps & { t: (key: string) => string }) {
     const path = usePathname();
-    const params = useParams();
-    const lng = params.lng as string;
     const pathWithoutLng = path.replace(`/${lng}`, "") || "/";
 
     return (
         <>
         {items.map(group => (
             <SidebarGroup key={group.id}>
-                {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
+                {group.label && <SidebarGroupLabel>{t(group.label)}</SidebarGroupLabel>}
                 <SidebarGroupContent>
                     <SidebarMenu>
                     {group.items.map(item => (
                         <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton
-                                tooltip={item.title}
-                                // Kontrolü pathWithoutLng ile yapıyoruz
+                                tooltip={t(item.title)}
                                 isActive={pathWithoutLng === item.url || (item.subItems?.some(sub => pathWithoutLng.startsWith(sub.url)) ?? false)}
                                 asChild
                             >
-                                {/* Link'e dil kodunu ekliyoruz */}
                                 <Link href={`/${lng}${item.url === '#' ? (item.subItems?.[0]?.url ?? '#') : item.url}`}>
                                     {item.icon && <item.icon/>}
-                                    <span className="sr-only">{item.title}</span>
+                                    <span className="sr-only">{t(item.title)}</span>
                                 </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
