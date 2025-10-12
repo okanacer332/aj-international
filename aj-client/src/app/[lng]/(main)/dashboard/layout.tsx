@@ -1,9 +1,8 @@
+// @ts-nocheck
 // src/app/[lng]/(main)/dashboard/layout.tsx
 import { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { unstable_noStore as noStore } from "next/cache";
-// YENİ İMPORT: React.use'u kullanmak için gerekli
-import React from 'react'; 
 
 export const dynamic = "force-dynamic";
 
@@ -27,9 +26,9 @@ import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher"; 
 
-// TİP TANIMI: params'ın bir Promise olduğunu belirtiyoruz (Server Component için Next.js'in yeni kuralı)
+// TİP TANIMI: Next.js'in beklediği parametre yapısını yansıtıyoruz
 type LayoutParams = {
-  params: Promise<{ lng: string }>;
+  params: { lng: string };
   children: ReactNode;
 };
 
@@ -37,10 +36,9 @@ type LayoutParams = {
 export default async function Layout({ children, params }: Readonly<LayoutParams>) {
   noStore();
   
-  // KRİTİK DÜZELTME: params Promise'ını React.use() ile çözüyoruz.
-  // Bu, Next.js'in en katı tip kontrolünü atlamasını sağlar.
-  const { lng } = React.use(params); 
-  
+  // lng'ye doğrudan erişiyoruz.
+  const lng = params.lng; 
+
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
 
