@@ -13,7 +13,7 @@ import {
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { getInitials } from "@/lib/utils";
-import { logout } from "@/lib/auth";
+import { logout, getAuthToken } from "@/lib/auth"; // getAuthToken import edildi
 import { User } from "@/types/user";
 import { apiFetchAuth } from "@/lib/api-auth";
 import { API_BASE } from "@/lib/api";
@@ -23,17 +23,21 @@ export function AccountSwitcher() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    apiFetchAuth('/api/account/me')
-      .then(res => res.json())
-      .then(data => setUser(data))
-      .catch(() => console.error("Kullanıcı verisi alınamadı."));
+    // --- ÇÖZÜM: API isteğinden önce token varlığını kontrol et ---
+    const token = getAuthToken();
+    if (token) {
+      apiFetchAuth('/api/account/me')
+        .then(res => res.json())
+        .then(data => setUser(data))
+        .catch(() => console.error("Kullanıcı verisi alınamadı."));
+    }
+    // --- ÇÖZÜM SONU ---
   }, []);
 
   if (!user) {
     return <Skeleton className="h-9 w-9 rounded-lg" />;
   }
   
-  // DEĞİŞİKLİK BURADA: Aradaki fazladan '/' kaldırıldı.
   const avatarSrc = user.avatarUrl ? `${API_BASE}${user.avatarUrl}` : undefined;
 
   return (

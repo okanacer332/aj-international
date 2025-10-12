@@ -4,15 +4,14 @@ import { useEffect, useState } from "react";
 import { apiFetchAuth } from "@/lib/api-auth";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuthStore } from "@/stores/auth-store"; // Auth store'u import ediyoruz
 
-// Yeni oluşturduğumuz tüm component'leri import edelim
 import { KpiCards } from "./_components/kpi-cards";
 import { CompetencyByProductChart } from "./_components/competency-by-product-chart";
 import { CompetencyLevelChart } from "./_components/competency-level-chart";
 import { HighlightsLists } from "./_components/highlights-lists";
 import { RecentActivitiesTable } from "./_components/recent-activities-table";
 
-// Backend'den gelecek verinin tam tip tanımı
 interface DashboardSummary {
   totalEmployees: number;
   totalMasterProducts: number;
@@ -28,6 +27,9 @@ interface DashboardSummary {
 export default function Page() {
   const [summaryData, setSummaryData] = useState<DashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // --- ÇÖZÜM: AuthStore'dan kullanıcı durumunu alıyoruz ---
+  const { user, isLoading: isAuthLoading } = useAuthStore();
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -37,15 +39,25 @@ export default function Page() {
         const data = await res.json();
         setSummaryData(data);
       } catch (error) {
+        // Bu hata sadece gerçekten giriş yapılmışken bir sorun olursa gösterilecek.
         toast.error("Dashboard verileri yüklenirken bir hata oluştu.");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchSummary();
-  }, []);
 
-  if (isLoading || !summaryData) {
+    // --- ÇÖZÜM: Sadece Auth yüklemesi bittiyse ve kullanıcı varsa veri çek ---
+    if (!isAuthLoading && user) {
+      fetchSummary();
+    } else if (!isAuthLoading && !user) {
+      // Kullanıcı yoksa, loading'i kapat, boş ekran göster (zaten yönlendirilecek)
+      setIsLoading(false);
+    }
+
+  }, [isAuthLoading, user]); // useEffect'i bu değerlere bağla
+
+  // Auth yüklenirken veya summary yüklenirken skeleton göster
+  if (isLoading || isAuthLoading) {
     return (
       <div className="flex flex-col gap-6">
         {/* KPI Skeletons */}
@@ -68,6 +80,11 @@ export default function Page() {
         <Skeleton className="h-80" />
       </div>
     );
+  }
+
+  // Eğer veri hala gelmediyse (ama yükleme bittiyse, örn. kullanıcı yoksa) boş bir fragment dön.
+  if (!summaryData) {
+    return <></>;
   }
 
   return (
