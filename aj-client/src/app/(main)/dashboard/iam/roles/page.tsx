@@ -80,8 +80,8 @@ export default function RolesPage() {
                             Yeni Rol
                         </Button>
                     </DialogTrigger>
-                    {/* YENİ CLASSNAME EKLEMESİ BURADA YAPILDI */}
-                    <DialogContent className="sm:max-w-xl md:max-w-2xl">
+                    {/* --- DEĞİŞİKLİK BURADA --- */}
+                    <DialogContent className="sm:max-w-xl md:max-w-2xl max-h-[90dvh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Yeni Rol Oluştur</DialogTitle>
                             <DialogDescription>Yeni bir rol oluşturun ve yetkilerini atayın.</DialogDescription>

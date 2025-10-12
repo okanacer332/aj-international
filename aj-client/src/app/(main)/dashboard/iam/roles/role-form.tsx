@@ -26,7 +26,6 @@ type RoleFormProps = {
   onSuccess: () => void;
 };
 
-// Yetki anahtarlarını Türkçe'ye çeviren harita
 const permissionTranslations: Record<string, string> = {
     PAGE_DASHBOARD: "Ana Sayfa (Dashboard)",
     PAGE_USERS: "Kullanıcı Yönetimi",
@@ -120,7 +119,11 @@ export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
                         <TableRow>
                             <TableHead>Sayfa / Modül</TableHead>
                             <TableHead className="text-center">Okuma</TableHead>
-                            <TableHead className="text-center">Yazma (Ekleme/Düzenleme/Silme)</TableHead>
+                            {/* --- DEĞİŞİKLİK BURADA --- */}
+                            <TableHead className="text-center">
+                              Yazma
+                              <span className="hidden sm:inline"> (Ekleme/Düzenleme/Silme)</span>
+                            </TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
