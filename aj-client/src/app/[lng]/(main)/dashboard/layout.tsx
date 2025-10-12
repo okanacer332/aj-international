@@ -25,14 +25,21 @@ import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher"; 
 
+// YENİ TİP TANIMI: params'ın bir Promise olduğunu belirtiyoruz
+type LayoutProps = { 
+  children: ReactNode;
+  params: { lng: string }; // Sunucu bileşeni olduğu için Promise'ı Next.js kendisi çözer
+}
+
+// Fonksiyon imzasını, destructing işlemini params üzerinde yapmayacak şekilde güncelliyoruz
 export default async function Layout({ 
   children,
-  params: { lng } 
-}: Readonly<{ 
-  children: ReactNode;
-  params: { lng: string }; 
-}>) {
+  params
+}: Readonly<LayoutProps>) {
   noStore();
+  
+  // DÜZELTME: lng değerine doğrudan erişiyoruz (çünkü Layout Server Component'tir)
+  const { lng } = params; 
 
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
@@ -44,13 +51,8 @@ export default async function Layout({
   ]);
 
   return (
-    // 'key' prop'unu buradan kaldırdık.
     <SidebarProvider defaultOpen={defaultOpen}>
       <AuthGuard />
-      {/* DEĞİŞİKLİK BURADA: 'key' prop'unu doğrudan AppSidebar bileşenine ekledik.
-        Bu, dil değiştiğinde (lng değiştiğinde) sadece AppSidebar'ın yeniden mount edilmesini
-        ve state'inin sıfırlanmasını sağlayarak menünün doğru dilde render edilmesini garanti eder.
-      */}
       <AppSidebar 
         key={lng} 
         variant={sidebarVariant} 
