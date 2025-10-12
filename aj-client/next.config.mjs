@@ -22,6 +22,13 @@ const nextConfig = {
         // DOĞRU YOL: Backend'den gelen "/uploads/" ile başlayan tüm yollara izin ver.
         pathname: '/uploads/**',
       },
+      // KRİTİK DEĞİŞİKLİK BURADA: Canlı ortam IP adresi eklendi
+      {
+        protocol: 'http',
+        hostname: '213.74.252.238',
+        port: '8080',
+        pathname: '/uploads/**',
+      },
     ],
   },
 
