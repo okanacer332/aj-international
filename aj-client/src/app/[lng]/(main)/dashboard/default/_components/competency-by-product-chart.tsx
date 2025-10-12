@@ -1,3 +1,4 @@
+// aj-client/src/app/[lng]/(main)/dashboard/default/_components/competency-by-product-chart.tsx
 "use client";
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -14,12 +15,15 @@ const getBarColor = (score: number) => {
     return "#22c55e"; // green-500
 };
 
-export function CompetencyByProductChart({ data }: { data: ChartData[] }) {
+// DÜZELTME: t fonksiyonunu prop olarak ekliyoruz
+export function CompetencyByProductChart({ data, t }: { data: ChartData[], t: (key: string) => string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ürün Bazında Yetkinlik Analizi</CardTitle>
-        <CardDescription>Hangi ürünlerin ne kadar iyi bilindiğini gösterir.</CardDescription>
+        {/* Çeviri Anahtarı: chart.productCompetency.title */}
+        <CardTitle>{t('chart.productCompetency.title')}</CardTitle>
+        {/* Çeviri Anahtarı: chart.productCompetency.desc */}
+        <CardDescription>{t('chart.productCompetency.desc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>

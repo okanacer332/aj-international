@@ -1,10 +1,13 @@
+// aj-client/src/app/[lng]/(main)/dashboard/default/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { apiFetchAuth } from "@/lib/api-auth";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuthStore } from "@/stores/auth-store"; // Auth store'u import ediyoruz
+import { useAuthStore } from "@/stores/auth-store"; 
+// YENİ İMPORT
+import { useTranslation } from "@/lib/i18n-client"; 
 
 import { KpiCards } from "./_components/kpi-cards";
 import { CompetencyByProductChart } from "./_components/competency-by-product-chart";
@@ -24,12 +27,15 @@ interface DashboardSummary {
   recentActivities: { id: string; timestamp: string; username: string; action: string; details: string; }[];
 }
 
-export default function Page() {
+// Fonksiyonu lng parametresini alacak şekilde güncelliyoruz
+export default function Page({ params: { lng } }: { params: { lng: string } }) { 
   const [summaryData, setSummaryData] = useState<DashboardSummary | null>(null);
+  // isLoading durumunu, i18n yüklemesi için de kullanacağız.
   const [isLoading, setIsLoading] = useState(true);
   
-  // --- ÇÖZÜM: AuthStore'dan kullanıcı durumunu alıyoruz ---
+  // Auth Store ve useTranslation hook'unu çağırıyoruz
   const { user, isLoading: isAuthLoading } = useAuthStore();
+  const { t, ready } = useTranslation(lng, 'common'); // <-- lng ve namespace'i geçiyoruz
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -39,25 +45,22 @@ export default function Page() {
         const data = await res.json();
         setSummaryData(data);
       } catch (error) {
-        // Bu hata sadece gerçekten giriş yapılmışken bir sorun olursa gösterilecek.
         toast.error("Dashboard verileri yüklenirken bir hata oluştu.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    // --- ÇÖZÜM: Sadece Auth yüklemesi bittiyse ve kullanıcı varsa veri çek ---
-    if (!isAuthLoading && user) {
+    // Sadece Auth yüklemesi bittiyse VE i18n hazırsa VE kullanıcı varsa veri çek
+    if (!isAuthLoading && user && ready) {
       fetchSummary();
     } else if (!isAuthLoading && !user) {
-      // Kullanıcı yoksa, loading'i kapat, boş ekran göster (zaten yönlendirilecek)
       setIsLoading(false);
     }
+  }, [isAuthLoading, user, ready]); // ready state'ini dependency olarak ekledik
 
-  }, [isAuthLoading, user]); // useEffect'i bu değerlere bağla
-
-  // Auth yüklenirken veya summary yüklenirken skeleton göster
-  if (isLoading || isAuthLoading) {
+  // Auth, summary VEYA i18n çevirileri yüklenirken skeleton göster
+  if (isLoading || isAuthLoading || !ready) {
     return (
       <div className="flex flex-col gap-6">
         {/* KPI Skeletons */}
@@ -89,20 +92,28 @@ export default function Page() {
 
   return (
     <div className="flex flex-col gap-6">
-      <KpiCards summary={summaryData} />
+      {/* Sayfa Başlıklarını Çevir */}
+      <div> 
+        <h1 className="text-2xl font-bold tracking-tight">{t('dashboard.title')}</h1>
+        <p className="text-muted-foreground">{t('dashboard.description')}</p>
+      </div>
+
+      {/* Alt bileşenlere t fonksiyonunu prop olarak iletiyoruz */}
+      <KpiCards summary={summaryData} t={t} /> 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3">
-          <CompetencyByProductChart data={summaryData.competencyByProduct} />
+          <CompetencyByProductChart data={summaryData.competencyByProduct} t={t} />
         </div>
         <div className="lg:col-span-2">
-          <CompetencyLevelChart data={summaryData.competencyLevelDistribution} />
+          <CompetencyLevelChart data={summaryData.competencyLevelDistribution} t={t} />
         </div>
       </div>
       <HighlightsLists 
         topUsers={summaryData.topCompetentUsers}
         productsToImprove={summaryData.productsToImprove}
+        t={t}
       />
-      <RecentActivitiesTable activities={summaryData.recentActivities} />
+      <RecentActivitiesTable activities={summaryData.recentActivities} t={t} />
     </div>
   );
 }

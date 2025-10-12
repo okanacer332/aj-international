@@ -1,3 +1,4 @@
+// aj-client/src/app/[lng]/(main)/dashboard/default/_components/competency-level-chart.tsx
 "use client";
 
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -15,12 +16,15 @@ const COLORS: { [key: string]: string } = {
     'Uzman': '#3b82f6',
 };
 
-export function CompetencyLevelChart({ data }: { data: ChartData[] }) {
+// DÜZELTME: t fonksiyonunu prop olarak ekliyoruz
+export function CompetencyLevelChart({ data, t }: { data: ChartData[], t: (key: string) => string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Genel Yetkinlik Dağılımı</CardTitle>
-        <CardDescription>Çalışanların tecrübe seviyelerine göre dağılımı.</CardDescription>
+        {/* Çeviri Anahtarı: chart.levelDistribution.title */}
+        <CardTitle>{t('chart.levelDistribution.title')}</CardTitle>
+        {/* Çeviri Anahtarı: chart.levelDistribution.desc */}
+        <CardDescription>{t('chart.levelDistribution.desc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -35,13 +39,18 @@ export function CompetencyLevelChart({ data }: { data: ChartData[] }) {
               paddingAngle={5}
               dataKey="userCount"
               nameKey="levelName"
+              // Burada seviye adları (Acemi, Uzman vb.) veritabanından geldiği için
+              // bu alanları çevirmek için ekstra bir harita kullanmanız veya backend'i
+              // çeviri key'i gönderecek şekilde güncellemeniz gerekir.
+              // Şimdilik sadece değerleri gösteriyoruz.
               label={({ levelName, userCount }) => `${levelName}: ${userCount}`}
             >
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[entry.levelName] || '#8884d8'} />
               ))}
             </Pie>
-            <Tooltip formatter={(value, name) => [`${value} kişi`, name]}/>
+            {/* Tooltip içindeki formatlama: "X kişi" */}
+            <Tooltip formatter={(value, name) => [`${value} ${t('kisi')}`, name]}/>
             <Legend />
           </PieChart>
         </ResponsiveContainer>

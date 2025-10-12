@@ -26,5 +26,32 @@
   "sidebar.modules.systemManagement": "System Management",
   "sidebar.modules.userManagement": "User Management",
   "sidebar.modules.roleManagement": "Role Management",
-  "sidebar.modules.auditLogs": "Audit Logs"
+  "sidebar.modules.auditLogs": "Audit Logs",
+
+  "dashboard.title": "Management Panel",
+  "dashboard.description": "Welcome! You can track your system's overall performance here.",
+
+  "kpi.totalEmployees.title": "Total Employees",
+  "kpi.totalEmployees.desc": "Number of active employees",
+  "kpi.totalMasterProducts.title": "Defined Master Products",
+  "kpi.totalMasterProducts.desc": "Number of master products in the system",
+  "kpi.averageCompetencyScore.title": "Overall Competency Average",
+  "kpi.averageCompetencyScore.desc": "Average score of all employees (1-10)",
+  "kpi.competencyCompletionRate.title": "Assessment Completion",
+  "kpi.competencyCompletionRate.desc": "Rate of employees who completed assessment",
+
+  "chart.productCompetency.title": "Competency Analysis by Product",
+  "chart.productCompetency.desc": "Shows how well each product is known.",
+  "chart.levelDistribution.title": "General Competency Distribution",
+  "chart.levelDistribution.desc": "Distribution of employees by experience level.",
+
+  "highlights.topUsers.title": "Most Competent Users",
+  "highlights.productsToImprove.title": "Products Requiring Improvement",
+
+  "activities.title": "Recent System Activities",
+  "activities.desc": "Last 5 significant events that occurred in the system.",
+  "activities.table.user": "User",
+  "activities.table.action": "Action",
+  "activities.table.detail": "Detail",
+  "activities.table.time": "Time"
 }

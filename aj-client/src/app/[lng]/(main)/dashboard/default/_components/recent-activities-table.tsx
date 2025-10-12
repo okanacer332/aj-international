@@ -1,3 +1,4 @@
+// aj-client/src/app/[lng]/(main)/dashboard/default/_components/recent-activities-table.tsx
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,21 +15,25 @@ type Activity = {
   details: string;
 };
 
-export function RecentActivitiesTable({ activities }: { activities: Activity[] }) {
+// DÜZELTME: t fonksiyonunu prop olarak ekliyoruz
+export function RecentActivitiesTable({ activities, t }: { activities: Activity[], t: (key: string) => string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Son Sistem Aktiviteleri</CardTitle>
-        <CardDescription>Sistemde gerçekleşen son 5 önemli olay.</CardDescription>
+        {/* Çeviri Anahtarı: activities.title */}
+        <CardTitle>{t('activities.title')}</CardTitle>
+        {/* Çeviri Anahtarı: activities.desc */}
+        <CardDescription>{t('activities.desc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Kullanıcı</TableHead>
-              <TableHead>Eylem</TableHead>
-              <TableHead>Detay</TableHead>
-              <TableHead className="text-right">Zaman</TableHead>
+              {/* Çeviri Anahtarları: activities.table.* */}
+              <TableHead>{t('activities.table.user')}</TableHead>
+              <TableHead>{t('activities.table.action')}</TableHead>
+              <TableHead>{t('activities.table.detail')}</TableHead>
+              <TableHead className="text-right">{t('activities.table.time')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -38,6 +43,7 @@ export function RecentActivitiesTable({ activities }: { activities: Activity[] }
                 <TableCell><Badge variant="outline">{activity.action}</Badge></TableCell>
                 <TableCell className="text-muted-foreground">{activity.details}</TableCell>
                 <TableCell className="text-right text-muted-foreground">
+                    {/* date-fns/locale kullanıldığı için bu alan zaten dil desteğine sahip */}
                     {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true, locale: tr })}
                 </TableCell>
               </TableRow>

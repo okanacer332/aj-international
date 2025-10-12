@@ -26,5 +26,32 @@
   "sidebar.modules.systemManagement": "Sistem Yönetimi",
   "sidebar.modules.userManagement": "Kullanıcı Yönetimi",
   "sidebar.modules.roleManagement": "Rol Yönetimi",
-  "sidebar.modules.auditLogs": "Log Kayıtları"
+  "sidebar.modules.auditLogs": "Log Kayıtları",
+
+  "dashboard.title": "Yönetim Paneli",
+  "dashboard.description": "Hoş geldiniz! Sisteminizin genel performansını buradan takip edebilirsiniz.",
+
+  "kpi.totalEmployees.title": "Toplam Çalışan",
+  "kpi.totalEmployees.desc": "Aktif çalışan sayısı",
+  "kpi.totalMasterProducts.title": "Tanımlı Ana Ürün",
+  "kpi.totalMasterProducts.desc": "Sistemdeki ana ürün sayısı",
+  "kpi.averageCompetencyScore.title": "Genel Yetkinlik Ortalaması",
+  "kpi.averageCompetencyScore.desc": "Tüm çalışanların ortalaması (1-10)",
+  "kpi.competencyCompletionRate.title": "Değerlendirme Tamamlama",
+  "kpi.competencyCompletionRate.desc": "Yetkinliğini değerlendirenlerin oranı",
+
+  "chart.productCompetency.title": "Ürün Bazında Yetkinlik Analizi",
+  "chart.productCompetency.desc": "Hangi ürünlerin ne kadar iyi bilindiğini gösterir.",
+  "chart.levelDistribution.title": "Genel Yetkinlik Dağılımı",
+  "chart.levelDistribution.desc": "Çalışanların tecrübe seviyelerine göre dağılımı.",
+
+  "highlights.topUsers.title": "En Yetkin Çalışanlar",
+  "highlights.productsToImprove.title": "Geliştirilmesi Gereken Ürünler",
+
+  "activities.title": "Son Sistem Aktiviteleri",
+  "activities.desc": "Sistemde gerçekleşen son 5 önemli olay.",
+  "activities.table.user": "Kullanıcı",
+  "activities.table.action": "Eylem",
+  "activities.table.detail": "Detay",
+  "activities.table.time": "Zaman"
 }

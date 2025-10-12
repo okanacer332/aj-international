@@ -1,3 +1,4 @@
+// aj-client/src/app/[lng]/(main)/dashboard/default/_components/highlights-lists.tsx
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,15 +21,19 @@ type ProductToImprove = {
 type HighlightsListsProps = {
   topUsers: TopUser[];
   productsToImprove: ProductToImprove[];
+  // DÜZELTME: t fonksiyonunu prop olarak ekliyoruz
+  t: (key: string) => string; 
 };
 
-export function HighlightsLists({ topUsers, productsToImprove }: HighlightsListsProps) {
+export function HighlightsLists({ topUsers, productsToImprove, t }: HighlightsListsProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <ArrowUp className="mr-2 h-5 w-5 text-green-500" /> En Yetkin Çalışanlar
+            <ArrowUp className="mr-2 h-5 w-5 text-green-500" /> 
+            {/* Çeviri Anahtarı: highlights.topUsers.title */}
+            {t('highlights.topUsers.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -51,7 +56,9 @@ export function HighlightsLists({ topUsers, productsToImprove }: HighlightsLists
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-             <ArrowDown className="mr-2 h-5 w-5 text-red-500" /> Geliştirilmesi Gereken Ürünler
+             <ArrowDown className="mr-2 h-5 w-5 text-red-500" /> 
+             {/* Çeviri Anahtarı: highlights.productsToImprove.title */}
+             {t('highlights.productsToImprove.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
