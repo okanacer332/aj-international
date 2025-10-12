@@ -25,21 +25,20 @@ import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher"; 
 
-// YENİ TİP TANIMI: params'ın bir Promise olduğunu belirtiyoruz
-type LayoutProps = { 
+// TİP TANIMI TEMİZLEME: Next.js'in beklediği parametre yapısını yansıtıyoruz
+// Bu yapıda 'params' objesi içinde 'lng' string olarak beklenir.
+type LayoutParams = {
+  params: { lng: string };
   children: ReactNode;
-  params: { lng: string }; // Sunucu bileşeni olduğu için Promise'ı Next.js kendisi çözer
-}
+};
 
-// Fonksiyon imzasını, destructing işlemini params üzerinde yapmayacak şekilde güncelliyoruz
-export default async function Layout({ 
-  children,
-  params
-}: Readonly<LayoutProps>) {
+// Fonksiyon imzasını, Next.js'in beklediği kesin tipi ve yapıyı koruyarak güncelliyoruz
+export default async function Layout({ children, params }: Readonly<LayoutParams>) {
   noStore();
   
-  // DÜZELTME: lng değerine doğrudan erişiyoruz (çünkü Layout Server Component'tir)
-  const { lng } = params; 
+  // DÜZELTME: lng'ye doğrudan erişiyoruz. Next.js Server Component'larda
+  // bunu otomatik çözer ve React.use() gerektirmez.
+  const lng = params.lng; 
 
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
