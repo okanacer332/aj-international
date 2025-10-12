@@ -2,11 +2,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+// YENİ İMPORT: React.use'u kullanabilmek için React'ı import ediyoruz
+import React from 'react'; 
 import { apiFetchAuth } from "@/lib/api-auth";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/auth-store"; 
-// YENİ İMPORT
 import { useTranslation } from "@/lib/i18n-client"; 
 
 import { KpiCards } from "./_components/kpi-cards";
@@ -27,15 +28,20 @@ interface DashboardSummary {
   recentActivities: { id: string; timestamp: string; username: string; action: string; details: string; }[];
 }
 
-// Fonksiyonu lng parametresini alacak şekilde güncelliyoruz
-export default function Page({ params: { lng } }: { params: { lng: string } }) { 
+// Next.js'in önerdiği Promise tipini kullanacak şekilde prop tipini güncelliyoruz.
+type PageProps = {
+  params: Promise<{ lng: string }>;
+};
+
+export default function Page({ params }: PageProps) {
+  // DÜZELTME: params Promise'ını React.use() ile çözüyoruz
+  const { lng } = React.use(params);
+    
   const [summaryData, setSummaryData] = useState<DashboardSummary | null>(null);
-  // isLoading durumunu, i18n yüklemesi için de kullanacağız.
   const [isLoading, setIsLoading] = useState(true);
   
-  // Auth Store ve useTranslation hook'unu çağırıyoruz
   const { user, isLoading: isAuthLoading } = useAuthStore();
-  const { t, ready } = useTranslation(lng, 'common'); // <-- lng ve namespace'i geçiyoruz
+  const { t, ready } = useTranslation(lng, 'common'); 
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -51,13 +57,12 @@ export default function Page({ params: { lng } }: { params: { lng: string } }) {
       }
     };
 
-    // Sadece Auth yüklemesi bittiyse VE i18n hazırsa VE kullanıcı varsa veri çek
     if (!isAuthLoading && user && ready) {
       fetchSummary();
     } else if (!isAuthLoading && !user) {
       setIsLoading(false);
     }
-  }, [isAuthLoading, user, ready]); // ready state'ini dependency olarak ekledik
+  }, [isAuthLoading, user, ready, lng]); // lng'yi de dependency'lere eklemek her zaman iyi bir pratiktir
 
   // Auth, summary VEYA i18n çevirileri yüklenirken skeleton göster
   if (isLoading || isAuthLoading || !ready) {
@@ -85,7 +90,6 @@ export default function Page({ params: { lng } }: { params: { lng: string } }) {
     );
   }
 
-  // Eğer veri hala gelmediyse (ama yükleme bittiyse, örn. kullanıcı yoksa) boş bir fragment dön.
   if (!summaryData) {
     return <></>;
   }
