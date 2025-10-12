@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BadgeCheck, Bell, CreditCard, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,26 +12,14 @@ import {
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { getInitials } from "@/lib/utils";
-import { logout, getAuthToken } from "@/lib/auth"; // getAuthToken import edildi
-import { User } from "@/types/user";
-import { apiFetchAuth } from "@/lib/api-auth";
+import { logout } from "@/lib/auth";
 import { API_BASE } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuthStore } from "@/stores/auth-store"; // Zustand store import edildi
 
 export function AccountSwitcher() {
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    // --- ÇÖZÜM: API isteğinden önce token varlığını kontrol et ---
-    const token = getAuthToken();
-    if (token) {
-      apiFetchAuth('/api/account/me')
-        .then(res => res.json())
-        .then(data => setUser(data))
-        .catch(() => console.error("Kullanıcı verisi alınamadı."));
-    }
-    // --- ÇÖZÜM SONU ---
-  }, []);
+  // --- DEĞİŞİKLİK: Yerel state yerine global store'u kullan ---
+  const { user } = useAuthStore();
 
   if (!user) {
     return <Skeleton className="h-9 w-9 rounded-lg" />;

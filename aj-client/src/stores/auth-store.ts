@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { User } from "@/types/user";
 import { apiFetchAuth } from "@/lib/api-auth";
-import { getAuthToken } from "@/lib/auth"; // getAuthToken import edildi
+import { getAuthToken } from "@/lib/auth";
 
 interface AuthState {
   user: User | null;
@@ -11,27 +11,19 @@ interface AuthState {
   logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   permissions: new Set(),
   isLoading: true, 
 
   fetchUser: async () => {
-    // --- ÇÖZÜM: API isteğinden önce token varlığını kontrol et ---
     if (!getAuthToken()) {
       set({ user: null, permissions: new Set(), isLoading: false });
       return;
     }
-    // --- ÇÖZÜM SONU ---
-
-    if (get().user) {
-        set({ isLoading: false });
-        return;
-    }
     
-    if (!get().isLoading) {
-        set({isLoading: true});
-    }
+    // Her çağrıldığında yükleniyor durumuna geç
+    set({ isLoading: true });
 
     try {
       const res = await apiFetchAuth("/api/account/me");
@@ -43,6 +35,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     } catch (error) {
       console.error("Kullanıcı bilgileri alınamadı:", error);
+      // Hata durumunda state'i temizle
       set({ user: null, permissions: new Set(), isLoading: false });
     }
   },

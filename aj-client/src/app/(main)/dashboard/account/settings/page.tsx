@@ -1,35 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { User } from "@/types/user";
-import { apiFetchAuth } from "@/lib/api-auth";
-import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileForm } from "./profile-form";
 import { SecurityForm } from "./security-form";
 import { AvatarForm } from "./avatar-form";
-import { CompetenciesForm } from "./competencies-form"; // YENİ EKLENDİ
+import { CompetenciesForm } from "./competencies-form";
+import { useAuthStore } from "@/stores/auth-store"; // Zustand store import edildi
 
 export default function AccountSettingsPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchUser = async () => {
-    try {
-      const res = await apiFetchAuth("/api/account/me");
-      const data = await res.json();
-      setUser(data);
-    } catch (error) {
-      toast.error("Kullanıcı bilgileri getirilirken bir hata oluştu.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  useEffect(() => {
-    fetchUser();
-  }, []);
+  // --- DEĞİŞİKLİK: Yerel state yerine global store'u kullan ---
+  const { user, isLoading, fetchUser } = useAuthStore();
 
   if (isLoading) {
     return (
@@ -51,23 +32,23 @@ export default function AccountSettingsPage() {
         <p className="text-muted-foreground">Profil, güvenlik ve yetkinlik ayarlarınızı yönetin.</p>
       </div>
       <Tabs defaultValue="profile" className="w-full">
-        {/* DEĞİŞİKLİK: grid-cols-3 -> grid-cols-4 yapıldı */}
         <TabsList className="grid w-full grid-cols-4"> 
           <TabsTrigger value="profile">Profil</TabsTrigger>
           <TabsTrigger value="security">Güvenlik</TabsTrigger>
           <TabsTrigger value="avatar">Fotoğraf</TabsTrigger>
-          <TabsTrigger value="competencies">Yetkinliklerim</TabsTrigger> {/* YENİ EKLENDİ */}
+          <TabsTrigger value="competencies">Yetkinliklerim</TabsTrigger>
         </TabsList>
         <TabsContent value="profile" className="pt-4">
+          {/* --- DEĞİŞİKLİK: onSuccess'e global fetchUser'ı ver --- */}
           <ProfileForm user={user} onSuccess={fetchUser} />
         </TabsContent>
         <TabsContent value="security" className="pt-4">
           <SecurityForm />
         </TabsContent>
         <TabsContent value="avatar" className="pt-4">
+          {/* --- DEĞİŞİKLİK: onSuccess'e global fetchUser'ı ver --- */}
           <AvatarForm user={user} onSuccess={fetchUser} />
         </TabsContent>
-        {/* YENİ EKLENDİ */}
         <TabsContent value="competencies" className="pt-4">
           <CompetenciesForm user={user} />
         </TabsContent>
