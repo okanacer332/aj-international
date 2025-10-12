@@ -1,0 +1,12 @@
+{
+  "loginTitle": "Giriş Yap",
+  "usernameLabel": "Kullanıcı Adı",
+  "passwordLabel": "Şifre",
+  "loginButton": "Giriş Yap",
+  "usernamePlaceholder": "kullanici.adi",
+  "validation.usernameRequired": "Kullanıcı adı boş bırakılamaz.",
+  "validation.passwordRequired": "Şifre boş bırakılamaz.",
+  "toast.loginSuccess": "Giriş başarılı",
+  "toast.loginErrorTitle": "Giriş başarısız",
+  "toast.loginErrorDescription": "Kullanıcı adı veya şifre hatalı."
+}

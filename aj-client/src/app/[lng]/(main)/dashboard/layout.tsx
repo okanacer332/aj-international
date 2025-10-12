@@ -1,14 +1,16 @@
+// src/app/[lng]/(main)/dashboard/layout.tsx
 import { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { unstable_noStore as noStore } from "next/cache";
 
-// Bu segmenti her zaman dinamik tut (cache'leme)
 export const dynamic = "force-dynamic";
 
 import AuthGuard from "./_components/auth-guard";
 import { AuthProvider } from "./_components/auth-provider";
 
-import { AppSidebar } from "@/app/(main)/dashboard/_components/sidebar/app-sidebar";
+// HATA BURADAYDI: Import yolunu göreceli (relative) olarak düzeltiyoruz.
+// '@/[lng]/...' yerine './...' kullanıyoruz.
+import { AppSidebar } from "./_components/sidebar/app-sidebar"; 
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -23,12 +25,17 @@ import {
 } from "@/types/preferences/layout";
 
 import { AccountSwitcher } from "./_components/sidebar/account-switcher";
-// import { LayoutControls } from "./_components/sidebar/layout-controls"; /* KALDIRILDI */
 import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 
-export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
-  // Server-side cache'leme kapalı
+// Layout bileşeninin artık 'params' prop'unu alması gerekiyor
+export default async function Layout({ 
+  children,
+  params: { lng } // lng parametresini burada yakalıyoruz (ileride alt bileşenlere aktarmak için)
+}: Readonly<{ 
+  children: ReactNode;
+  params: { lng: string }; 
+}>) {
   noStore();
 
   const cookieStore = await cookies();
@@ -39,15 +46,6 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
     getPreference<SidebarCollapsible>("sidebar_collapsible", SIDEBAR_COLLAPSIBLE_VALUES, "icon"),
     getPreference<ContentLayout>("content_layout", CONTENT_LAYOUT_VALUES, "centered"),
   ]);
-
-  /*
-   // layoutPreferences objesi artık kullanılmadığı için kaldırıldı.
-   const layoutPreferences = {
-     contentLayout,
-     variant: sidebarVariant,
-     collapsible: sidebarCollapsible,
-   };
-  */
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
@@ -68,7 +66,6 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               <SearchDialog />
             </div>
             <div className="flex items-center gap-2">
-              {/* <LayoutControls {...layoutPreferences} /> --- BU SATIR KALDIRILDI --- */}
               <ThemeSwitcher />
               <AccountSwitcher />
             </div>

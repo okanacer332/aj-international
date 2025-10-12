@@ -1,7 +1,9 @@
+// src/app/[lng]/(main)/dashboard/_components/sidebar/nav-main.tsx
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+// 'useParams' hook'unu import ediyoruz
+import { usePathname, useParams } from "next/navigation"; 
 import { type NavGroup } from "@/navigation/sidebar/sidebar-items";
 import { useSidebar } from "@/components/ui/sidebar";
 import {
@@ -29,8 +31,13 @@ interface NavMainProps {
 
 export function NavMain({ items }: NavMainProps) {
   const path = usePathname();
+  const params = useParams(); // URL'deki parametreleri almak için
+  const lng = params.lng as string; // Dil kodunu alıyoruz ('tr', 'en' vb.)
   const { state, isMobile, setOpenMobile } = useSidebar();
   const { permissions: userPermissions } = useAuthStore();
+
+  // URL'den dil kodunu çıkararak karşılaştırma için temiz bir yol elde ediyoruz
+  const pathWithoutLng = path.replace(`/${lng}`, "") || "/";
 
   const handleLinkClick = () => {
     if (isMobile) {
@@ -38,7 +45,6 @@ export function NavMain({ items }: NavMainProps) {
     }
   };
 
-  // Menü elemanlarını kullanıcının yetkilerine göre filtrele
   const filteredItems = items.map(group => ({
     ...group,
     items: group.items.map(item => ({
@@ -58,7 +64,8 @@ export function NavMain({ items }: NavMainProps) {
   const getActiveAccordionItem = () => {
     for (const group of items) {
       for (const item of group.items) {
-        if (item.subItems?.some(sub => path.startsWith(sub.url))) {
+        // Kontrolü pathWithoutLng ile yapıyoruz
+        if (item.subItems?.some(sub => pathWithoutLng.startsWith(sub.url))) {
           return item.title;
         }
       }
@@ -78,7 +85,8 @@ export function NavMain({ items }: NavMainProps) {
                   <AccordionItem key={item.title} value={item.title} className="border-none">
                     <AccordionTrigger
                       className={`px-2 py-1.5 rounded-md hover:no-underline 
-                      ${item.subItems.some(sub => path.startsWith(sub.url))
+                      ${/* Kontrolü pathWithoutLng ile yapıyoruz */
+                        item.subItems.some(sub => pathWithoutLng.startsWith(sub.url))
                         ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                         : 'hover:bg-sidebar-accent'
                       }`}
@@ -93,10 +101,12 @@ export function NavMain({ items }: NavMainProps) {
                         {item.subItems.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton
-                              isActive={path === subItem.url}
+                              // Kontrolü pathWithoutLng ile yapıyoruz
+                              isActive={pathWithoutLng === subItem.url}
                               asChild
                             >
-                              <Link href={subItem.url} onClick={handleLinkClick}>
+                              {/* Link'e dil kodunu ekliyoruz */}
+                              <Link href={`/${lng}${subItem.url}`} onClick={handleLinkClick}>
                                 {subItem.icon && <subItem.icon />}
                                 <span>{subItem.title}</span>
                               </Link>
@@ -109,15 +119,17 @@ export function NavMain({ items }: NavMainProps) {
                 ) : (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
-                      isActive={path === item.url}
+                      // Kontrolü pathWithoutLng ile yapıyoruz
+                      isActive={pathWithoutLng === item.url}
                       className={
-                        path === item.url
+                        pathWithoutLng === item.url
                           ? "bg-primary text-primary-foreground hover:bg-primary/90"
                           : "hover:bg-sidebar-accent"
                       }
                       asChild
                     >
-                      <Link href={item.url} onClick={handleLinkClick}>
+                      {/* Link'e dil kodunu ekliyoruz */}
+                      <Link href={`/${lng}${item.url}`} onClick={handleLinkClick}>
                         {item.icon && <item.icon />}
                         <span>{item.title}</span>
                       </Link>
@@ -135,6 +147,10 @@ export function NavMain({ items }: NavMainProps) {
 
 function CollapsedNav({ items }: NavMainProps) {
     const path = usePathname();
+    const params = useParams();
+    const lng = params.lng as string;
+    const pathWithoutLng = path.replace(`/${lng}`, "") || "/";
+
     return (
         <>
         {items.map(group => (
@@ -146,10 +162,12 @@ function CollapsedNav({ items }: NavMainProps) {
                         <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton
                                 tooltip={item.title}
-                                isActive={path === item.url || (item.subItems?.some(sub => path.startsWith(sub.url)) ?? false)}
+                                // Kontrolü pathWithoutLng ile yapıyoruz
+                                isActive={pathWithoutLng === item.url || (item.subItems?.some(sub => pathWithoutLng.startsWith(sub.url)) ?? false)}
                                 asChild
                             >
-                                <Link href={item.url === '#' ? (item.subItems?.[0]?.url ?? '#') : item.url}>
+                                {/* Link'e dil kodunu ekliyoruz */}
+                                <Link href={`/${lng}${item.url === '#' ? (item.subItems?.[0]?.url ?? '#') : item.url}`}>
                                     {item.icon && <item.icon/>}
                                     <span className="sr-only">{item.title}</span>
                                 </Link>

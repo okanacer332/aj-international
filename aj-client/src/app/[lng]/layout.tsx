@@ -1,7 +1,10 @@
+// src/app/[lng]/layout.tsx
 import { ReactNode } from "react";
-
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+
+// i18n için gerekli importları ekliyoruz
+import { supportedLngs } from "@/lib/i18n";
 
 import { Toaster } from "@/components/ui/sonner";
 import { APP_CONFIG } from "@/config/app-config";
@@ -18,13 +21,24 @@ export const metadata: Metadata = {
   description: APP_CONFIG.meta.description,
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+// Next.js'e hangi diller için statik sayfa oluşturacağını söylüyoruz.
+export async function generateStaticParams() {
+  return supportedLngs.map((lng) => ({ lng }));
+}
+
+export default async function RootLayout({ 
+  children,
+  params: { lng } // URL'den gelen 'lng' parametresini burada yakalıyoruz.
+}: Readonly<{ 
+  children: ReactNode;
+  params: { lng: string }; 
+}>) {
   const themeMode = await getPreference<ThemeMode>("theme_mode", THEME_MODE_VALUES, "light");
   const themePreset = await getPreference<ThemePreset>("theme_preset", THEME_PRESET_VALUES, "default");
 
   return (
     <html
-      lang="en"
+      lang={lng} // 'lang' özelliğini dinamik olarak ayarlıyoruz.
       className={themeMode === "dark" ? "dark" : ""}
       data-theme-preset={themePreset}
       suppressHydrationWarning

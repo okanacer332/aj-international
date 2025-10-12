@@ -1,0 +1,12 @@
+{
+  "loginTitle": "Login",
+  "usernameLabel": "Username",
+  "passwordLabel": "Password",
+  "loginButton": "Login",
+  "usernamePlaceholder": "user.name",
+  "validation.usernameRequired": "Username cannot be empty.",
+  "validation.passwordRequired": "Password cannot be empty.",
+  "toast.loginSuccess": "Login successful",
+  "toast.loginErrorTitle": "Login failed",
+  "toast.loginErrorDescription": "Incorrect username or password."
+}

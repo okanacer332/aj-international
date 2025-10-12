@@ -1,6 +1,8 @@
+// src/app/[lng]/(main)/auth/_components/login-form.tsx
 "use client";
 
-import { useState } from "react";
+// useEffect ve useState'i import ediyoruz
+import { useState, useEffect } from "react"; 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -9,25 +11,36 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { User, Lock, Loader2 } from "lucide-react";
 
+import { useTranslation } from "@/lib/i18n-client"; 
+
 import { Button } from "@/components/ui/button";
-// Checkbox kaldırıldı
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const FormSchema = z.object({
-  username: z.string().min(1, "Kullanıcı adı boş bırakılamaz."),
-  password: z.string().min(1, "Şifre boş bırakılamaz."),
-  // remember alanı kaldırıldı
+const createFormSchema = (t: (key: string) => string) => z.object({
+  username: z.string().min(1, t('validation.usernameRequired')),
+  password: z.string().min(1, t('validation.passwordRequired')),
 });
 
-export function LoginForm() {
+export function LoginForm({ lng }: { lng: string }) {
+  const { t, ready } = useTranslation(lng, 'common');
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   
+  // YENİ EKLENEN KISIM: Bileşenin istemcide mount edilip edilmediğini takip eden state
+  const [isMounted, setIsMounted] = useState(false);
+
+  // YENİ EKLENEN KISIM: Bileşen ilk kez mount olduğunda bu state'i true yap
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const FormSchema = createFormSchema(t);
+  
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
-    // defaultValues'dan remember kaldırıldı
     defaultValues: { username: "", password: "" },
   });
 
@@ -40,23 +53,43 @@ export function LoginForm() {
       });
       const json = await res.json();
 
-      // remember mantığı ve maxAge kaldırıldı, cookie her zaman session bazlı olacak veya default kalacak
       document.cookie = `auth-token=${encodeURIComponent(json.accessToken)}; Path=/; SameSite=Lax`;
 
-      toast.success("Giriş başarılı");
-      router.replace("/dashboard/default");
+      toast.success(t('toast.loginSuccess'));
+      router.replace(`/${lng}/dashboard/default`); 
     } catch (e: any) {
-      toast.error("Giriş başarısız", { description: "Kullanıcı adı veya şifre hatalı." });
+      toast.error(t('toast.loginErrorTitle'), { description: t('toast.loginErrorDescription') });
     } finally {
       setIsLoading(false);
     }
   };
 
+  // GÜNCELLENEN KONTROL: Eğer çeviriler hazır değilse VEYA bileşen henüz client'ta mount edilmemişse iskeleti göster.
+  if (!ready || !isMounted) {
+    return (
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <Skeleton className="h-8 w-32" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-9 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-9 w-full" />
+          </div>
+          <Skeleton className="h-9 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle className="text-2xl">Giriş Yap</CardTitle>
-        {/* CardDescription kaldırıldı */}
+        <CardTitle className="text-2xl">{t('loginTitle')}</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -66,11 +99,11 @@ export function LoginForm() {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Kullanıcı Adı</FormLabel>
+                  <FormLabel>{t('usernameLabel')}</FormLabel>
                   <div className="relative">
                     <User className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <FormControl>
-                      <Input type="text" placeholder="kullanici.adi" autoComplete="username" {...field} className="pl-8" />
+                      <Input type="text" placeholder={t('usernamePlaceholder')} autoComplete="username" {...field} className="pl-8" />
                     </FormControl>
                   </div>
                   <FormMessage />
@@ -82,7 +115,7 @@ export function LoginForm() {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Şifre</FormLabel>
+                  <FormLabel>{t('passwordLabel')}</FormLabel>
                    <div className="relative">
                     <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <FormControl>
@@ -93,10 +126,9 @@ export function LoginForm() {
                 </FormItem>
               )}
             />
-            {/* Remember me Checkbox kaldırıldı */}
             <Button className="w-full" type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Giriş Yap
+              {t('loginButton')}
             </Button>
           </form>
         </Form>
