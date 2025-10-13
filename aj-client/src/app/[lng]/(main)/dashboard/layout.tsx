@@ -25,6 +25,8 @@ import { AccountSwitcher } from "./_components/sidebar/account-switcher";
 import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher"; 
+// YENİ IMPORT
+import { SidebarInitializer } from "./_components/sidebar-initializer"; 
 
 // TİP TANIMI: Next.js'in beklediği parametre yapısını yansıtıyoruz
 type LayoutParams = {
@@ -40,7 +42,8 @@ export default async function Layout({ children, params }: Readonly<LayoutParams
   const lng = params.lng; 
 
   const cookieStore = await cookies();
-  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
+  // defaultOpen değerini cookie'den okumayı bırakıp, artık Client Side'da Initializer ile yöneteceğiz.
+  // const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"; // Bu satır artık kullanılmayacak
 
   const [sidebarVariant, sidebarCollapsible, contentLayout] = await Promise.all([
     getPreference<SidebarVariant>("sidebar_variant", SIDEBAR_VARIANT_VALUES, "inset"),
@@ -49,7 +52,9 @@ export default async function Layout({ children, params }: Readonly<LayoutParams
   ]);
 
   return (
-    <SidebarProvider defaultOpen={defaultOpen}>
+    // defaultOpen değeri artık geçilmiyor. SidebarInitializer ilk durumu yönetecek.
+    <SidebarProvider> 
+      <SidebarInitializer /> {/* KRİTİK EKLEME */}
       <AuthGuard />
       <AppSidebar 
         key={lng} 
