@@ -220,5 +220,57 @@
   "iam.user.placeholder.selectRole": "Bir rol seçin...",
   
   "iam.role.toast.fetchError": "Roller getirilirken bir hata oluştu.",
-  "iam.user.label.activeStatus": "Kullanıcı Aktif mi?"
+  "iam.user.label.activeStatus": "Kullanıcı Aktif mi?",
+
+  "iam.role.pageTitle": "Rol Yönetimi",
+  "iam.role.pageDescription": "Sistemdeki rolleri ve yetkilerini yönetin.",
+  "iam.role.listTitle": "Roller",
+  "iam.role.permissionCountText": "yetki",
+  "iam.role.addNewButton": "Yeni Rol",
+
+  "iam.role.addDialogTitle": "Yeni Rol Oluştur",
+  "iam.role.addDialogDescription": "Yeni bir rol oluşturun ve yetkilerini atayın.",
+
+  "iam.role.deleteRoleButton": "Bu Rolü Sil",
+  "iam.role.placeholderSelect": "Lütfen düzenlemek için bir rol seçin veya yeni bir rol oluşturun.",
+  
+  "iam.role.deleteDialogTitle": "Emin misiniz?",
+  "iam.role.deleteDialogText": "rolünü kalıcı olarak silmek üzeresiniz. Bu işlem geri alınamaz.",
+
+  "iam.role.cancelButton": "İptal",
+  "iam.role.deleteButton": "Sil",
+ 
+  "iam.role.toast.deleteSuccess": "Rol başarıyla silindi.",
+  "iam.role.toast.deleteFailed": "Rol silinirken bir hata oluştu.",
+
+  "iam.role.validation.nameMinLength": "Rol adı en az 2 karakter olmalıdır.",
+  "iam.role.updateButton": "Değişiklikleri Kaydet",
+  "iam.role.createButton": "Rolü Oluştur",
+
+  "iam.role.form.nameLabel": "Rol Adı",
+  "iam.role.form.namePlaceholder": "Örn: Saha Operatörü",
+  "iam.role.form.permissionsTitle": "Yetkiler",
+  "iam.role.form.tableHeader.module": "Sayfa / Modül",
+  "iam.role.form.tableHeader.read": "Okuma",
+  "iam.role.form.tableHeader.write": "Yazma",
+  "iam.role.form.tableHeader.writeSub": "(Ekleme/Düzenleme/Silme)",
+  
+  "iam.role.toast.creationSuccess": "Rol başarıyla oluşturuldu.",
+  "iam.role.toast.updateSuccess": "Rol başarıyla güncellendi.",
+  "iam.role.toast.operationFailed": "İşlem başarısız.",
+  "iam.role.toast.nameUniqueError": "Bu rol adı zaten mevcut.",
+  "iam.role.toast.unknownError": "Bilinmeyen bir hata oluştu.",
+  "iam.permission.toast.fetchError": "Yetki listesi getirilirken bir hata oluştu.",
+ 
+  "iam.permission.PAGE_DASHBOARD": "Ana Sayfa (Dashboard)",
+  "iam.permission.PAGE_USERS": "Kullanıcı Yönetimi",
+  "iam.permission.PAGE_ROLES": "Rol Yönetimi",
+  "iam.permission.PAGE_LOGS": "Log Kayıtları",
+  "iam.permission.PAGE_TASKS": "Görev Yönetimi",
+  "iam.permission.PAGE_MASTER_PRODUCT": "Ürün Tanımları",
+  "iam.permission.PAGE_PERSONNEL": "Personel Yönetimi",
+  "iam.permission.PAGE_REPORTS": "Raporlama",
+  "iam.permission.PAGE_LEAVES": "İzin Yönetimi",
+  "iam.permission.PAGE_SHIFTS": "Vardiya Yönetimi",
+  "iam.permission.PAGE_DEFINITIONS": "Genel Tanımlar"
 }

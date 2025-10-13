@@ -1,3 +1,4 @@
+// aj-client/src/app/[lng]/(main)/dashboard/iam/roles/role-form.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,6 +8,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { apiFetchAuth } from "@/lib/api-auth";
 import { Role } from "@/types/role";
+// YENİ IMPORT: i18n desteği için
+import { useTranslation } from "@/lib/i18n-client"; 
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -16,33 +19,38 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const formSchema = z.object({
-  name: z.string().min(2, "Rol adı en az 2 karakter olmalıdır."),
+// KRİTİK DEĞİŞİKLİK 1: permissionTranslations nesnesi KALDIRILDI.
+// Yetkiler için çeviri key'leri eklenecek (iam.permission.PAGE_...)
+
+// KRİTİK DEĞİŞİKLİK 2: formSchema artık t fonksiyonunu alarak dinamik hale getirildi.
+const createFormSchema = (t: (key: string) => string) => z.object({
+  name: z.string().min(2, t("iam.role.validation.nameMinLength")),
   permissions: z.array(z.string()),
 });
 
+// KRİTİK DEĞİŞİKLİK 3: lng prop'u eklendi
 type RoleFormProps = {
   initialData?: Role | null;
   onSuccess: () => void;
+  lng: string;
 };
 
-const permissionTranslations: Record<string, string> = {
-    PAGE_DASHBOARD: "Ana Sayfa (Dashboard)",
-    PAGE_USERS: "Kullanıcı Yönetimi",
-    PAGE_ROLES: "Rol Yönetimi",
-    PAGE_LOGS: "Log Kayıtları",
-    PAGE_TASKS: "Görev Yönetimi",
-    PAGE_MASTER_PRODUCT: "Ürün Tanımları",
-    PAGE_PERSONNEL: "Personel Yönetimi",
-    PAGE_REPORTS: "Raporlar",
-    PAGE_LEAVES: "İzin Yönetimi",
-    PAGE_SHIFTS: "Vardiya Yönetimi",
-    PAGE_DEFINITIONS: "Genel Tanımlar",
+// YENİ YARDIMCI FONKSİYON: Yetki Key'inin çevirisini bulur.
+const getPermissionTranslation = (pageKey: string, t: (key: string) => string): string => {
+    // Örn: PAGE_USERS key'i için iam.permission.PAGE_USERS çevirisini arar.
+    return t(`iam.permission.${pageKey}`) || pageKey;
 };
 
-export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
+
+export function RoleForm({ initialData, onSuccess, lng }: RoleFormProps) {
   const [allPermissions, setAllPermissions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // KRİTİK DEĞİŞİKLİK: i18n Hook'u eklendi
+  const { t, ready } = useTranslation(lng, 'common');
+
+  // Hook çağrıları
+  const formSchema = createFormSchema(t);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -53,17 +61,24 @@ export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
   });
 
   useEffect(() => {
-    form.reset({
-      name: initialData?.name || "",
-      permissions: initialData?.permissions || [],
-    });
-  }, [initialData, form.reset]);
+    // Rol verisi değiştiğinde formu resetle
+    if (ready) {
+        form.reset({
+            name: initialData?.name || "",
+            permissions: initialData?.permissions || [],
+        });
+    }
+  }, [initialData, form.reset, ready]);
 
   useEffect(() => {
+    // Yetki listesini backend'den çek
+    if (!ready) return;
+      
     apiFetchAuth("/api/iam/permissions")
       .then(res => res.json())
-      .then(data => setAllPermissions(data.sort()));
-  }, []);
+      .then(data => setAllPermissions(data.sort()))
+      .catch((error: any) => toast.error(t("iam.permission.toast.fetchError"), { description: error.message }));
+  }, [ready, t]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -75,15 +90,20 @@ export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
         method: method,
         body: JSON.stringify(values),
       });
-      toast.success(initialData ? "Rol başarıyla güncellendi." : "Rol başarıyla oluşturuldu.");
+      // ÇEVİRİ: Başarı mesajı
+      const successMsgKey = initialData ? "iam.role.toast.updateSuccess" : "iam.role.toast.creationSuccess";
+      toast.success(t(successMsgKey));
       onSuccess();
     } catch (error: any) {
-      toast.error("İşlem başarısız.", { description: error.message });
+      // ÇEVİRİ: Hata mesajı ayrıştırma
+      const errorMessageKey = error.message.includes("rol adı zaten mevcut") ? "iam.role.toast.nameUniqueError" : "iam.role.toast.unknownError";
+      toast.error(t("iam.role.toast.operationFailed"), { description: t(errorMessageKey) });
     } finally {
       setIsLoading(false);
     }
   };
   
+  // Yetki gruplarını oluştur
   const pagePermissions = allPermissions.reduce((acc, permission) => {
     const [pageKey, action] = permission.split(':');
     if (!acc[pageKey]) {
@@ -104,32 +124,39 @@ export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
     form.setValue("permissions", newPermissions, { shouldDirty: true });
   };
   
+  if (!ready) return null;
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField control={form.control} name="name" render={({ field }) => (
-          <FormItem><FormLabel>Rol Adı</FormLabel><FormControl><Input placeholder="Örn: Saha Operatörü" {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem>
+              {/* ÇEVİRİ: Rol Adı Etiketi */}
+              <FormLabel>{t('iam.role.form.nameLabel')}</FormLabel>
+              {/* ÇEVİRİ: Rol Adı Placeholder'ı */}
+              <FormControl><Input placeholder={t('iam.role.form.namePlaceholder')} {...field} /></FormControl><FormMessage /></FormItem>
         )}/>
         
         <Card>
-            <CardHeader><CardTitle>Yetkiler</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t('iam.role.form.permissionsTitle')}</CardTitle></CardHeader>
             <CardContent>
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Sayfa / Modül</TableHead>
-                            <TableHead className="text-center">Okuma</TableHead>
-                            {/* --- DEĞİŞİKLİK BURADA --- */}
+                            {/* ÇEVİRİ: Tablo Başlıkları */}
+                            <TableHead>{t('iam.role.form.tableHeader.module')}</TableHead>
+                            <TableHead className="text-center">{t('iam.role.form.tableHeader.read')}</TableHead>
                             <TableHead className="text-center">
-                              Yazma
-                              <span className="hidden sm:inline"> (Ekleme/Düzenleme/Silme)</span>
+                              {t('iam.role.form.tableHeader.write')}
+                              <span className="hidden sm:inline"> {t('iam.role.form.tableHeader.writeSub')}</span>
                             </TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {Object.keys(pagePermissions).map(pageKey => (
                             <TableRow key={pageKey}>
-                                <TableCell className="font-medium">{permissionTranslations[pageKey] || pageKey}</TableCell>
+                                {/* ÇEVİRİ: Modül Adı */}
+                                <TableCell className="font-medium">{getPermissionTranslation(pageKey, t)}</TableCell>
                                 <TableCell className="text-center">
                                     {pagePermissions[pageKey]['READ'] && (
                                         <Checkbox
@@ -155,7 +182,8 @@ export function RoleForm({ initialData, onSuccess }: RoleFormProps) {
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {initialData ? "Değişiklikleri Kaydet" : "Rolü Oluştur"}
+          {/* ÇEVİRİ: Buton Metni */}
+          {initialData ? t("iam.role.updateButton") : t("iam.role.createButton")}
         </Button>
       </form>
     </Form>
