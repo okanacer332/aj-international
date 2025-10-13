@@ -1,39 +1,65 @@
-// src/components/language-switcher.tsx
+// aj-client/src/components/language-switcher.tsx
 'use client';
 
-import { usePathname, useParams } from 'next/navigation';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Globe } from 'lucide-react';
+import { usePathname, useRouter, useParams } from 'next/navigation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supportedLngs } from '@/lib/i18n'; 
+// cn helper'a ihtiyacımız kalmadı
+
+const LANGUAGE_OPTIONS: Record<string, { label: string, icon: string, flag: string }> = {
+  'tr': { label: 'Türkçe', icon: 'TR', flag: '🇹🇷' },
+  'en': { label: 'English', icon: 'EN', flag: '🇬🇧' },
+};
 
 export const LanguageSwitcher = () => {
   const pathname = usePathname();
   const params = useParams();
-  const lng = params.lng as string;
+  const router = useRouter(); 
+  
+  const currentLng = params.lng as string;
 
-  // Mevcut yoldan dil kodunu kaldırarak ana yolu buluyoruz
-  // Örn: /tr/dashboard/settings -> /dashboard/settings
-  const redirectedPathName = (path: string, currentLng: string) => {
-    if (!path) return '/';
-    const segments = path.split('/');
-    if (segments[1] === currentLng) {
-      segments.splice(1, 1);
-      return segments.join('/') || '/';
-    }
-    return path;
+  const handleLanguageChange = (newLng: string) => {
+    if (newLng === currentLng) return;
+
+    const segments = pathname.split('/');
+    segments[1] = newLng;
+    const newPath = segments.join('/');
+
+    router.push(newPath);
   };
 
-  const currentPathWithoutLng = redirectedPathName(pathname, lng);
-
-  // Hedef dili belirle
-  const targetLng = lng === 'tr' ? 'en' : 'tr';
+  const selectedOption = LANGUAGE_OPTIONS[currentLng] || { label: currentLng.toUpperCase(), flag: '🌐' };
 
   return (
-    <Link href={`/${targetLng}${currentPathWithoutLng}`}>
-      <Button variant="ghost" size="sm">
-        <Globe className="mr-2 h-4 w-4" />
-        {targetLng.toUpperCase()}
-      </Button>
-    </Link>
+    <Select value={currentLng} onValueChange={handleLanguageChange}>
+      {/* KRİTİK DÜZELTME: SelectValue'yu Custom Content olarak kullanıyoruz. */}
+      <SelectTrigger className="w-fit min-w-32 gap-2 h-9">
+        
+        {/* SelectValue içine, sadece seçili bayrak ve metni manuel yerleştiriyoruz. 
+            Bu, SelectValue'nun varsayılan yansıtmasını atlar. */}
+        <SelectValue placeholder={selectedOption.label} asChild>
+             <div className="flex items-center gap-2"> 
+                <span className="text-lg leading-none">{selectedOption.flag}</span> 
+                <span className="text-sm">{selectedOption.label}</span>
+            </div>
+        </SelectValue>
+        
+      </SelectTrigger>
+      
+      <SelectContent>
+        {supportedLngs.map((lng) => {
+           const option = LANGUAGE_OPTIONS[lng] || { label: lng.toUpperCase(), flag: '🌐' };
+           return (
+            <SelectItem key={lng} value={lng}>
+              {/* SelectItem içeriği: Sadece metin ve bayrak (Açılır menü için) */}
+              <div className="flex items-center gap-2">
+                  <span className="text-lg leading-none">{option.flag}</span>
+                  <span>{option.label}</span>
+              </div>
+            </SelectItem>
+           )
+        })}
+      </SelectContent>
+    </Select>
   );
 };
