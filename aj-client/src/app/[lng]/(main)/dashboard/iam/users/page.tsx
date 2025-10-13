@@ -1,3 +1,4 @@
+// aj-client/src/app/[lng]/(main)/dashboard/iam/users/page.tsx
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -18,9 +19,13 @@ import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // YENİ IMPORT
-import { getInitials } from "@/lib/utils"; // YENİ IMPORT
-import { API_BASE } from "@/lib/api"; // YENİ IMPORT
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; 
+import { getInitials } from "@/lib/utils"; 
+import { API_BASE } from "@/lib/api"; 
+import { useTranslation } from "@/lib/i18n-client";
+import { useParams } from "next/navigation";
+// createIAMUserColumns'ın columns.tsx'ten import edildiğini varsayıyoruz.
+import { createIAMUserColumns } from "./columns"; 
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -28,6 +33,12 @@ export default function UsersPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  
+  // YENİ STATE: Sadece silme diyalogunu yönetir.
+  const [userToDelete, setUserToDelete] = useState<User | null>(null); 
+  
+  const { lng } = useParams() as { lng: string };
+  const { t, ready } = useTranslation(lng, 'common');
 
   const fetchUsers = async () => {
     try {
@@ -35,16 +46,18 @@ export default function UsersPage() {
       const res = await apiFetchAuth("/api/iam/users");
       const data = await res.json();
       setUsers(data);
-    } catch (error) {
-      toast.error("Kullanıcılar getirilirken bir hata oluştu.");
+    } catch (error: any) { // KRİTİK DÜZELTME: Hata tipini 'any' olarak zorladık
+      toast.error(t("iam.user.toast.fetchError"));
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if(ready) {
+        fetchUsers();
+    }
+  }, [ready, t]);
 
   const handleSuccess = () => {
     setIsAddDialogOpen(false);
@@ -58,117 +71,121 @@ export default function UsersPage() {
     setIsEditDialogOpen(true);
   };
   
+  // YENİ FONKSİYON: Silme diyalogunu açar.
+  const openDeleteDialog = (user: User) => {
+    setUserToDelete(user);
+  }
+  
   const handleDeleteUser = async (userId: string) => {
+    const username = userToDelete?.fullName || userId;
     try {
       await apiFetchAuth(`/api/iam/users/${userId}`, { method: 'DELETE' });
-      toast.success("Kullanıcı başarıyla silindi.");
+      toast.success(t("iam.user.toast.deleteSuccess"));
       fetchUsers();
-    } catch (error) {
-      toast.error("Kullanıcı silinirken bir hata oluştu.");
+    } catch (error: any) { // KRİTİK DÜZELTME: Hata tipini 'any' olarak zorladık
+      toast.error(t("iam.user.toast.deleteFailed"), { description: error.message });
+    } finally {
+      setUserToDelete(null); 
     }
   };
 
-  const columns = useMemo<ColumnDef<User>[]>(() => [
-    // YENİ EKLENEN FOTOĞRAF SÜTUNU
-    {
-      id: "avatar",
-      header: "", // Başlık boş olacak
-      cell: ({ row }) => {
-        const user = row.original;
-        const avatarSrc = user.avatarUrl ? `${API_BASE}${user.avatarUrl}` : undefined;
-        return (
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={avatarSrc} alt={user.fullName} />
-            <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
-          </Avatar>
-        );
-      },
-      size: 32, // Sütun genişliğini ayarla
+  // Avatar kolonu, page.tsx'in içinden taşınmış olmalıydı, bu nedenle bu kısmı page.tsx'e geri getirelim
+  const AvatarColumn: ColumnDef<User> = {
+    id: "avatar",
+    header: "", 
+    cell: ({ row }) => {
+      const user = row.original;
+      const avatarSrc = user.avatarUrl ? `${API_BASE}${user.avatarUrl}` : undefined;
+      return (
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={avatarSrc} alt={user.fullName} />
+          <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
+        </Avatar>
+      );
     },
-    { accessorKey: "fullName", header: "Ad Soyad" },
-    { accessorKey: "username", header: "Kullanıcı Adı" },
-    { accessorKey: "email", header: "Email", cell: ({ row }) => row.getValue("email") || "---" },
-    { accessorKey: "roleIds", header: "Roller", cell: ({ row }) => {
-        const roleIds = row.getValue("roleIds") as string[] | undefined;
-        if (!roleIds || roleIds.length === 0) return <span className="text-muted-foreground">Rol Atanmamış</span>;
-        return <div className="flex flex-wrap gap-1">{roleIds.map((roleId) => <Badge key={roleId} variant="outline">{roleId}</Badge>)}</div>;
-    }},
-    { accessorKey: "active", header: "Durum", cell: ({ row }) => <Badge variant={row.getValue("active") ? "secondary" : "destructive"}>{row.getValue("active") ? "Aktif" : "Pasif"}</Badge> },
-    { id: "actions", cell: ({ row }) => (
-        <div className="text-right">
-          <AlertDialog>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>İşlemler</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => openEditDialog(row.original)}>Düzenle</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors w-full justify-start font-normal text-destructive hover:bg-destructive/10 focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">Sil</Button>
-                </AlertDialogTrigger>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <AlertDialogContent>
-              <AlertDialogHeader><AlertDialogTitle>Emin misiniz?</AlertDialogTitle><AlertDialogDescription><b>{row.original.fullName}</b> adlı kullanıcıyı kalıcı olarak silmek üzeresiniz. Bu işlem geri alınamaz.</AlertDialogDescription></AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>İptal</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleDeleteUser(row.original.id)}>Sil</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-    )},
-  ], []);
+    size: 32,
+  };
+
+  const DeleteConfirmationDialog = ({ user }: { user: User }) => (
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>{t('iam.user.deleteDialogTitle')}</AlertDialogTitle>
+        <AlertDialogDescription>
+          <b className="font-semibold">{user.fullName}</b> {t('iam.user.deleteDialogText')}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>{t('iam.user.cancelButton')}</AlertDialogCancel>
+        <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>{t('iam.user.deleteButton')}</AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  );
+
+  const columns = useMemo<ColumnDef<User>[]>(() => [AvatarColumn, ...createIAMUserColumns({ 
+    openEditDialog: openEditDialog, 
+    openDeleteDialog: openDeleteDialog, 
+    t: t 
+  })], [t]);
 
   const table = useDataTableInstance({ data: users, columns });
+
+  if (!ready || isLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Kullanıcı Yönetimi</h1>
-          <p className="text-muted-foreground">Sistemdeki kullanıcıları yönetin ve yeni kullanıcılar oluşturun.</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t('iam.user.pageTitle')}</h1>
+          <p className="text-muted-foreground">{t('iam.user.pageDescription')}</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>Yeni Kullanıcı Ekle</Button>
+            <Button>{t('iam.user.addNewButton')}</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Yeni Kullanıcı Oluştur</DialogTitle>
+              <DialogTitle>{t('iam.user.addDialogTitle')}</DialogTitle>
               <DialogDescription>
-                Yeni kullanıcı için bilgileri girin. Varsayılan şifre "1234" olarak atanacaktır.
+                {t('iam.user.addDialogDescription')}
               </DialogDescription>
             </DialogHeader>
-            <AddUserForm onSuccess={handleSuccess} />
+            <AddUserForm onSuccess={handleSuccess} lng={lng} /> 
           </DialogContent>
         </Dialog>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ) : (
-        <div className="rounded-md border">
-          <DataTable table={table} columns={columns} />
-        </div>
-      )}
+      <div className="rounded-md border">
+        <DataTable table={table} columns={columns} />
+      </div>
       
-      {!isLoading && <DataTablePagination table={table} />}
+      <DataTablePagination table={table} />
 
-      {selectedUser && (
+      {/* KRİTİK DÜZELTME: Kullanıcı Düzenleme Diyaloğu (selectedUser var VE düzenleme açık) */}
+      {selectedUser && isEditDialogOpen && (
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Kullanıcıyı Düzenle</DialogTitle>
-              <DialogDescription>{selectedUser.fullName} kullanıcısının bilgilerini güncelleyin.</DialogDescription>
+              <DialogTitle>{t('iam.user.editDialogTitle')}</DialogTitle>
+              <DialogDescription>{selectedUser.fullName} {t('iam.user.editDialogDescription')}</DialogDescription>
             </DialogHeader>
-            <EditUserForm user={selectedUser} onSuccess={handleSuccess} />
+            <EditUserForm user={selectedUser} onSuccess={handleSuccess} lng={lng} /> 
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* KRİTİK DÜZELTME: Silme Onayı Diyaloğu (Sadece userToDelete varsa açılır) */}
+      {userToDelete && (
+        <AlertDialog open={true} onOpenChange={() => setUserToDelete(null)}>
+          {DeleteConfirmationDialog({ user: userToDelete })}
+        </AlertDialog>
       )}
     </div>
   );

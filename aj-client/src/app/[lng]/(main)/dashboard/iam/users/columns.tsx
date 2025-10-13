@@ -1,3 +1,4 @@
+// aj-client/src/app/[lng]/(main)/dashboard/iam/users/columns.tsx
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
@@ -14,34 +15,35 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 
-export const columns: ColumnDef<User>[] = [
+// KRİTİK DEĞİŞİKLİK: columns array'i bir fonksiyona dönüştürüldü ve yeni prop'lar eklendi
+export const createIAMUserColumns = ({ t, openEditDialog, openDeleteDialog }: {
+  t: (key: string) => string;
+  openEditDialog: (user: User) => void;
+  openDeleteDialog: (user: User) => void;
+}): ColumnDef<User>[] => [
   {
     accessorKey: "fullName",
-    header: "Ad Soyad",
+    header: t("iam.user.column.fullName"),
   },
   {
     accessorKey: "username",
-    header: "Kullanıcı Adı",
+    header: t("iam.user.column.username"),
   },
   {
     accessorKey: "email",
-    header: "Email",
-    // E-posta yoksa "---" göster
-    cell: ({ row }) => row.getValue("email") || "---",
+    header: t("iam.user.column.email"),
+    cell: ({ row }) => row.getValue("email") || t("iam.user.noEmail"),
   },
   {
-    accessorKey: "roleIds", // Backend'den gelen alanın adı 'roleIds'
-    header: "Roller",
+    accessorKey: "roleIds", 
+    header: t("iam.user.column.roles"),
     cell: ({ row }) => {
-      // DEĞİŞİKLİK BURADA: 'roleIds' tanımsız veya boş olabilir diye kontrol ekliyoruz.
       const roleIds = row.getValue("roleIds") as string[] | undefined;
 
-      // Eğer roleIds yoksa veya boş bir diziyse, "Rol Atanmamış" yaz.
       if (!roleIds || roleIds.length === 0) {
-        return <span className="text-muted-foreground">Rol Atanmamış</span>;
+        return <span className="text-muted-foreground">{t("iam.user.roleNotAssigned")}</span>;
       }
 
-      // Not: Şimdilik ID'leri gösteriyoruz. İleride rol isimlerini getireceğiz.
       return (
         <div className="flex flex-wrap gap-1">
           {roleIds.map((roleId) => (
@@ -53,10 +55,10 @@ export const columns: ColumnDef<User>[] = [
   },
   {
     accessorKey: "active",
-    header: "Durum",
+    header: t("iam.user.column.status"),
     cell: ({ row }) => {
       const isActive = row.getValue("active");
-      return <Badge variant={isActive ? "secondary" : "destructive"}>{isActive ? "Aktif" : "Pasif"}</Badge>;
+      return <Badge variant={isActive ? "secondary" : "destructive"}>{isActive ? t("iam.user.status.active") : t("iam.user.status.inactive")}</Badge>;
     },
   },
   {
@@ -68,20 +70,32 @@ export const columns: ColumnDef<User>[] = [
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Menüyü aç</span>
+                <span className="sr-only">{t("iam.user.aria.openMenu")}</span>
                 <MoreHorizontal className="h-4 w-4" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuLabel>İşlemler</DropdownMenuLabel>
+                <DropdownMenuLabel>{t("iam.user.actions.label")}</DropdownMenuLabel>
                 <DropdownMenuItem
                 onClick={() => navigator.clipboard.writeText(user.id)}
                 >
-                Kullanıcı ID'sini kopyala
+                {t("iam.user.actions.copyID")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Düzenle</DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive focus:text-destructive">Sil</DropdownMenuItem>
+                
+                {/* DÜZENLE: openEditDialog'u çağırır */}
+                <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                   {t("iam.user.actions.edit")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                
+                {/* KRİTİK DÜZELTME: Silme aksiyonunu çağırır, bu da ana sayfada AlertDialog'u tetikler. */}
+                <DropdownMenuItem 
+                    onClick={() => openDeleteDialog(user)}
+                    className="text-destructive focus:text-destructive"
+                >
+                    {t("iam.user.actions.delete")}
+                </DropdownMenuItem>
             </DropdownMenuContent>
             </DropdownMenu>
         </div>

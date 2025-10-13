@@ -1,3 +1,4 @@
+// aj-client/src/app/[lng]/(main)/dashboard/iam/users/add-user-form.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,6 +8,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { apiFetchAuth } from "@/lib/api-auth";
 import { Role } from "@/types/role";
+// YENİ IMPORT: i18n desteği için
+import { useTranslation } from "@/lib/i18n-client"; 
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,36 +30,47 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
-// Form validasyon şeması
-const formSchema = z.object({
-  fullName: z.string().min(3, "Ad Soyad en az 3 karakter olmalıdır."),
-  email: z.string().email("Geçerli bir email adresi giriniz."),
-  tenantId: z.string().min(1, "Tenant ID boş bırakılamaz."),
-  roleId: z.string({ required_error: "Lütfen bir rol seçin." }),
+// KRİTİK DEĞİŞİKLİK: formSchema t fonksiyonunu alarak dinamik hale getirildi
+const createFormSchema = (t: (key: string) => string) => z.object({
+  fullName: z.string().min(3, t("validation.fullNameMinLength")),
+  email: z.string().email(t("validation.emailInvalid")),
+  tenantId: z.string().min(1, t("iam.user.validation.tenantRequired")),
+  roleId: z.string({ required_error: t("iam.user.validation.roleRequired") }),
 });
 
+// KRİTİK DEĞİŞİKLİK: lng prop'u eklendi
 type AddUserFormProps = {
   onSuccess: () => void; // Form başarıyla gönderildiğinde çağrılacak fonksiyon
+  lng: string;
 };
 
-export function AddUserForm({ onSuccess }: AddUserFormProps) {
+export function AddUserForm({ onSuccess, lng }: AddUserFormProps) {
   const [roles, setRoles] = useState<Role[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // KRİTİK DEĞİŞİKLİK: i18n Hook'u eklendi
+  const { t, ready } = useTranslation(lng, 'common');
 
   // Component yüklendiğinde rolleri backend'den çek
   useEffect(() => {
+    if (!ready) return; // Çeviriler hazır değilse API çağrısı yapma
+
     const fetchRoles = async () => {
       try {
         const res = await apiFetchAuth("/api/iam/roles");
         const data = await res.json();
         setRoles(data);
       } catch (error) {
-        toast.error("Roller getirilirken bir hata oluştu.");
+        // ÇEVİRİ: Hata mesajı
+        toast.error(t("iam.role.toast.fetchError"));
       }
     };
     fetchRoles();
-  }, []);
+  }, [ready, t]);
   
+  // Hook çağrıları koşulsuz alanda yapılmalı
+  const formSchema = createFormSchema(t);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { fullName: "", email: "", tenantId: "TR" },
@@ -65,13 +79,12 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      // Backend'in beklediği yapıya dönüştür
       const payload = {
         fullName: values.fullName,
         email: values.email,
         tenantId: values.tenantId,
-        roleIds: [values.roleId], // Şimdilik tek rol seçimi
-        password: "1234" // Varsayılan şifre
+        roleIds: [values.roleId], 
+        password: "1234" 
       };
       
       await apiFetchAuth("/api/iam/users", {
@@ -79,14 +92,18 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
         body: JSON.stringify(payload),
       });
 
-      toast.success("Kullanıcı başarıyla oluşturuldu.");
-      onSuccess(); // Başarılı olduğunda ana component'i bilgilendir
+      // ÇEVİRİ: Başarı mesajı
+      toast.success(t("iam.user.toast.creationSuccess"));
+      onSuccess(); 
     } catch (error: any) {
-      toast.error("Kullanıcı oluşturulamadı.", { description: error.message });
+      // ÇEVİRİ: Hata mesajı
+      toast.error(t("iam.user.toast.creationFailed"), { description: error.message });
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (!ready) return null;
 
   return (
     <Form {...form}>
@@ -96,9 +113,11 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
           name="fullName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Ad Soyad</FormLabel>
+              {/* ÇEVİRİ: Etiket */}
+              <FormLabel>{t("iam.user.label.fullName")}</FormLabel>
               <FormControl>
-                <Input placeholder="Okan Umut Acer" {...field} />
+                {/* ÇEVİRİ: Placeholder */}
+                <Input placeholder={t("iam.user.placeholder.fullName")} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -109,9 +128,11 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              {/* ÇEVİRİ: Etiket */}
+              <FormLabel>{t("iam.user.label.email")}</FormLabel>
               <FormControl>
-                <Input placeholder="kullanici@example.com" {...field} />
+                {/* ÇEVİRİ: Placeholder */}
+                <Input placeholder={t("iam.user.placeholder.email")} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -122,9 +143,11 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
           name="tenantId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Ülke Kodu (Tenant)</FormLabel>
+              {/* ÇEVİRİ: Etiket */}
+              <FormLabel>{t("iam.user.label.tenantId")}</FormLabel>
               <FormControl>
-                <Input placeholder="TR" {...field} />
+                {/* ÇEVİRİ: Placeholder */}
+                <Input placeholder={t("iam.user.placeholder.tenantId")} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -135,11 +158,13 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
           name="roleId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Rol</FormLabel>
+              {/* ÇEVİRİ: Etiket */}
+              <FormLabel>{t("iam.user.label.role")}</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Bir rol seçin..." />
+                    {/* ÇEVİRİ: Placeholder */}
+                    <SelectValue placeholder={t("iam.user.placeholder.selectRole")} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -156,7 +181,8 @@ export function AddUserForm({ onSuccess }: AddUserFormProps) {
         />
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Kullanıcıyı Oluştur
+          {/* ÇEVİRİ: Buton Metni */}
+          {t("iam.user.createButton")}
         </Button>
       </form>
     </Form>

@@ -166,5 +166,64 @@
   "masterdata.product.toast.creationSuccess": "New product successfully saved.",
   "masterdata.product.toast.operationFailed": "Operation Failed",
   "masterdata.product.toast.codeUniqueError": "This product code is already in use.",
-  "masterdata.product.toast.unknownError": "An unknown error occurred."
+  "masterdata.product.toast.unknownError": "An unknown error occurred.",
+
+  "iam.user.pageTitle": "User Management",
+  "iam.user.pageDescription": "Manage users in the system and create new users.",
+  "iam.user.addNewButton": "Add New User",
+
+  "iam.user.addDialogTitle": "Create New User",
+  "iam.user.addDialogDescription": "Enter details for the new user. Default password will be set to \"1234\".",
+  "iam.user.createButton": "Create User",
+
+  "iam.user.editDialogTitle": "Edit User",
+  "iam.user.editDialogDescription": "user's information.",
+  "iam.user.updateButton": "Save Changes",
+
+  "iam.user.deleteDialogTitle": "Are you sure?",
+  "iam.user.deleteDialogText": "user permanently. This action cannot be undone.",
+
+  "iam.user.cancelButton": "Cancel",
+  "iam.user.deleteButton": "Delete",
+
+  "iam.user.toast.fetchError": "An error occurred while fetching users.",
+  "iam.user.toast.deleteSuccess": "User deleted successfully.",
+  "iam.user.toast.deleteFailed": "Failed to delete user.",
+
+  "iam.user.toast.creationSuccess": "User created successfully.",
+  "iam.user.toast.creationFailed": "Failed to create user.",
+  "iam.user.toast.updateSuccess": "User updated successfully.",
+  "iam.user.toast.updateFailed": "Failed to update user.",
+  
+  "iam.user.roleNotAssigned": "Role Not Assigned",
+
+  "iam.user.column.fullName": "Full Name",
+  "iam.user.column.username": "Username",
+  "iam.user.column.email": "Email",
+  "iam.user.column.roles": "Roles",
+  "iam.user.column.status": "Status",
+  
+  "iam.user.noEmail": "---",
+  "iam.user.status.active": "Active",
+  "iam.user.status.inactive": "Inactive",
+  
+  "iam.user.aria.openMenu": "Open menu",
+  "iam.user.actions.label": "Actions",
+  "iam.user.actions.copyID": "Copy User ID",
+  "iam.user.actions.edit": "Edit",
+  "iam.user.actions.delete": "Delete",
+  "iam.user.validation.tenantRequired": "Tenant ID cannot be empty.",
+  "iam.user.validation.roleRequired": "Please select a role.",
+
+  "iam.user.label.fullName": "Full Name",
+  "iam.user.placeholder.fullName": "Okan Umut Acer",
+  "iam.user.label.email": "Email",
+  "iam.user.placeholder.email": "user@example.com",
+  "iam.user.label.tenantId": "Tenant ID",
+  "iam.user.placeholder.tenantId": "TR",
+  "iam.user.label.role": "Role",
+  "iam.user.placeholder.selectRole": "Select a role...",
+  
+  "iam.role.toast.fetchError": "An error occurred while fetching roles.",
+    "iam.user.label.activeStatus": "Is User Active?"
 }

@@ -161,5 +161,64 @@
   "masterdata.product.toast.creationSuccess": "Yeni ürün başarıyla kaydedildi.",
   "masterdata.product.toast.operationFailed": "İşlem Başarısız",
   "masterdata.product.toast.codeUniqueError": "Bu ürün kodu zaten kullanılıyor.",
-  "masterdata.product.toast.unknownError": "Bilinmeyen bir hata oluştu."
+  "masterdata.product.toast.unknownError": "Bilinmeyen bir hata oluştu.",
+
+  "iam.user.pageTitle": "Kullanıcı Yönetimi",
+  "iam.user.pageDescription": "Sistemdeki kullanıcıları yönetin ve yeni kullanıcılar oluşturun.",
+  "iam.user.addNewButton": "Yeni Kullanıcı Ekle",
+
+  "iam.user.addDialogTitle": "Yeni Kullanıcı Oluştur",
+  "iam.user.addDialogDescription": "Yeni kullanıcı için bilgileri girin. Varsayılan şifre \"1234\" olarak atanacaktır.",
+  "iam.user.createButton": "Kullanıcıyı Oluştur",
+  
+  "iam.user.editDialogTitle": "Kullanıcıyı Düzenle",
+  "iam.user.editDialogDescription": "kullanıcısının bilgilerini güncelleyin.",
+  "iam.user.updateButton": "Değişiklikleri Kaydet",
+  
+  "iam.user.deleteDialogTitle": "Emin misiniz?",
+  "iam.user.deleteDialogText": "adlı kullanıcıyı kalıcı olarak silmek üzeresiniz. Bu işlem geri alınamaz.",
+
+  "iam.user.cancelButton": "İptal",
+  "iam.user.deleteButton": "Sil",
+  
+  "iam.user.toast.fetchError": "Kullanıcılar getirilirken bir hata oluştu.",
+  "iam.user.toast.deleteSuccess": "Kullanıcı başarıyla silindi.",
+  "iam.user.toast.deleteFailed": "Kullanıcı silinirken bir hata oluştu.",
+  
+  "iam.user.toast.creationSuccess": "Kullanıcı başarıyla oluşturuldu.",
+  "iam.user.toast.creationFailed": "Kullanıcı oluşturulamadı.",
+  "iam.user.toast.updateSuccess": "Kullanıcı başarıyla güncellendi.",
+  "iam.user.toast.updateFailed": "Kullanıcı güncellenemedi.",
+
+  "iam.user.roleNotAssigned": "Rol Atanmamış",
+
+  "iam.user.column.fullName": "Ad Soyad",
+  "iam.user.column.username": "Kullanıcı Adı",
+  "iam.user.column.email": "Email",
+  "iam.user.column.roles": "Roller",
+  "iam.user.column.status": "Durum",
+  
+  "iam.user.noEmail": "---",
+  "iam.user.status.active": "Aktif",
+  "iam.user.status.inactive": "Pasif",
+  
+  "iam.user.aria.openMenu": "Menüyü aç",
+  "iam.user.actions.label": "İşlemler",
+  "iam.user.actions.copyID": "Kullanıcı ID'sini kopyala",
+  "iam.user.actions.edit": "Düzenle",
+  "iam.user.actions.delete": "Sil",
+  "iam.user.validation.tenantRequired": "Tenant ID boş bırakılamaz.",
+  "iam.user.validation.roleRequired": "Lütfen bir rol seçin.",
+  
+  "iam.user.label.fullName": "Ad Soyad",
+  "iam.user.placeholder.fullName": "Okan Umut Acer",
+  "iam.user.label.email": "Email",
+  "iam.user.placeholder.email": "kullanici@example.com",
+  "iam.user.label.tenantId": "Ülke Kodu (Tenant)",
+  "iam.user.placeholder.tenantId": "TR",
+  "iam.user.label.role": "Rol",
+  "iam.user.placeholder.selectRole": "Bir rol seçin...",
+  
+  "iam.role.toast.fetchError": "Roller getirilirken bir hata oluştu.",
+  "iam.user.label.activeStatus": "Kullanıcı Aktif mi?"
 }
