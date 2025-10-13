@@ -53,5 +53,8 @@
   "activities.table.user": "User",
   "activities.table.action": "Action",
   "activities.table.detail": "Detail",
-  "activities.table.time": "Time"
+  "activities.table.time": "Time",
+  "account.myAccount": "My Account",
+  "auth.logout": "Log Out",
+  "kisi": "people"
 }

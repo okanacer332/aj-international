@@ -74,7 +74,8 @@ export default async function Layout({ children, params }: Readonly<LayoutParams
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
               <ThemeSwitcher />
-              <AccountSwitcher />
+              {/* KRİTİK GÜNCELLEME: lng prop'u AccountSwitcher'a eklendi. */}
+              <AccountSwitcher lng={lng} /> 
             </div>
           </div>
         </header>

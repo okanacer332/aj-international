@@ -53,5 +53,8 @@
   "activities.table.user": "Kullanıcı",
   "activities.table.action": "Eylem",
   "activities.table.detail": "Detay",
-  "activities.table.time": "Zaman"
+  "activities.table.time": "Zaman",
+  "account.myAccount": "Hesabım",
+  "auth.logout": "Çıkış Yap",
+  "kisi": "kişi"
 }
