@@ -109,5 +109,9 @@
   "account.competency.title": "My Product Competencies",
   "account.competency.description": "You can update your knowledge and experience level for products on a scale of 1-10.",
   "toast.competencyUpdateSuccess": "Your competencies have been successfully saved.",
-  "toast.competencyUpdateError": "An error occurred during saving."
+  "toast.competencyUpdateError": "An error occurred during saving.",
+  "operation.taskManagement.title": "Task Management",
+  "operation.taskManagement.placeholder": "This section will be added soon.",
+  "hr.personnelManagement.title": "Personnel Management",
+  "hr.personnelManagement.placeholder": "This section will be added soon."
 }

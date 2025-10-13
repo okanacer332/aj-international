@@ -22,10 +22,10 @@ import {
   type ContentLayout,
 } from "@/types/preferences/layout";
 import { AccountSwitcher } from "./_components/sidebar/account-switcher";
-import { SearchDialog } from "./_components/sidebar/search-dialog";
+// İTHALAT KALDIRILDI: SearchDialog artık kullanılmıyor.
+// import { SearchDialog } from "./_components/sidebar/search-dialog"; 
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher"; 
-// YENİ IMPORT
 import { SidebarInitializer } from "./_components/sidebar-initializer"; 
 
 // TİP TANIMI: Next.js'in beklediği parametre yapısını yansıtıyoruz
@@ -42,7 +42,7 @@ export default async function Layout({ children, params }: Readonly<LayoutParams
   const lng = params.lng; 
 
   const cookieStore = await cookies();
-  // defaultOpen değerini cookie'den okumayı bırakıp, artık Client Side'da Initializer ile yöneteceğiz.
+  // defaultOpen değeri artık geçilmiyor. SidebarInitializer ilk durumu yönetecek.
   // const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"; // Bu satır artık kullanılmayacak
 
   const [sidebarVariant, sidebarCollapsible, contentLayout] = await Promise.all([
@@ -54,7 +54,7 @@ export default async function Layout({ children, params }: Readonly<LayoutParams
   return (
     // defaultOpen değeri artık geçilmiyor. SidebarInitializer ilk durumu yönetecek.
     <SidebarProvider> 
-      <SidebarInitializer /> {/* KRİTİK EKLEME */}
+      <SidebarInitializer />
       <AuthGuard />
       <AppSidebar 
         key={lng} 
@@ -73,13 +73,13 @@ export default async function Layout({ children, params }: Readonly<LayoutParams
           <div className="flex w-full items-center justify-between px-4 lg:px-6">
             <div className="flex items-center gap-1 lg:gap-2">
               <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
-              <SearchDialog />
+              {/* KRİTİK DEĞİŞİKLİK: SearchDialog ve ayırıcıları kaldırıldı */}
+              {/* <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" /> */}
+              {/* <SearchDialog /> */}
             </div>
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
               <ThemeSwitcher />
-              {/* KRİTİK GÜNCELLEME: lng prop'u AccountSwitcher'a eklendi. */}
               <AccountSwitcher lng={lng} /> 
             </div>
           </div>

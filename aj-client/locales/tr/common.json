@@ -109,5 +109,9 @@
   "account.competency.title": "Ürün Yetkinliklerim",
   "account.competency.description": "Ürünler hakkındaki bilgi ve tecrübe seviyenizi 1-10 arasında belirterek yetkinliklerinizi güncelleyebilirsiniz.",
   "toast.competencyUpdateSuccess": "Yetkinlikleriniz başarıyla kaydedildi.",
-  "toast.competencyUpdateError": "Kaydetme sırasında bir hata oluştu."
+  "toast.competencyUpdateError": "Kaydetme sırasında bir hata oluştu.",
+   "operation.taskManagement.title": "Görev Yönetimi",
+  "operation.taskManagement.placeholder": "Bu bölüm yakında eklenecektir.",
+   "hr.personnelManagement.title": "Personel Yönetimi",
+  "hr.personnelManagement.placeholder": "Bu bölüm yakında eklenecektir."
 }
