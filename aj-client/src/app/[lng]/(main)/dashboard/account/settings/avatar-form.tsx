@@ -1,3 +1,4 @@
+// aj-client/src/app/[lng]/(main)/dashboard/account/settings/avatar-form.tsx
 "use client";
 
 import { useState } from "react";
@@ -10,18 +11,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { API_BASE } from "@/lib/api";
+import { useTranslation } from "@/lib/i18n-client"; 
+import { Skeleton } from "@/components/ui/skeleton"; // Skeleton'ı ekleyelim
 
 type AvatarFormProps = {
   user: User;
   onSuccess: () => void;
+  lng: string; 
 };
 
-export function AvatarForm({ user, onSuccess }: AvatarFormProps) {
+export function AvatarForm({ user, onSuccess, lng }: AvatarFormProps) {
+  // KRİTİK DÜZELTME: Hook'lar KOŞULSUZ olarak en üstte çağrılmalı
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
-  // DEĞİŞİKLİK BURADA: Aradaki fazladan '/' kaldırıldı.
+  // Hook'lar
+  const { t, ready } = useTranslation(lng, 'common'); 
+  
+  // useState Hook'u
   const [preview, setPreview] = useState<string | null>(user.avatarUrl ? `${API_BASE}${user.avatarUrl}` : null);
+  
+  // KRİTİK DÜZELTME: Tüm Hook'lar çağrıldı, artık erken çıkış yapabiliriz.
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -34,7 +44,7 @@ export function AvatarForm({ user, onSuccess }: AvatarFormProps) {
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedFile) {
-      toast.warning("Lütfen önce bir dosya seçin.");
+      toast.warning(t("toast.selectFileWarning"));
       return;
     }
     
@@ -47,27 +57,38 @@ export function AvatarForm({ user, onSuccess }: AvatarFormProps) {
         method: "POST",
         body: formData,
       });
-      toast.success("Profil fotoğrafı başarıyla güncellendi.");
+      toast.success(t("toast.avatarUpdateSuccess"));
       onSuccess();
     } catch (error: any) {
-      toast.error("Fotoğraf yüklenemedi.", { description: error.message });
+      toast.error(t("toast.avatarUpdateError"), { description: error.message });
     } finally {
       setIsLoading(false);
     }
   };
 
+  // KRİTİK DÜZELTME: Çeviriler hazır değilse (ready=false) erken çıkış yap.
+  if (!ready) {
+       return (
+          <Card>
+              <CardHeader><div className="h-6 w-1/3 bg-gray-200 animate-pulse rounded-md" /></CardHeader>
+              <CardContent><div className="h-20 w-full bg-gray-200 animate-pulse rounded-md" /></CardContent>
+          </Card>
+      );
+  }
+
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Profil Fotoğrafı</CardTitle>
-        <CardDescription>Yeni bir profil fotoğrafı yükleyin.</CardDescription>
+        <CardTitle>{t('account.settings.tab.avatar')}</CardTitle>
+        <CardDescription>{t('account.avatar.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="flex items-center space-x-4">
             <Image
               src={preview || "/avatars/default.png"}
-              alt="Avatar Preview"
+              alt={t('account.avatar.imageAlt')}
               width={80}
               height={80}
               className="rounded-full bg-muted"
@@ -76,7 +97,7 @@ export function AvatarForm({ user, onSuccess }: AvatarFormProps) {
           </div>
           <Button type="submit" disabled={isLoading || !selectedFile}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Fotoğrafı Yükle
+            {t('account.form.uploadPhoto')}
           </Button>
         </form>
       </CardContent>

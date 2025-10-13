@@ -1,3 +1,4 @@
+// aj-client/src/app/[lng]/(main)/dashboard/account/settings/competencies-form.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -5,6 +6,7 @@ import { User } from "@/types/user";
 import { MasterProduct } from "@/types/master-product";
 import { apiFetchAuth } from "@/lib/api-auth";
 import { toast } from "sonner";
+import { useTranslation } from "@/lib/i18n-client"; 
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,32 +17,38 @@ import { Loader2 } from "lucide-react";
 
 type CompetenciesFormProps = {
   user: User;
+  lng: string; 
 };
 
-// Puanlara karşılık gelen seviye adlarını ve renklerini tanımlayalım
-const scoreLevels: Record<number, { label: string; className: string }> = {
-    1: { label: "Bilgisi Yok", className: "bg-gray-400" },
-    2: { label: "Tanımıyor", className: "bg-gray-500" },
-    3: { label: "Acemi", className: "bg-red-500" },
-    4: { label: "Teorik Bilgi", className: "bg-red-600" },
-    5: { label: "Orta Düzey", className: "bg-yellow-500 text-black" },
-    6: { label: "Gözetimle Uygular", className: "bg-yellow-600 text-black" },
-    7: { label: "Deneyimli", className: "bg-green-500" },
-    8: { label: "Bağımsız Uygular", className: "bg-green-600" },
-    9: { label: "Uzman", className: "bg-blue-500" },
-    10: { label: "Eğitmen", className: "bg-blue-600" },
-};
+// KRİTİK GÜNCELLEME: Puan seviyeleri artık bir fonksiyondan çekiliyor ve çeviri kullanıyor.
+const getScoreLevels = (t: (key: string) => string): Record<number, { label: string; className: string }> => ({
+    1: { label: t("competency.level.1"), className: "bg-gray-400" },
+    2: { label: t("competency.level.2"), className: "bg-gray-500" },
+    3: { label: t("competency.level.3"), className: "bg-red-500" },
+    4: { label: t("competency.level.4"), className: "bg-red-600" },
+    5: { label: t("competency.level.5"), className: "bg-yellow-500 text-black" },
+    6: { label: t("competency.level.6"), className: "bg-yellow-600 text-black" },
+    7: { label: t("competency.level.7"), className: "bg-green-500" },
+    8: { label: t("competency.level.8"), className: "bg-green-600" },
+    9: { label: t("competency.level.9"), className: "bg-blue-500" },
+    10: { label: t("competency.level.10"), className: "bg-blue-600" },
+});
 
-const getScoreLabel = (score: number) => {
+// Artık getScoreLabel, t fonksiyonunu almalı
+const getScoreLabel = (score: number, t: (key: string) => string) => {
+    const scoreLevels = getScoreLevels(t);
     return scoreLevels[score] || { label: "N/A", className: "bg-gray-400" };
 };
 
-export function CompetenciesForm({ user }: CompetenciesFormProps) {
+export function CompetenciesForm({ user, lng }: CompetenciesFormProps) {
   const [products, setProducts] = useState<MasterProduct[]>([]);
   const [scores, setScores] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-
+  
+  // KRİTİK DÜZELTME: Hook'lar koşulsuz olarak en üstte çağrılmalı
+  const { t, ready } = useTranslation(lng, 'common'); 
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -66,14 +74,18 @@ export function CompetenciesForm({ user }: CompetenciesFormProps) {
         setScores(initialScores);
 
       } catch (error) {
-        toast.error("Veriler yüklenirken bir hata oluştu.");
+        // ÇEVİRİ: Hata mesajı güncellendi
+        toast.error(t("toast.dataLoadError"));
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchData();
-  }, []);
+    // Ready olunca verileri çek
+    if (ready) {
+        fetchData();
+    }
+  }, [ready, t]); // t'yi dependency array'e eklemek en iyi uygulamadır.
 
   const handleSliderChange = (productId: string, newScore: number) => {
     setScores(prevScores => ({
@@ -95,13 +107,32 @@ export function CompetenciesForm({ user }: CompetenciesFormProps) {
             body: JSON.stringify(payload),
         });
 
-        toast.success("Yetkinlikleriniz başarıyla kaydedildi.");
+        // ÇEVİRİ: Başarı mesajı
+        toast.success(t("toast.competencyUpdateSuccess"));
     } catch (error) {
-        toast.error("Kaydetme sırasında bir hata oluştu.");
+        // ÇEVİRİ: Hata mesajı
+        toast.error(t("toast.competencyUpdateError"));
     } finally {
         setIsSaving(false);
     }
   };
+
+  // KRİTİK DÜZELTME: Erken çıkış (return) tüm Hook'lar çağrıldıktan sonra yapılmalı.
+  if (!ready) {
+    return (
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-1/3" />
+                <Skeleton className="h-4 w-2/3" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+            </CardContent>
+        </Card>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -122,15 +153,18 @@ export function CompetenciesForm({ user }: CompetenciesFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ürün Yetkinliklerim</CardTitle>
+        {/* ÇEVİRİ: Başlık */}
+        <CardTitle>{t('account.competency.title')}</CardTitle>
+        {/* ÇEVİRİ: Açıklama */}
         <CardDescription>
-          Ürünler hakkındaki bilgi ve tecrübe seviyenizi 1-10 arasında belirterek yetkinliklerinizi güncelleyebilirsiniz.
+          {t('account.competency.description')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {products.map(product => {
             const currentScore = scores[product.id] || 1;
-            const scoreInfo = getScoreLabel(currentScore);
+            // KRİTİK DEĞİŞİKLİK: getScoreLabel'a t fonksiyonu geçirildi
+            const scoreInfo = getScoreLabel(currentScore, t); 
             return (
                 <div key={product.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                     <div className="font-medium">{product.name}</div>
@@ -154,7 +188,8 @@ export function CompetenciesForm({ user }: CompetenciesFormProps) {
       <CardFooter>
         <Button onClick={handleSave} disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Değişiklikleri Kaydet
+          {/* ÇEVİRİ: Buton Metni */}
+          {t('account.form.saveChanges')}
         </Button>
       </CardFooter>
     </Card>
