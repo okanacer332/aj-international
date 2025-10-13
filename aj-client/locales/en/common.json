@@ -113,5 +113,58 @@
   "operation.taskManagement.title": "Task Management",
   "operation.taskManagement.placeholder": "This section will be added soon.",
   "hr.personnelManagement.title": "Personnel Management",
-  "hr.personnelManagement.placeholder": "This section will be added soon."
+  "hr.personnelManagement.placeholder": "This section will be added soon.",
+
+  "masterdata.product.pageTitle": "Product Definitions",
+  "masterdata.product.pageDescription": "Manage master product types and their breakdown (Tree Table) for recycling.",
+  "masterdata.product.newProductButton": "Define New Product",
+
+  "masterdata.product.dialogTitleNew": "Define New Product",
+  "masterdata.product.dialogTitleEdit": "Edit Product",
+  "masterdata.product.dialogDescriptionNew": "Create a new master product or a sub-product record.",
+  "masterdata.product.dialogDescriptionEdit": "Update the details for the {productName} product.",
+
+  "masterdata.product.deleteDialogTitle": "Are you sure?",
+  "masterdata.product.deleteDialogText1": "product permanently. This action cannot be undone.",
+  "masterdata.product.deleteDialogTextHasChildren": " (WARNING: This is a master product and has sub-products. These sub-products will also be deleted.)",
+
+  "masterdata.product.cancelButton": "Cancel",
+  "masterdata.product.deleteButton": "Delete",
+
+  "masterdata.product.toast.fetchError": "Failed to fetch product list.",
+  "masterdata.product.toast.deleteSuccess": "Product ({productName}) successfully deleted.",
+  "masterdata.product.toast.deleteFailed": "Deletion Failed",
+  "masterdata.product.toast.deleteHasChildrenError": "This master product has sub-products. You must delete the sub-products first.",
+  "masterdata.product.toast.deleteUnknownError": "An unknown error occurred.",
+  "masterdata.product.column.name": "Product Name / Hierarchy",
+  "masterdata.product.column.code": "Product Code",
+  "masterdata.product.column.description": "Description",
+  "masterdata.product.column.actions": "Actions",
+  "masterdata.product.noDescription": "No description entered.",
+  "masterdata.product.aria.edit": "Edit Product",
+  "masterdata.product.aria.delete": "Delete Product",
+  "masterdata.product.aria.collapse": "Collapse sub-products",
+  "masterdata.product.aria.expand": "Expand sub-products",
+  "masterdata.product.fieldName": "Product Name",
+  "masterdata.product.fieldCode": "Product Code",
+  "masterdata.product.fieldParent": "Parent Product",
+  "masterdata.product.fieldDescription": "Description",
+  
+  "masterdata.product.placeholderNameExample": "E.g: POLO Collar T-Shirt",
+  "masterdata.product.placeholderCodeExample": "E.g: PLY-01",
+  "masterdata.product.placeholderParent": "Select Parent Product",
+  "masterdata.product.placeholderDescription": "Detailed description about the product...",
+  
+  "masterdata.product.selectOptionMaster": "Not a Parent Product (Standalone)",
+  "masterdata.product.updateButton": "Save Changes",
+  "masterdata.product.createButton": "Create Product",
+  
+  "masterdata.product.validation.nameMinLength": "Product name must be at least 2 characters.",
+  "masterdata.product.validation.codeMinLength": "Product code must be at least 2 characters.",
+  
+  "masterdata.product.toast.updateSuccess": "Product successfully updated.",
+  "masterdata.product.toast.creationSuccess": "New product successfully saved.",
+  "masterdata.product.toast.operationFailed": "Operation Failed",
+  "masterdata.product.toast.codeUniqueError": "This product code is already in use.",
+  "masterdata.product.toast.unknownError": "An unknown error occurred."
 }

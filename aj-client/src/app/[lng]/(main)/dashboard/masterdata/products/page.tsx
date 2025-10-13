@@ -1,3 +1,4 @@
+// aj-client/src/app/[lng]/(main)/dashboard/masterdata/products/page.tsx
 "use client"; 
 
 import { useEffect, useState, useMemo } from "react";
@@ -15,9 +16,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { MasterProductForm } from "./master-product-form"; 
 import { cn } from "@/lib/utils";
+// YENİ IMPORTLAR: i18n ve lng için
+import { useTranslation } from "@/lib/i18n-client";
+import { useParams } from "next/navigation";
 
 
 function flattenProducts(products: MasterProduct[]): MasterProduct[] {
+  // ... (fonksiyon içeriği aynı)
   const flatList: MasterProduct[] = [];
   
   products.forEach(parent => {
@@ -46,6 +51,10 @@ export default function MasterDataProductsPage() {
   const [productInForm, setProductInForm] = useState<MasterProduct | null>(null);
   const [productToDelete, setProductToDelete] = useState<MasterProduct | null>(null);
   
+  // KRİTİK DEĞİŞİKLİK: i18n Hook'ları eklendi
+  const { lng } = useParams() as { lng: string };
+  const { t, ready } = useTranslation(lng, 'common');
+  
   const fetchData = async () => {
     if (!getAuthToken()) {
         setIsLoading(false);
@@ -61,11 +70,12 @@ export default function MasterDataProductsPage() {
         const expandedIds = new Set(prevProducts.filter(p => p.isExpanded).map(p => p.id));
         return data.map(p => ({ 
             ...p, 
-            isExpanded: expandedIds.has(p.id) || !p.parentProductId // Ana ürünleri varsayılan olarak açık getir
+            isExpanded: expandedIds.has(p.id) || !p.parentProductId 
         }));
       });
     } catch (error) {
-      toast.error("Ürün listesi getirilemedi.");
+      // ÇEVİRİ: Hata mesajı güncellendi
+      toast.error(t("masterdata.product.toast.fetchError"));
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -73,8 +83,11 @@ export default function MasterDataProductsPage() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    // Çeviriler hazır olduğunda veri çek
+    if(ready) {
+        fetchData();
+    }
+  }, [ready, t]); // ready ve t eklendi
   
   const handleToggle = (id: string) => {
     setProducts(prevProducts => prevProducts.map(p => 
@@ -101,10 +114,13 @@ export default function MasterDataProductsPage() {
       if (!productToDelete) return;
       try {
           await apiFetchAuth(`/api/masterdata/products/${productToDelete.id}`, { method: 'DELETE' });
-          toast.success(`Ürün (${productToDelete.code}) başarıyla silindi.`);
+          // ÇEVİRİ: Başarı mesajı güncellendi
+          toast.success(t('masterdata.product.toast.deleteSuccess', { productName: productToDelete.code }));
           fetchData(); 
       } catch (e: any) {
-          toast.error("Silme Başarısız", { description: e.message.includes("alt ürünleri") ? "Bu ana ürünün alt ürünleri mevcut. Önce alt ürünleri silmelisiniz." : "Bilinmeyen bir hata oluştu." });
+          // ÇEVİRİ: Hata mesajı güncellendi
+          const errorMessageKey = e.message.includes("alt ürünleri") ? "masterdata.product.toast.deleteHasChildrenError" : "masterdata.product.toast.deleteUnknownError";
+          toast.error(t("masterdata.product.toast.deleteFailed"), { description: t(errorMessageKey) });
       } finally {
           setProductToDelete(null);
           setIsDeleteDialogOpen(false);
@@ -117,7 +133,9 @@ export default function MasterDataProductsPage() {
     onEdit: handleEdit,
     onDelete: handleDelete,
     onToggleExpand: handleToggle, 
-  }), [products]);
+    // YENİ EKLEME: Çeviri fonksiyonu columns'a iletilmeli
+    t: t
+  }), [products, t]); // t'yi bağımlılıklara ekle
 
   const table = useDataTableInstance({
     data: flatData,
@@ -125,7 +143,7 @@ export default function MasterDataProductsPage() {
     getRowId: (row) => row.id.toString(),
   });
 
-  if (isLoading) {
+  if (isLoading || !ready) {
     return (
       <div className="space-y-2">
           <Skeleton className="h-12 w-full" />
@@ -139,29 +157,37 @@ export default function MasterDataProductsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Ürün Tanımları</h1>
-          <p className="text-muted-foreground">Geri dönüştürülecek ana ürün türlerini ve kırılımlarını (Tree Table) yönetin.</p>
+          {/* ÇEVİRİ: Ana Başlık */}
+          <h1 className="text-2xl font-bold tracking-tight">{t('masterdata.product.pageTitle')}</h1>
+          {/* ÇEVİRİ: Açıklama */}
+          <p className="text-muted-foreground">{t('masterdata.product.pageDescription')}</p>
         </div>
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
                 <Button onClick={() => setProductInForm(null)}> 
                     <Plus className="mr-2 h-4 w-4" />
-                    Yeni Ürün Tanımla
+                    {/* ÇEVİRİ: Buton Metni */}
+                    {t('masterdata.product.newProductButton')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>{productInForm ? "Ürünü Düzenle" : "Yeni Ürün Tanımla"}</DialogTitle>
+                    {/* ÇEVİRİ: Diyalog Başlığı */}
+                    <DialogTitle>
+                        {productInForm ? t("masterdata.product.dialogTitleEdit") : t("masterdata.product.dialogTitleNew")}
+                    </DialogTitle>
+                    {/* ÇEVİRİ: Diyalog Açıklaması */}
                     <DialogDescription>
                         {productInForm ? 
-                            `${productInForm.name} ürününün bilgilerini güncelleyin.` : 
-                            "Yeni ana ürün veya alt ürün kaydı oluşturun."}
+                            t("masterdata.product.dialogDescriptionEdit", { productName: productInForm.name }) : 
+                            t("masterdata.product.dialogDescriptionNew")}
                     </DialogDescription>
                 </DialogHeader>
                 <MasterProductForm 
                     initialData={productInForm} 
                     onSuccess={() => { setIsFormOpen(false); fetchData(); }} 
                     masterProducts={products} 
+                    lng={lng} // lng prop'u forma iletildi
                 />
             </DialogContent>
         </Dialog>
@@ -174,15 +200,19 @@ export default function MasterDataProductsPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Emin misiniz?</AlertDialogTitle>
+            {/* ÇEVİRİ: Silme Başlığı */}
+            <AlertDialogTitle>{t('masterdata.product.deleteDialogTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              <b className="font-semibold">{productToDelete?.name} ({productToDelete?.code})</b> ürününü kalıcı olarak silmek üzeresiniz. Bu işlem geri alınamaz. 
-              {productToDelete?.subProducts?.length ? " (DİKKAT: Bu bir ana üründür ve alt ürünleri mevcuttur. Bu alt ürünler de silinecektir.)" : ""}
+              {/* ÇEVİRİ: Silme Açıklaması */}
+              <b className="font-semibold">{productToDelete?.name} ({productToDelete?.code})</b> {t('masterdata.product.deleteDialogText1')}
+              {productToDelete?.subProducts?.length ? t('masterdata.product.deleteDialogTextHasChildren') : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Sil</AlertDialogAction>
+            {/* ÇEVİRİ: İptal Butonu */}
+            <AlertDialogCancel>{t('masterdata.product.cancelButton')}</AlertDialogCancel>
+            {/* ÇEVİRİ: Silme Butonu */}
+            <AlertDialogAction onClick={confirmDelete}>{t('masterdata.product.deleteButton')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

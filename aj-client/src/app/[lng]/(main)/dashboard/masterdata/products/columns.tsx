@@ -5,14 +5,17 @@ import { Edit, Trash2, ChevronRight, ChevronDown, BookText, Package } from "luci
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-export const createMasterProductColumns = ({ onEdit, onDelete, onToggleExpand }: {
+// KRİTİK DEĞİŞİKLİK: t fonksiyonu prop olarak eklendi
+export const createMasterProductColumns = ({ onEdit, onDelete, onToggleExpand, t }: {
   onEdit: (product: MasterProduct) => void;
   onDelete: (product: MasterProduct) => void;
   onToggleExpand: (id: string) => void;
+  t: (key: string) => string;
 }): ColumnDef<MasterProduct>[] => [
   {
     accessorKey: "name",
-    header: "Ürün Adı / Hiyerarşi",
+    // ÇEVİRİ: Sütun Başlığı
+    header: t('masterdata.product.column.name'), 
     cell: ({ row }) => {
       const product = row.original;
       
@@ -29,6 +32,8 @@ export const createMasterProductColumns = ({ onEdit, onDelete, onToggleExpand }:
           size="icon" 
           className="size-6 p-0 mr-2 shrink-0"
           onClick={() => onToggleExpand(product.id)} 
+          // ÇEVİRİ: Açma/Kapama aksiyonu için aria-label
+          aria-label={isExpanded ? t('masterdata.product.aria.collapse') : t('masterdata.product.aria.expand')}
         >
           {isExpanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
         </Button>
@@ -50,7 +55,8 @@ export const createMasterProductColumns = ({ onEdit, onDelete, onToggleExpand }:
   },
   {
     accessorKey: "code",
-    header: "Ürün Kodu",
+    // ÇEVİRİ: Sütun Başlığı
+    header: t('masterdata.product.column.code'),
     cell: ({ row }) => {
         const isParent = !row.original.parentProductId;
         return (
@@ -65,18 +71,23 @@ export const createMasterProductColumns = ({ onEdit, onDelete, onToggleExpand }:
   },
   {
     accessorKey: "description",
-    header: "Açıklama",
-    cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.description || "Tanım girilmemiş."}</span>,
+    // ÇEVİRİ: Sütun Başlığı
+    header: t('masterdata.product.column.description'),
+    cell: ({ row }) => 
+        // ÇEVİRİ: Tanım yoksa gösterilecek metin
+        <span className="text-muted-foreground text-sm">{row.original.description || t('masterdata.product.noDescription')}</span>,
   },
   {
     id: "actions",
-    header: "İşlemler",
+    // ÇEVİRİ: Sütun Başlığı
+    header: t('masterdata.product.column.actions'),
     cell: ({ row }) => (
       <div className="flex justify-end space-x-2">
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={() => onEdit(row.original)}
+          aria-label={t('masterdata.product.aria.edit')}
         >
           <Edit className="size-4" />
         </Button>
@@ -84,6 +95,7 @@ export const createMasterProductColumns = ({ onEdit, onDelete, onToggleExpand }:
           variant="ghost" 
           size="sm" 
           onClick={() => onDelete(row.original)}
+          aria-label={t('masterdata.product.aria.delete')}
         >
           <Trash2 className="size-4 text-destructive" />
         </Button>

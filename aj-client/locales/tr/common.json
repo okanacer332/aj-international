@@ -113,5 +113,53 @@
    "operation.taskManagement.title": "Görev Yönetimi",
   "operation.taskManagement.placeholder": "Bu bölüm yakında eklenecektir.",
    "hr.personnelManagement.title": "Personel Yönetimi",
-  "hr.personnelManagement.placeholder": "Bu bölüm yakında eklenecektir."
+  "hr.personnelManagement.placeholder": "Bu bölüm yakında eklenecektir.",
+
+  "masterdata.product.pageTitle": "Ürün Tanımları",
+  "masterdata.product.pageDescription": "Geri dönüştürülecek ana ürün türlerini ve kırılımlarını (Tree Table) yönetin.",
+  "masterdata.product.newProductButton": "Yeni Ürün Tanımla",
+
+  "masterdata.product.dialogTitleNew": "Yeni Ürün Tanımla",
+  "masterdata.product.dialogTitleEdit": "Ürünü Düzenle",
+  "masterdata.product.dialogDescriptionNew": "Yeni ana ürün veya alt ürün kaydı oluşturun.",
+  "masterdata.product.dialogDescriptionEdit": "{productName} ürününün bilgilerini güncelleyin.",
+
+  "masterdata.product.deleteDialogTitle": "Emin misiniz?",
+  "masterdata.product.deleteDialogText1": "ürününü kalıcı olarak silmek üzeresiniz. Bu işlem geri alınamaz.",
+  "masterdata.product.deleteDialogTextHasChildren": " (DİKKAT: Bu bir ana üründür ve alt ürünleri mevcuttur. Bu alt ürünler de silinecektir.)",
+
+  "masterdata.product.cancelButton": "İptal",
+  "masterdata.product.deleteButton": "Sil",
+  
+  "masterdata.product.toast.fetchError": "Ürün listesi getirilemedi.",
+  "masterdata.product.toast.deleteSuccess": "Ürün ({productName}) başarıyla silindi.",
+  "masterdata.product.toast.deleteFailed": "Silme Başarısız",
+  "masterdata.product.toast.deleteHasChildrenError": "Bu ana ürünün alt ürünleri mevcut. Önce alt ürünleri silmelisiniz.",
+  "masterdata.product.toast.deleteUnknownError": "Bilinmeyen bir hata oluştu.",
+    "masterdata.product.column.name": "Ürün Adı / Hiyerarşi",
+  "masterdata.product.column.code": "Ürün Kodu",
+  "masterdata.product.column.description": "Açıklama",
+  "masterdata.product.column.actions": "İşlemler",
+  "masterdata.product.noDescription": "Tanım girilmemiş.",
+  "masterdata.product.aria.edit": "Ürünü Düzenle",
+  "masterdata.product.aria.delete": "Ürünü Sil",
+  "masterdata.product.aria.collapse": "Alt ürünleri kapat",
+  "masterdata.product.aria.expand": "Alt ürünleri aç",
+   "masterdata.product.placeholderNameExample": "Örn: POLO Yaka T-Shirt",
+  "masterdata.product.placeholderCodeExample": "Örn: PLY-01",
+  "masterdata.product.placeholderParent": "Ana Ürünü Seçin",
+  "masterdata.product.placeholderDescription": "Ürün ile ilgili detaylı açıklama...",
+  
+  "masterdata.product.selectOptionMaster": "Ana Ürün Değil (Kendi Başına)",
+  "masterdata.product.updateButton": "Değişiklikleri Kaydet",
+  "masterdata.product.createButton": "Ürünü Oluştur",
+  
+  "masterdata.product.validation.nameMinLength": "Ürün adı en az 2 karakter olmalıdır.",
+  "masterdata.product.validation.codeMinLength": "Ürün kodu en az 2 karakter olmalıdır.",
+  
+  "masterdata.product.toast.updateSuccess": "Ürün başarıyla güncellendi.",
+  "masterdata.product.toast.creationSuccess": "Yeni ürün başarıyla kaydedildi.",
+  "masterdata.product.toast.operationFailed": "İşlem Başarısız",
+  "masterdata.product.toast.codeUniqueError": "Bu ürün kodu zaten kullanılıyor.",
+  "masterdata.product.toast.unknownError": "Bilinmeyen bir hata oluştu."
 }

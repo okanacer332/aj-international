@@ -1,3 +1,4 @@
+// aj-client/src/app/[lng]/(main)/dashboard/masterdata/products/master-product-form.tsx
 "use client"; 
 
 import { useState, useEffect } from "react";
@@ -7,6 +8,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { apiFetchAuth } from "@/lib/api-auth";
+// YENİ IMPORT: i18n desteği için
+import { useTranslation } from "@/lib/i18n-client";
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -15,26 +18,34 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MasterProduct, MasterProductFormValues } from "@/types/master-product";
 
-
-const formSchema = z.object({
+// KRİTİK DEĞİŞİKLİK: formSchema artık t fonksiyonunu alarak dinamik hale getirildi.
+const createFormSchema = (t: (key: string) => string) => z.object({
   id: z.string().optional(),
-  name: z.string().min(2, "Ürün adı en az 2 karakter olmalıdır."),
-  code: z.string().min(2, "Ürün kodu en az 2 karakter olmalıdır."),
+  name: z.string().min(2, t("masterdata.product.validation.nameMinLength")),
+  code: z.string().min(2, t("masterdata.product.validation.codeMinLength")),
   description: z.string().optional(),
   
   parentProductId: z.string().nullable().optional(), 
 });
 
+// KRİTİK DEĞİŞİKLİK: lng prop'u eklendi
 type MasterProductFormProps = {
   initialData: MasterProduct | null;
   onSuccess: () => void;
   masterProducts: MasterProduct[]; 
+  lng: string;
 };
 
-export function MasterProductForm({ initialData, onSuccess, masterProducts }: MasterProductFormProps) {
+export function MasterProductForm({ initialData, onSuccess, masterProducts, lng }: MasterProductFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-
+  
+  // KRİTİK DEĞİŞİKLİK: useTranslation Hook'u eklendi
+  const { t, ready } = useTranslation(lng, 'common');
+  
   const parentProducts = masterProducts.filter(p => !p.parentProductId);
+
+  // Hook çağrıları koşulsuz alanda yapılmalı
+  const formSchema = createFormSchema(t);
 
   const form = useForm<MasterProductFormValues>({
     resolver: zodResolver(formSchema),
@@ -48,14 +59,18 @@ export function MasterProductForm({ initialData, onSuccess, masterProducts }: Ma
   });
 
   useEffect(() => {
-    form.reset({
-      id: initialData?.id || undefined,
-      name: initialData?.name || "",
-      code: initialData?.code || "",
-      description: initialData?.description || "",
-      parentProductId: initialData?.parentProductId || "ana_urun", 
-    });
-  }, [initialData, form.reset]);
+    // Çeviriler hazır olana kadar formun resetlenmesini beklemek gerekli değildir.
+    // Ancak initialData değişirse resetlemeliyiz.
+    if (ready) {
+        form.reset({
+            id: initialData?.id || undefined,
+            name: initialData?.name || "",
+            code: initialData?.code || "",
+            description: initialData?.description || "",
+            parentProductId: initialData?.parentProductId || "ana_urun", 
+        });
+    }
+  }, [initialData, form.reset, ready]);
 
 
   const onSubmit = async (values: MasterProductFormValues) => {
@@ -69,7 +84,6 @@ export function MasterProductForm({ initialData, onSuccess, masterProducts }: Ma
         parentProductId: finalParentId,
     };
     
-    // KRİTİK LOG: API'ye gönderilen son veriyi konsola yazdır
     console.log("API'a Gönderilen Veri (Payload):", payload); 
 
     try {
@@ -78,15 +92,23 @@ export function MasterProductForm({ initialData, onSuccess, masterProducts }: Ma
         body: JSON.stringify(payload),
       });
       
-      toast.success(initialData ? "Ürün başarıyla güncellendi." : "Yeni ürün başarıyla kaydedildi.");
+      // ÇEVİRİ: Başarı mesajı
+      const successMsgKey = initialData ? "masterdata.product.toast.updateSuccess" : "masterdata.product.toast.creationSuccess";
+      toast.success(t(successMsgKey));
       onSuccess();
     } catch (error: any) {
-      const errorMessage = error.message.includes("Benzersiz") ? "Bu ürün kodu zaten kullanılıyor." : error.message;
-      toast.error("İşlem Başarısız", { description: errorMessage });
+      // ÇEVİRİ: Hata mesajı ayrıştırma
+      const isUniqueError = error.message.includes("Benzersiz");
+      const errorMessageKey = isUniqueError ? "masterdata.product.toast.codeUniqueError" : "masterdata.product.toast.unknownError";
+      
+      toast.error(t("masterdata.product.toast.operationFailed"), { description: t(errorMessageKey) });
     } finally {
       setIsLoading(false);
     }
   };
+  
+  // Çeviriler yüklenene kadar bekleyelim (Hook'lar zaten koşulsuz çağrıldı)
+  if (!ready) return null;
 
   return (
     <Form {...form}>
@@ -94,23 +116,32 @@ export function MasterProductForm({ initialData, onSuccess, masterProducts }: Ma
         
         <FormField name="name" control={form.control} render={({ field }) => (
           <FormItem>
-            <FormLabel>Ürün Adı</FormLabel>
-            <FormControl><Input placeholder="Örn: POLO Yaka T-Shirt" {...field} /></FormControl>
+            {/* ÇEVİRİ: Etiket */}
+            <FormLabel>{t('masterdata.product.fieldName')}</FormLabel>
+            <FormControl>
+                {/* ÇEVİRİ: Placeholder */}
+                <Input placeholder={t('masterdata.product.placeholderNameExample')} {...field} />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}/>
         
         <FormField name="code" control={form.control} render={({ field }) => (
           <FormItem>
-            <FormLabel>Ürün Kodu</FormLabel>
-            <FormControl><Input placeholder="Örn: PLY-01" {...field} /></FormControl>
+             {/* ÇEVİRİ: Etiket */}
+            <FormLabel>{t('masterdata.product.fieldCode')}</FormLabel>
+            <FormControl>
+                {/* ÇEVİRİ: Placeholder */}
+                <Input placeholder={t('masterdata.product.placeholderCodeExample')} {...field} />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}/>
         
         <FormField name="parentProductId" control={form.control} render={({ field }) => (
           <FormItem>
-            <FormLabel>Ana Ürün (Parent)</FormLabel> 
+             {/* ÇEVİRİ: Etiket */}
+            <FormLabel>{t('masterdata.product.fieldParent')}</FormLabel> 
             <Select 
                 onValueChange={field.onChange} 
                 value={field.value || "ana_urun"} 
@@ -118,11 +149,13 @@ export function MasterProductForm({ initialData, onSuccess, masterProducts }: Ma
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Ana Ürün Değil (Bu bir ANA ÜRÜN olacak)" />
+                   {/* ÇEVİRİ: Placeholder */}
+                  <SelectValue placeholder={t('masterdata.product.placeholderParent')} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="ana_urun">Ana Ürün Değil (Kendi Başına)</SelectItem> 
+                 {/* ÇEVİRİ: Kendi Başına seçeneği */}
+                <SelectItem value="ana_urun">{t('masterdata.product.selectOptionMaster')}</SelectItem> 
                 
                 {parentProducts
                     .filter(p => p.id !== initialData?.id)
@@ -140,15 +173,20 @@ export function MasterProductForm({ initialData, onSuccess, masterProducts }: Ma
 
         <FormField name="description" control={form.control} render={({ field }) => (
           <FormItem>
-            <FormLabel>Açıklama</FormLabel>
-            <FormControl><Textarea placeholder="Ürün ile ilgili detaylı açıklama..." {...field} /></FormControl>
+             {/* ÇEVİRİ: Etiket */}
+            <FormLabel>{t('masterdata.product.fieldDescription')}</FormLabel>
+            <FormControl>
+                {/* ÇEVİRİ: Placeholder */}
+                <Textarea placeholder={t('masterdata.product.placeholderDescription')} {...field} />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}/>
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {initialData ? "Değişiklikleri Kaydet" : "Ürünü Oluştur"}
+          {/* ÇEVİRİ: Buton Metni */}
+          {initialData ? t('masterdata.product.updateButton') : t('masterdata.product.createButton')}
         </Button>
       </form>
     </Form>
