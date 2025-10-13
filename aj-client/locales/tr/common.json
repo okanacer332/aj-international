@@ -272,5 +272,14 @@
   "iam.permission.PAGE_REPORTS": "Raporlama",
   "iam.permission.PAGE_LEAVES": "İzin Yönetimi",
   "iam.permission.PAGE_SHIFTS": "Vardiya Yönetimi",
-  "iam.permission.PAGE_DEFINITIONS": "Genel Tanımlar"
+  "iam.permission.PAGE_DEFINITIONS": "Genel Tanımlar",
+
+  "audit.log.pageTitle": "Log Kayıtları",
+  "audit.log.pageDescription": "Sistemde gerçekleşen tüm kullanıcı eylemlerini izleyin.",
+  "audit.log.toast.fetchError": "Log kayıtları getirilirken bir hata oluştu.",
+  "audit.log.column.timestamp": "Zaman Damgası",
+  "audit.log.column.username": "Kullanıcı",
+  "audit.log.column.action": "Eylem",
+  "audit.log.column.details": "Detaylar",
+  "audit.log.column.ipAddress": "IP Adresi"
 }

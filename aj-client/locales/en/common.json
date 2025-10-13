@@ -276,5 +276,14 @@
   "iam.permission.PAGE_REPORTS": "Reporting",
   "iam.permission.PAGE_LEAVES": "Leave Management",
   "iam.permission.PAGE_SHIFTS": "Shift Management",
-  "iam.permission.PAGE_DEFINITIONS": "General Definitions"
+  "iam.permission.PAGE_DEFINITIONS": "General Definitions",
+
+  "audit.log.pageTitle": "Audit Logs",
+  "audit.log.pageDescription": "Monitor all user actions performed in the system.",
+  "audit.log.toast.fetchError": "An error occurred while fetching audit logs.",
+  "audit.log.column.timestamp": "Timestamp",
+  "audit.log.column.username": "User",
+  "audit.log.column.action": "Action",
+  "audit.log.column.details": "Details",
+  "audit.log.column.ipAddress": "IP Address"
 }
