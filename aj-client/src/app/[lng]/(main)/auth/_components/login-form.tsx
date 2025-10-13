@@ -9,7 +9,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
-import { User, Lock, Loader2 } from "lucide-react";
+// İKON GÜNCELLEMESİ: Eye ve EyeOff eklendi.
+import { User, Lock, Loader2, Eye, EyeOff } from "lucide-react"; 
 
 import { useTranslation } from "@/lib/i18n-client"; 
 
@@ -31,6 +32,9 @@ export function LoginForm({ lng }: { lng: string }) {
   
   // YENİ EKLENEN KISIM: Bileşenin istemcide mount edilip edilmediğini takip eden state
   const [isMounted, setIsMounted] = useState(false);
+  
+  // YENİ EKLENEN KISIM: Şifre görünürlüğünü yöneten state
+  const [showPassword, setShowPassword] = useState(false); 
 
   // YENİ EKLENEN KISIM: Bileşen ilk kez mount olduğunda bu state'i true yap
   useEffect(() => {
@@ -119,8 +123,26 @@ export function LoginForm({ lng }: { lng: string }) {
                    <div className="relative">
                     <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <FormControl>
-                        <Input type="password" placeholder="••••••••" autoComplete="current-password" {...field} className="pl-8" />
+                        {/* KRİTİK DEĞİŞİKLİK: Input type'ı dinamik hale getirildi. */}
+                        <Input 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="••••••••" 
+                            autoComplete="current-password" 
+                            {...field} 
+                            className="pl-8 pr-10" // Sağdan daha fazla boşluk bırakıldı
+                        />
                     </FormControl>
+                    {/* YENİ EKLEME: Göz ikonu butonu */}
+                    <Button
+                        type="button" // Formun submit olmasını engelle
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 size-9 text-muted-foreground hover:bg-transparent"
+                        onClick={() => setShowPassword(prev => !prev)}
+                        aria-label={showPassword ? "Şifreyi Gizle" : "Şifreyi Göster"}
+                    >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </Button>
                   </div>
                   <FormMessage />
                 </FormItem>

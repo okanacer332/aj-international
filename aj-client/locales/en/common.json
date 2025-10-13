@@ -56,5 +56,7 @@
   "activities.table.time": "Time",
   "account.myAccount": "My Account",
   "auth.logout": "Log Out",
-  "kisi": "people"
+  "kisi": "people",
+  "password.show": "Show Password",
+  "password.hide": "Hide Password"
 }

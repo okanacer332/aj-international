@@ -56,5 +56,7 @@
   "activities.table.time": "Zaman",
   "account.myAccount": "Hesabım",
   "auth.logout": "Çıkış Yap",
-  "kisi": "kişi"
+  "kisi": "kişi",
+  "password.show": "Şifreyi Göster",
+  "password.hide": "Şifreyi Gizle"
 }
