@@ -9,6 +9,9 @@ import { supportedLngs } from '@/lib/i18n';
 const LANGUAGE_OPTIONS: Record<string, { label: string, icon: string, flag: string }> = {
   'tr': { label: 'Türkçe', icon: 'TR', flag: '🇹🇷' },
   'en': { label: 'English', icon: 'EN', flag: '🇬🇧' },
+  'ru': { label: 'Русский', icon: 'RU', flag: '🇷🇺' }, // Rusça eklendi
+  'es': { label: 'Español', icon: 'ES', flag: '🇪🇸' }, // İspanyolca eklendi
+  'ar': { label: 'العربية', icon: 'AR', flag: '🇦🇪' }, // Arapça eklendi (Birleşik Arap Emirlikleri bayrağı kullanıldı, istersen değiştirebiliriz)
 };
 
 export const LanguageSwitcher = () => {

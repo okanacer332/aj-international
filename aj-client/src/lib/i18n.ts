@@ -4,7 +4,7 @@ import { initReactI18next } from 'react-i18next/initReactI18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
 
 // Desteklenen diller
-export const supportedLngs = ['tr', 'en'];
+export const supportedLngs = ['tr', 'en', 'ru', 'es', 'ar'];
 // Varsayılan dil (tarayıcı dili algılanamazsa veya desteklenmiyorsa bu dil kullanılır)
 export const fallbackLng = 'tr';
 

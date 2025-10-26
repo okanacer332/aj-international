@@ -54,7 +54,7 @@ public class SecurityConfig {
         // *** ANA DEĞİŞİKLİK BURADA ***
         // "*" yerine, frontend'inizin çalıştığı adresleri açıkça belirtin.
         // Müşterinizin IP'sini veya alan adını da buraya ekleyebilirsiniz.
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://213.74.252.238:7777"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://213.74.252.238:7777","http://localhost:3001" ));
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
