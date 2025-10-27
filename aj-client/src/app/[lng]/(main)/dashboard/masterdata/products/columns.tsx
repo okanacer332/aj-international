@@ -1,71 +1,59 @@
-import { ColumnDef, Row } from "@tanstack/react-table"; // Row eklendi
+import { ColumnDef, Row } from "@tanstack/react-table";
 import { MasterProduct } from "@/types/master-product";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, ChevronRight, ChevronDown, BookText, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 
-// Interface'e level ekleyelim (flattenProducts'tan gelecek)
+// --- GÜNCELLEME: originalSubProducts eklendi ---
 interface HierarchicalMasterProduct extends MasterProduct {
-    level: number; // Hiyerarşi derinliği
+    level: number;
+    originalSubProducts?: MasterProduct[]; // Bu satır eklendi
 }
 
-// createMasterProductColumns fonksiyonu artık HierarchicalMasterProduct tipini bekliyor
 export const createMasterProductColumns = ({ onEdit, onDelete, onToggleExpand, t }: {
   onEdit: (product: MasterProduct) => void;
   onDelete: (product: MasterProduct) => void;
   onToggleExpand: (id: string) => void;
   t: (key: string) => string;
-}): ColumnDef<HierarchicalMasterProduct>[] => [ // Tip MasterProduct'tan HierarchicalMasterProduct'a değişti
+}): ColumnDef<HierarchicalMasterProduct>[] => [
   {
     accessorKey: "name",
-    header: t('masterdata.product.column.name'),
-    cell: ({ row }: { row: Row<HierarchicalMasterProduct> }) => { // row tipi güncellendi
+    header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={t('masterdata.product.column.name')} />
+    ),
+    cell: ({ row }: { row: Row<HierarchicalMasterProduct> }) => {
       const product = row.original;
-      const level = product.level ?? 0; // level bilgisini al (varsayılan 0)
+      const level = product.level ?? 0;
+      // originalSubProducts artık tipte tanımlı
+      const hasChildren = !!product.originalSubProducts && product.originalSubProducts.length > 0;
+      const isExpanded = product.isExpanded ?? false;
+      const indentPadding = `${level * 1.5 + 1}rem`;
 
-      // ÖNEMLİ: Alt ürünleri olup olmadığını kontrol etmek için orijinal hiyerarşik veriye
-      // (subProducts) bakmamız gerekiyor. Düzleştirilmiş listede bu bilgi kaybolur.
-      // Bu nedenle `page.tsx`de `masterProducts` state'ini kullanarak kontrol edeceğiz
-      // veya `flattenProducts` fonksiyonu `hasChildren` gibi bir flag ekleyebilir.
-      // Şimdilik `product.subProducts`'ın hala mevcut olduğunu varsayalım (bu page.tsx'deki mantığa bağlı).
-      // Eğer page.tsx'deki flatData'da subProducts yoksa, bu kontrol çalışmaz.
-      // Geçici çözüm: Backend'den gelen veride subProducts varsa kontrolü
-      const hasChildren = !!product.subProducts && product.subProducts.length > 0;
-      const isExpanded = product.isExpanded ?? false; // isExpanded flag'i flattenProducts'tan gelmeli
-
-      // Girintiyi dinamik olarak hesapla (level * boşluk + temel boşluk)
-      const indentPadding = `${level * 1.5 + 1}rem`; // Tailwind pl-* yerine style kullanmak daha esnek
-
-      // Açma/Kapama butonu, sadece alt ürünleri varsa gösterilir
       const toggleButton = hasChildren ? (
         <Button
           variant="ghost"
           size="icon"
-          className="size-6 p-0 mr-2 shrink-0" // mr-2 kalsın
-          onClick={(e) => {
-            e.stopPropagation(); // Satırın kendi tıklama olayını tetiklemesin
-            onToggleExpand(product.id);
-          }}
+          className="size-6 p-0 mr-2 shrink-0"
+          onClick={(e) => { e.stopPropagation(); onToggleExpand(product.id); }}
           aria-label={isExpanded ? t('masterdata.product.aria.collapse') : t('masterdata.product.aria.expand')}
         >
           {isExpanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
         </Button>
       ) : (
-         // Alt ürünü olmayanlar veya en alt seviyedekiler için boşluk bırak
          <div className="size-6 mr-2 shrink-0" />
       );
 
-      // İkonu belirle: Alt ürünleri varsa Paket, yoksa Kitap ikonu
       const icon = hasChildren ? <Package className="size-4 text-primary mr-1" /> : <BookText className="size-4 text-muted-foreground mr-1" />;
 
       return (
         <div
             className={cn(
                 "flex items-center space-x-1",
-                 level > 0 ? "text-muted-foreground font-normal italic" : "font-semibold" // Kök olmayanları italik yap
+                 level > 0 ? "text-muted-foreground font-normal italic" : "font-semibold"
             )}
-            style={{ paddingLeft: indentPadding }} // Dinamik padding
+            style={{ paddingLeft: indentPadding }}
         >
           {toggleButton}
           {icon}
@@ -73,13 +61,13 @@ export const createMasterProductColumns = ({ onEdit, onDelete, onToggleExpand, t
         </div>
       );
     },
-    // accessorFn: row => row.name, // Bu gerekli değil, accessorKey yeterli
   },
   {
     accessorKey: "code",
-    header: t('masterdata.product.column.code'),
-    cell: ({ row }: { row: Row<HierarchicalMasterProduct> }) => { // row tipi güncellendi
-        // Kod rozetini seviyeye göre stilize edebiliriz (opsiyonel)
+    header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={t('masterdata.product.column.code')} />
+    ),
+    cell: ({ row }: { row: Row<HierarchicalMasterProduct> }) => {
         const isRoot = (row.original.level ?? 0) === 0;
         return (
             <Badge
@@ -93,18 +81,25 @@ export const createMasterProductColumns = ({ onEdit, onDelete, onToggleExpand, t
   },
   {
     accessorKey: "description",
-    header: t('masterdata.product.column.description'),
-    cell: ({ row }: { row: Row<HierarchicalMasterProduct> }) => // row tipi güncellendi
-        <span className="text-muted-foreground text-sm">{row.original.description || t('masterdata.product.noDescription')}</span>,
+    header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={t('masterdata.product.column.description')} />
+    ),
+    // --- GÜNCELLEME: Açıklama için truncate eklendi ---
+    cell: ({ row }: { row: Row<HierarchicalMasterProduct> }) =>
+        <span className="text-muted-foreground text-sm block max-w-xs truncate" title={row.original.description}> {/* title attribute eklendi */}
+            {row.original.description || t('masterdata.product.noDescription')}
+        </span>,
   },
   {
     id: "actions",
-    header: t('masterdata.product.column.actions'),
-    cell: ({ row }: { row: Row<HierarchicalMasterProduct> }) => ( // row tipi güncellendi
-      <div className="flex justify-end space-x-2">
+    // --- GÜNCELLEME: text-right kaldırıldı ---
+    header: () => <div>{t('masterdata.product.column.actions')}</div>,
+    cell: ({ row }: { row: Row<HierarchicalMasterProduct> }) => (
+      <div className="flex justify-end space-x-1"> {/* space-x-1 yapıldı */}
         <Button
           variant="ghost"
           size="sm"
+          className="size-8 p-0" // Boyut ve padding ayarlandı
           onClick={(e) => { e.stopPropagation(); onEdit(row.original); }}
           aria-label={t('masterdata.product.aria.edit')}
         >
@@ -113,6 +108,7 @@ export const createMasterProductColumns = ({ onEdit, onDelete, onToggleExpand, t
         <Button
           variant="ghost"
           size="sm"
+          className="size-8 p-0" // Boyut ve padding ayarlandı
           onClick={(e) => { e.stopPropagation(); onDelete(row.original); }}
           aria-label={t('masterdata.product.aria.delete')}
         >
@@ -122,5 +118,7 @@ export const createMasterProductColumns = ({ onEdit, onDelete, onToggleExpand, t
     ),
     enableSorting: false,
     enableHiding: false,
+    // --- YENİ EKLEME: Sütun genişliğini biraz küçültelim ---
+    size: 80, // Piksel cinsinden genişlik (deneyerek ayarlanabilir)
   },
 ];
