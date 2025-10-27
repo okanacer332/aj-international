@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation"; 
+import { usePathname } from "next/navigation";
 import { type NavGroup } from "@/navigation/sidebar/sidebar-items";
 import { useSidebar } from "@/components/ui/sidebar";
 import {
@@ -23,24 +23,21 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/stores/auth-store";
-import { useTranslation } from "@/lib/i18n-client"; 
+import { useTranslation } from "@/lib/i18n-client";
 
-// DEĞİŞİKLİK BURADA: 'lng' prop'unu ekliyoruz
 interface NavMainProps {
   readonly items: readonly NavGroup[];
   lng: string;
 }
 
-export function NavMain({ items, lng }: NavMainProps) { // 'lng' artık prop'tan geliyor
+export function NavMain({ items, lng }: NavMainProps) {
   const path = usePathname();
-  // 'useParams' artık gerekli değil
   const { t } = useTranslation(lng, 'common');
   const { state, isMobile, setOpenMobile } = useSidebar();
   const { permissions: userPermissions } = useAuthStore();
 
   const pathWithoutLng = path.replace(`/${lng}`, "") || "/";
 
-  // ... (handleLinkClick ve filteredItems aynı kalıyor) ...
   const handleLinkClick = () => {
     if (isMobile) {
       setOpenMobile(false);
@@ -51,7 +48,7 @@ export function NavMain({ items, lng }: NavMainProps) { // 'lng' artık prop'tan
     ...group,
     items: group.items.map(item => ({
       ...item,
-      subItems: item.subItems?.filter(subItem => 
+      subItems: item.subItems?.filter(subItem =>
         !subItem.permission || userPermissions.has(subItem.permission)
       ),
     })).filter(item => {
@@ -74,31 +71,35 @@ export function NavMain({ items, lng }: NavMainProps) { // 'lng' artık prop'tan
     return "";
   };
 
-  // ... (JSX içeriği aynı, sadece t() fonksiyonunu kullanıyor)
   return (
     <>
       {filteredItems.map((group) => (
         <SidebarGroup key={group.id}>
           {group.label && <SidebarGroupLabel>{t(group.label)}</SidebarGroupLabel>}
+          {/* gap-* and flex-col are direction-agnostic */}
           <SidebarGroupContent className="flex flex-col gap-1">
             <Accordion type="single" collapsible defaultValue={getActiveAccordionItem()} className="w-full">
               {group.items.map((item) =>
                 item.subItems ? (
                   <AccordionItem key={item.title} value={item.title} className="border-none">
                     <AccordionTrigger
-                      className={`px-2 py-1.5 rounded-md hover:no-underline 
+                      // px-* applies to both sides, rounded-md is fine, hover states are fine
+                      className={`px-2 py-1.5 rounded-md hover:no-underline
                       ${
                         item.subItems.some(sub => pathWithoutLng.startsWith(sub.url))
                         ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                         : 'hover:bg-sidebar-accent'
                       }`}
                     >
+                      {/* flex, items-center, gap-2 are direction-agnostic */}
                       <div className="flex items-center gap-2">
                         {item.icon && <item.icon className="h-4 w-4" />}
                         <span className="text-sm font-medium">{t(item.title)}</span>
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="pt-1 pl-4">
+                    {/* --- RTL DEĞİŞİKLİĞİ: pl-4 -> ps-4 --- */}
+                    <AccordionContent className="pt-1 ps-4">
+                    {/* --- RTL DEĞİŞİKLİĞİ SONU --- */}
                       <SidebarMenuSub>
                         {item.subItems.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
@@ -143,6 +144,8 @@ export function NavMain({ items, lng }: NavMainProps) { // 'lng' artık prop'tan
   );
 }
 
+// CollapsedNav uses Tooltips, which generally handle positioning.
+// The structure inside Link (icon + sr-only span) doesn't need RTL adjustment.
 function CollapsedNav({ items, lng, t }: NavMainProps & { t: (key: string) => string }) {
     const path = usePathname();
     const pathWithoutLng = path.replace(`/${lng}`, "") || "/";

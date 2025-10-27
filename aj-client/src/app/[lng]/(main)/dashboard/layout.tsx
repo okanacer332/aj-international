@@ -8,8 +8,9 @@ export const dynamic = "force-dynamic";
 
 import AuthGuard from "./_components/auth-guard";
 import { AuthProvider } from "./_components/auth-provider";
-import { AppSidebar } from "./_components/sidebar/app-sidebar"; 
-import { Separator } from "@/components/ui/separator";
+import { AppSidebar } from "./_components/sidebar/app-sidebar";
+// Separator import removed as it's not used after removing SearchDialog
+// import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { getPreference } from "@/server/server-actions";
@@ -22,11 +23,9 @@ import {
   type ContentLayout,
 } from "@/types/preferences/layout";
 import { AccountSwitcher } from "./_components/sidebar/account-switcher";
-// İTHALAT KALDIRILDI: SearchDialog artık kullanılmıyor.
-// import { SearchDialog } from "./_components/sidebar/search-dialog"; 
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
-import { LanguageSwitcher } from "@/components/language-switcher"; 
-import { SidebarInitializer } from "./_components/sidebar-initializer"; 
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { SidebarInitializer } from "./_components/sidebar-initializer";
 
 // TİP TANIMI: Next.js'in beklediği parametre yapısını yansıtıyoruz
 type LayoutParams = {
@@ -37,13 +36,11 @@ type LayoutParams = {
 // Fonksiyonu Promise prop'unu alacak şekilde tanımlıyoruz
 export default async function Layout({ children, params }: Readonly<LayoutParams>) {
   noStore();
-  
+
   // lng'ye doğrudan erişiyoruz.
-  const lng = params.lng; 
+  const lng = params.lng;
 
   const cookieStore = await cookies();
-  // defaultOpen değeri artık geçilmiyor. SidebarInitializer ilk durumu yönetecek.
-  // const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"; // Bu satır artık kullanılmayacak
 
   const [sidebarVariant, sidebarCollapsible, contentLayout] = await Promise.all([
     getPreference<SidebarVariant>("sidebar_variant", SIDEBAR_VARIANT_VALUES, "inset"),
@@ -52,40 +49,44 @@ export default async function Layout({ children, params }: Readonly<LayoutParams
   ]);
 
   return (
-    // defaultOpen değeri artık geçilmiyor. SidebarInitializer ilk durumu yönetecek.
-    <SidebarProvider> 
+    <SidebarProvider>
       <SidebarInitializer />
       <AuthGuard />
-      <AppSidebar 
-        key={lng} 
-        variant={sidebarVariant} 
-        collapsible={sidebarCollapsible} 
-        lng={lng} 
+      <AppSidebar
+        key={lng}
+        variant={sidebarVariant}
+        collapsible={sidebarCollapsible}
+        lng={lng}
       />
       <SidebarInset
         data-content-layout={contentLayout}
         className={cn(
           "data-[content-layout=centered]:!mx-auto data-[content-layout=centered]:max-w-screen-2xl",
-          "max-[113rem]:peer-data-[variant=inset]:!mr-2 min-[101rem]:peer-data-[variant=inset]:peer-data-[state=collapsed]:!mr-auto",
+          // --- RTL DEĞİŞİKLİĞİ: mr-* -> me-* ---
+          "max-[113rem]:peer-data-[variant=inset]:!me-2 min-[101rem]:peer-data-[variant=inset]:peer-data-[state=collapsed]:!me-auto"
+          // --- RTL DEĞİŞİKLİĞİ SONU ---
         )}
       >
         <header className="flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          {/* justify-between flex direction'a göre çalışır, RTL'de sıralamayı otomatik ters çevirir */}
           <div className="flex w-full items-center justify-between px-4 lg:px-6">
             <div className="flex items-center gap-1 lg:gap-2">
-              <SidebarTrigger className="-ml-1" />
-              {/* KRİTİK DEĞİŞİKLİK: SearchDialog ve ayırıcıları kaldırıldı */}
-              {/* <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" /> */}
-              {/* <SearchDialog /> */}
+              {/* --- RTL DEĞİŞİKLİĞİ: -ml-1 -> -ms-1 --- */}
+              <SidebarTrigger className="-ms-1" />
+              {/* --- RTL DEĞİŞİKLİĞİ SONU --- */}
+              {/* SearchDialog ve Separator kaldırıldı */}
             </div>
+            {/* gap-* iki yönlüdür, RTL'de sorun çıkarmaz */}
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
               <ThemeSwitcher />
-              <AccountSwitcher lng={lng} /> 
+              <AccountSwitcher lng={lng} />
             </div>
           </div>
         </header>
 
         <AuthProvider>
+          {/* p-* iki yönlüdür, RTL'de sorun çıkarmaz */}
           <div className="h-full p-4 md:p-6">{children}</div>
         </AuthProvider>
 
