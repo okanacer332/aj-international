@@ -8,8 +8,9 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { apiFetchAuth } from "@/lib/api-auth";
 import { Role } from "@/types/role";
-// YENİ IMPORT: i18n desteği için
-import { useTranslation } from "@/lib/i18n-client"; 
+import { useTranslation } from "@/lib/i18n-client";
+// Globe ikonu eklendi
+import { Loader2, Globe } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,75 +29,81 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+// --- DEĞİŞİKLİK: Auth Store import edildi (opsiyonel - admin kontrolü için) ---
+import { useAuthStore } from "@/stores/auth-store";
 
-// KRİTİK DEĞİŞİKLİK: formSchema t fonksiyonunu alarak dinamik hale getirildi
+// Ülke seçenekleri (Tenant'lar) - LoginForm'daki ile aynı
+const tenantOptions = [
+  { value: "TR", label: "Türkiye", flag: "🇹🇷" },
+  { value: "RU", label: "Россия", flag: "🇷🇺" },
+  { value: "AE", label: "Dubai (UAE)", flag: "🇦🇪" },
+];
+
 const createFormSchema = (t: (key: string) => string) => z.object({
   fullName: z.string().min(3, t("validation.fullNameMinLength")),
   email: z.string().email(t("validation.emailInvalid")),
-  tenantId: z.string().min(1, t("iam.user.validation.tenantRequired")),
+  // tenantId tipi değişmedi, sadece component değişecek
+  tenantId: z.string({ required_error: t("iam.user.validation.tenantRequired") }),
   roleId: z.string({ required_error: t("iam.user.validation.roleRequired") }),
 });
 
-// KRİTİK DEĞİŞİKLİK: lng prop'u eklendi
 type AddUserFormProps = {
-  onSuccess: () => void; // Form başarıyla gönderildiğinde çağrılacak fonksiyon
+  onSuccess: () => void;
   lng: string;
 };
 
 export function AddUserForm({ onSuccess, lng }: AddUserFormProps) {
   const [roles, setRoles] = useState<Role[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // KRİTİK DEĞİŞİKLİK: i18n Hook'u eklendi
   const { t, ready } = useTranslation(lng, 'common');
+  // --- DEĞİŞİKLİK: Mevcut kullanıcı bilgisi alındı ---
+  const { user: currentUser } = useAuthStore();
+  const isSuperAdmin = currentUser?.username === 'admin';
 
-  // Component yüklendiğinde rolleri backend'den çek
   useEffect(() => {
-    if (!ready) return; // Çeviriler hazır değilse API çağrısı yapma
-
-    const fetchRoles = async () => {
+    if (!ready) return;
+    const fetchRoles = async () => { /* ... rol fetch etme kodu aynı ... */
       try {
         const res = await apiFetchAuth("/api/iam/roles");
         const data = await res.json();
         setRoles(data);
       } catch (error) {
-        // ÇEVİRİ: Hata mesajı
         toast.error(t("iam.role.toast.fetchError"));
       }
     };
     fetchRoles();
   }, [ready, t]);
-  
-  // Hook çağrıları koşulsuz alanda yapılmalı
+
   const formSchema = createFormSchema(t);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { fullName: "", email: "", tenantId: "TR" },
+    // Varsayılan tenantId: Süper admin değilse mevcut kullanıcının tenant'ı, süper admin ise TR
+    defaultValues: {
+      fullName: "",
+      email: "",
+      tenantId: !isSuperAdmin && currentUser ? currentUser.tenantId : "TR",
+    },
   });
 
+  // onSubmit kodu aynı kalıyor
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      const payload = {
+      const payload = { /* ... payload aynı ... */
         fullName: values.fullName,
         email: values.email,
         tenantId: values.tenantId,
-        roleIds: [values.roleId], 
-        password: "1234" 
+        roleIds: [values.roleId],
+        password: "1234"
       };
-      
-      await apiFetchAuth("/api/iam/users", {
+      await apiFetchAuth("/api/iam/users", { /* ... API çağrısı aynı ... */
         method: "POST",
         body: JSON.stringify(payload),
       });
-
-      // ÇEVİRİ: Başarı mesajı
       toast.success(t("iam.user.toast.creationSuccess"));
-      onSuccess(); 
+      onSuccess();
     } catch (error: any) {
-      // ÇEVİRİ: Hata mesajı
       toast.error(t("iam.user.toast.creationFailed"), { description: error.message });
     } finally {
       setIsLoading(false);
@@ -108,62 +115,87 @@ export function AddUserForm({ onSuccess, lng }: AddUserFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {/* Ad Soyad alanı aynı */}
         <FormField
           control={form.control}
           name="fullName"
           render={({ field }) => (
             <FormItem>
-              {/* ÇEVİRİ: Etiket */}
               <FormLabel>{t("iam.user.label.fullName")}</FormLabel>
               <FormControl>
-                {/* ÇEVİRİ: Placeholder */}
                 <Input placeholder={t("iam.user.placeholder.fullName")} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        {/* Email alanı aynı */}
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
             <FormItem>
-              {/* ÇEVİRİ: Etiket */}
               <FormLabel>{t("iam.user.label.email")}</FormLabel>
               <FormControl>
-                {/* ÇEVİRİ: Placeholder */}
                 <Input placeholder={t("iam.user.placeholder.email")} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        {/* --- DEĞİŞİKLİK: Tenant ID Alanı (Input yerine Select) --- */}
          <FormField
           control={form.control}
           name="tenantId"
           render={({ field }) => (
             <FormItem>
-              {/* ÇEVİRİ: Etiket */}
               <FormLabel>{t("iam.user.label.tenantId")}</FormLabel>
-              <FormControl>
-                {/* ÇEVİRİ: Placeholder */}
-                <Input placeholder={t("iam.user.placeholder.tenantId")} {...field} />
-              </FormControl>
+               {/* Sadece süper admin tenant değiştirebilir */}
+               <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  disabled={!isSuperAdmin} // Süper admin değilse disable
+                >
+                <FormControl>
+                  <SelectTrigger>
+                    {/* Seçili değeri bayrakla göster */}
+                    <SelectValue placeholder={t("tenantPlaceholder", "Ülke Seçin...")}>
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                        {tenantOptions.find(opt => opt.value === field.value)?.label ?? t("tenantPlaceholder", "Ülke Seçin...")}
+                        <span className="ml-auto">{tenantOptions.find(opt => opt.value === field.value)?.flag}</span>
+                      </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {tenantOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex items-center gap-2">
+                        <span>{option.flag}</span>
+                        <span>{option.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
+        {/* --- DEĞİŞİKLİK SONU --- */}
+
+        {/* Rol alanı aynı */}
         <FormField
           control={form.control}
           name="roleId"
           render={({ field }) => (
             <FormItem>
-              {/* ÇEVİRİ: Etiket */}
               <FormLabel>{t("iam.user.label.role")}</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    {/* ÇEVİRİ: Placeholder */}
                     <SelectValue placeholder={t("iam.user.placeholder.selectRole")} />
                   </SelectTrigger>
                 </FormControl>
@@ -179,9 +211,9 @@ export function AddUserForm({ onSuccess, lng }: AddUserFormProps) {
             </FormItem>
           )}
         />
+        {/* Buton aynı */}
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {/* ÇEVİRİ: Buton Metni */}
           {t("iam.user.createButton")}
         </Button>
       </form>

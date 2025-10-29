@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.Base64;
 import java.util.Date;
+// Map import edildi
+import java.util.Map;
 import java.util.function.Function;
 
 @Component
@@ -34,6 +36,11 @@ public class JwtUtil {
         return extractClaim(token, Claims::getExpiration);
     }
 
+    // YENİ METOT: Tenant ID'yi token'dan çıkarmak için
+    public String extractTenantId(String token) {
+        return extractClaim(token, claims -> claims.get("tenantId", String.class));
+    }
+
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
@@ -51,8 +58,13 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(UserDetails userDetails) {
+    // generateToken metodu artık tenantId parametresini alıyor
+    public String generateToken(UserDetails userDetails, String tenantId) {
+        // Ekstra claim'leri (tenantId) içeren bir Map oluştur
+        Map<String, Object> claims = Map.of("tenantId", tenantId);
+
         return Jwts.builder()
+                .claims(claims) // Custom claim'leri ekle
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiration))
@@ -62,6 +74,8 @@ public class JwtUtil {
 
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
+        // Tenant ID kontrolü burada yapılmaz, sadece kullanıcı adı ve süre kontrol edilir.
+        // Tenant kontrolü isteği işleyen servislerde yapılmalı.
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 }
