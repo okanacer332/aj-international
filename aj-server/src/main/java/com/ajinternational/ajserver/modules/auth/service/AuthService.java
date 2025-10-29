@@ -4,75 +4,114 @@ import com.ajinternational.ajserver.config.JwtUtil;
 import com.ajinternational.ajserver.modules.auth.dto.AuthResponse;
 import com.ajinternational.ajserver.modules.auth.dto.LoginRequest;
 import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
-// User modelini import et
+import com.ajinternational.ajserver.modules.iam.model.Role; // Role import edildi
 import com.ajinternational.ajserver.modules.iam.model.User;
-// UserRepository'yi import et
+import com.ajinternational.ajserver.modules.iam.repository.RoleRepository; // RoleRepository import edildi
 import com.ajinternational.ajserver.modules.iam.repository.UserRepository;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException; // Eklendi
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+// AuthenticationManager kaldırıldı
+// import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+// UsernamePasswordAuthenticationToken kaldırıldı
+// import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+// GrantedAuthority ve SimpleGrantedAuthority import edildi
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder; // PasswordEncoder import edildi
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UsernameNotFoundException; // Eklendi
+
+import java.util.Collection; // Collection import edildi
+import java.util.Set; // Set import edildi
+import java.util.stream.Collectors; // Collectors import edildi
+import java.util.stream.Stream; // Stream import edildi
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final AuthenticationManager authenticationManager;
+    // AuthenticationManager kaldırıldı
+    // private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
-    private final CustomUserDetailsService userDetailsService;
+    private final CustomUserDetailsService userDetailsService; // UserDetails oluşturmak için hala kullanılabilir veya manuel yapabiliriz
     private final AuditLogService auditLogService;
-    // UserRepository'yi enjekte et
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder; // PasswordEncoder enjekte edildi
+    private final RoleRepository roleRepository; // RoleRepository enjekte edildi (Yetkiler için)
 
     public AuthResponse login(LoginRequest request) {
+        String username = request.username();
+        String tenantId = request.tenantId();
+        String password = request.password();
+
         try {
-            // 1. Kullanıcı adı ve şifre ile kimlik doğrulama denemesi
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.username(), request.password())
-            );
+            // 1. Kullanıcıyı username ve tenantId ile bul
+            // BU METODU UserRepository'ye eklememiz gerekecek!
+            User user = userRepository.findByUsernameAndTenantId(username, tenantId)
+                    .orElseThrow(() -> {
+                        // Kullanıcı bulunamadıysa, hangi tenantta arandığını logla
+                        auditLogService.logAction(username, "USER_LOGIN_FAILURE", "Kullanıcı bulunamadı. Aranan Tenant: " + tenantId);
+                        // Genel hata mesajı fırlat
+                        return new BadCredentialsException("Kullanıcı adı, şifre veya operasyon ülkesi hatalı.");
+                    });
 
-            // 2. Kimlik doğrulama başarılıysa, UserDetails nesnesini al
-            final UserDetails userDetails = userDetailsService.loadUserByUsername(request.username());
-
-            // 3. Tam User nesnesini veritabanından çek
-            User user = userRepository.findByUsername(request.username())
-                    .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + request.username()));
-
-            // 4. Tenant ID Kontrolü VE Aktiflik Kontrolü
-            boolean isSuperAdmin = "admin".equals(request.username());
-            // Tenant ID'yi belirle: Süper admin ise kullanıcının kendi tenant'ı, değilse istekteki tenant
-            String effectiveTenantId = isSuperAdmin ? user.getTenantId() : request.tenantId();
-
-            if (!isSuperAdmin && !user.getTenantId().equals(request.tenantId())) {
-                auditLogService.logAction(request.username(), "USER_LOGIN_FAILURE", "Hatalı tenant ID girişi denemesi: " + request.tenantId());
-                throw new BadCredentialsException("Kullanıcı bu operasyon ülkesi için yetkili değil.");
+            // 2. Şifreyi manuel olarak kontrol et
+            if (!passwordEncoder.matches(password, user.getPassword())) {
+                auditLogService.logAction(username, "USER_LOGIN_FAILURE", "Hatalı şifre girişi. Tenant: " + tenantId);
+                throw new BadCredentialsException("Kullanıcı adı, şifre veya operasyon ülkesi hatalı.");
             }
+
+            // 3. Kullanıcı aktif mi kontrol et
             if (!user.isActive()) {
-                auditLogService.logAction(request.username(), "USER_LOGIN_FAILURE", "Pasif kullanıcı girişi denemesi.");
+                auditLogService.logAction(username, "USER_LOGIN_FAILURE", "Pasif kullanıcı girişi denemesi. Tenant: " + tenantId);
                 throw new BadCredentialsException("Kullanıcı hesabı pasif durumdadır.");
             }
 
-            // 5. Tüm kontrollerden geçerse token üret
-            // --- DEĞİŞİKLİK BURADA: generateToken'a effectiveTenantId geçiriliyor ---
-            final String accessToken = jwtUtil.generateToken(userDetails, effectiveTenantId);
-            // --- DEĞİŞİKLİK SONU ---
+            // 4. UserDetails nesnesini manuel olarak oluştur (Yetkiler için)
+            // Roller ve izinlerden yetkileri oluştur
+            Set<Role> roles = roleRepository.findAllById(user.getRoleIds()).stream().collect(Collectors.toSet());
+            Set<GrantedAuthority> authorities = roles.stream()
+                    .flatMap(role -> Stream.concat(
+                            Stream.of(new SimpleGrantedAuthority("ROLE_" + role.getName().toUpperCase())), // Rol yetkisi (ROLE_ADMIN gibi)
+                            role.getPermissions().stream().map(SimpleGrantedAuthority::new) // İzin yetkileri (PAGE_USERS:READ gibi)
+                    ))
+                    .collect(Collectors.toSet());
 
-            // 6. Başarılı giriş logu oluştur (Tenant bilgisi eklenebilir)
-            auditLogService.logAction(request.username(), "USER_LOGIN_SUCCESS", "Kullanıcı başarıyla giriş yaptı. Tenant: " + effectiveTenantId); // Logda da effectiveTenantId kullanıldı
+            // Spring Security'nin UserDetails arayüzünü implemente eden User nesnesini oluştur
+            UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+                    user.getUsername(),
+                    user.getPassword(), // Şifre hash'i (token'a eklenmez, sadece nesne için)
+                    user.isActive(),
+                    true, // accountNonExpired
+                    true, // credentialsNonExpired
+                    true, // accountNonLocked
+                    authorities // Hesaplanan yetkiler
+            );
+
+
+            // 5. Token üretimi için tenant ID'yi belirle
+            boolean isSuperAdmin = "admin".equals(username); // Basit admin kontrolü
+            // Süper admin ise kendi tenantını (örn: "SYSTEM"), değilse istekteki tenantı kullan
+            String effectiveTenantId = isSuperAdmin ? user.getTenantId() : tenantId;
+
+            // 6. Token üret
+            final String accessToken = jwtUtil.generateToken(userDetails, effectiveTenantId);
+
+            // 7. Başarılı giriş logu oluştur
+            auditLogService.logAction(username, "USER_LOGIN_SUCCESS", "Kullanıcı başarıyla giriş yaptı. Tenant: " + effectiveTenantId);
 
             return new AuthResponse(accessToken);
 
-        } catch (BadCredentialsException e) { // Sadece şifre hatasını yakala
-            auditLogService.logAction(request.username(), "USER_LOGIN_FAILURE", "Hatalı şifre girişi denemesi.");
-            throw e; // Orijinal hatayı fırlat
-        } catch (Exception e) { // Diğer potansiyel hatalar
-            if (!(e instanceof BadCredentialsException || e instanceof UsernameNotFoundException)) {
-                auditLogService.logAction(request.username(), "USER_LOGIN_FAILURE", "Giriş sırasında bilinmeyen hata: " + e.getMessage());
-            }
-            throw new BadCredentialsException("Kullanıcı adı, şifre veya operasyon ülkesi hatalı ya da hesap aktif değil.");
+        } catch (BadCredentialsException e) {
+            // Hatalı şifre veya kullanıcı bulunamadı durumları zaten loglandı.
+            // Sadece hatayı tekrar fırlat.
+            throw e;
+        } catch (Exception e) {
+            // Beklenmedik diğer hatalar için loglama
+            auditLogService.logAction(username, "USER_LOGIN_FAILURE", "Giriş sırasında bilinmeyen hata: " + e.getMessage() + ". Tenant: " + tenantId);
+            // Genel hata mesajı fırlat
+            throw new BadCredentialsException("Giriş sırasında bir hata oluştu.");
         }
     }
 }
