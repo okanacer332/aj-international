@@ -285,5 +285,8 @@
   "audit.log.column.username": "المستخدم",
   "audit.log.column.action": "الإجراء",
   "audit.log.column.details": "التفاصيل",
-  "audit.log.column.ipAddress": "عنوان IP"
+  "audit.log.column.ipAddress": "عنوان IP",
+  "tenantSelection.label": "بلد التشغيل",
+"tenantSelection.placeholder": "اختر الدولة...",
+"validation.tenantRequired": "الرجاء تحديد بلد التشغيل."
 }

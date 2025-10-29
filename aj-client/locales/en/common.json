@@ -285,5 +285,8 @@
   "audit.log.column.username": "User",
   "audit.log.column.action": "Action",
   "audit.log.column.details": "Details",
-  "audit.log.column.ipAddress": "IP Address"
+  "audit.log.column.ipAddress": "IP Address",
+  "tenantSelection.label": "Operation Country",
+"tenantSelection.placeholder": "Select country...",
+"validation.tenantRequired": "Please select an operation country."
 }

@@ -1,16 +1,19 @@
 package com.ajinternational.ajserver.modules.masterdata.service;
 
+// --- YENİ IMPORT ---
+import com.ajinternational.ajserver.config.tenant.TenantContext;
+// --- YENİ IMPORT SONU ---
 import com.ajinternational.ajserver.modules.masterdata.model.MasterProduct;
 import com.ajinternational.ajserver.modules.masterdata.repository.MasterProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList; // ArrayList eklendi
-import java.util.HashMap; // HashMap eklendi
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional; // Optional importu korundu
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -23,16 +26,25 @@ public class MasterProductService {
     private static final Logger logger = LoggerFactory.getLogger(MasterProductService.class);
 
     private final MasterProductRepository productRepository;
-    // Mock Tenant ID'sini bir sabit olarak tanımlayalım
-    private static final String MOCK_TENANT_ID = "TR";
+    // --- MOCK_TENANT_ID KALDIRILDI ---
+    // private static final String MOCK_TENANT_ID = "TR";
+    // --- MOCK_TENANT_ID KALDIRILDI SONU ---
 
     /**
      * Tüm ürünleri çeker ve sonsuz derinlikte hiyerarşik yapıyı kurarak sadece kök (ana) ürünleri döner.
      * Alt ürünler, ilgili ana ürünün 'subProducts' listesi içinde yer alır.
      */
     public List<MasterProduct> findAllHierarchicalProducts() {
-        List<MasterProduct> allProducts = productRepository.findByTenantId(MOCK_TENANT_ID);
-        logger.info("Tenant '{}' için tüm ürünler çekildi: {} adet.", MOCK_TENANT_ID, allProducts.size());
+        // --- DEĞİŞİKLİK: MOCK_TENANT_ID yerine TenantContext kullanıldı ---
+        String currentTenantId = TenantContext.getCurrentTenant();
+        if (currentTenantId == null) {
+            logger.error("findAllHierarchicalProducts çağrılırken tenantId bulunamadı!");
+            // Proje gereksinimine göre burada hata fırlatabilir veya boş liste dönebilirsiniz.
+            throw new IllegalStateException("Tenant ID context'te bulunamadı.");
+        }
+        List<MasterProduct> allProducts = productRepository.findByTenantId(currentTenantId);
+        logger.info("Tenant '{}' için tüm ürünler çekildi: {} adet.", currentTenantId, allProducts.size());
+        // --- DEĞİŞİKLİK SONU ---
 
         // Hızlı erişim için tüm ürünleri ID'lerine göre map'leyelim.
         Map<String, MasterProduct> productMap = new HashMap<>();
@@ -51,17 +63,12 @@ public class MasterProductService {
                 String parentId = parentIdOpt.get();
                 MasterProduct parent = productMap.get(parentId);
                 if (parent != null) {
-                    // Mevcut getSubProducts null olamayacağı için direkt ekleme yapabiliriz.
                     parent.getSubProducts().add(product);
                     logger.debug("Alt ürün '{}' ({}), ana ürün '{}' ({}) altına eklendi.", product.getName(), product.getId(), parent.getName(), parent.getId());
                 } else {
-                    // Bu durum normalde olmamalı (veritabanı tutarlılığı varsa)
                     logger.warn("Alt ürün '{}' ({}) için ana ürün ID'si '{}' bulundu ancak ilgili ana ürün map'te bulunamadı!", product.getName(), product.getId(), parentId);
-                    // Ana ürünü bulunamayanları da kök olarak ekleyebiliriz (opsiyonel)
-                    // rootProducts.add(product);
                 }
             } else {
-                // parentProductId'si olmayanlar kök ürünlerdir.
                 rootProducts.add(product);
                 logger.debug("Kök ürün bulundu: '{}' ({})", product.getName(), product.getId());
             }
@@ -72,36 +79,41 @@ public class MasterProductService {
     }
 
     public MasterProduct saveProduct(MasterProduct product) {
-        product.setTenantId(MOCK_TENANT_ID);
+        // --- DEĞİŞİKLİK: MOCK_TENANT_ID yerine TenantContext kullanıldı ---
+        String currentTenantId = TenantContext.getCurrentTenant();
+        if (currentTenantId == null) {
+            logger.error("saveProduct çağrılırken tenantId bulunamadı!");
+            throw new IllegalStateException("Tenant ID context'te bulunamadı.");
+        }
+        product.setTenantId(currentTenantId);
+        // --- DEĞİŞİKLİK SONU ---
 
         String rawParentId = product.getParentProductId().orElse(null);
         String finalParentId = (rawParentId != null && !rawParentId.trim().isEmpty()) ? rawParentId.trim() : null;
 
-        product.setParentProductId(finalParentId); // Set the potentially modified parent ID
+        product.setParentProductId(finalParentId);
 
         if (finalParentId == null) {
-            logger.info("SAVE LOG: '{}' ürünü ANA ÜRÜN olarak kaydediliyor (parentProductId: null)", product.getName());
+            logger.info("SAVE LOG: Tenant '{}' - '{}' ürünü ANA ÜRÜN olarak kaydediliyor (parentProductId: null)", currentTenantId, product.getName());
         } else {
-            // Kaydetmeden önce parent'ın var olup olmadığını kontrol etmek iyi bir pratik olabilir.
             if (!productRepository.existsById(finalParentId)) {
-                logger.error("HATA: Belirtilen ana ürün ID'si ({}) veritabanında bulunamadı. '{}' kaydedilemedi.", finalParentId, product.getName());
+                logger.error("HATA: Tenant '{}' - Belirtilen ana ürün ID'si ({}) veritabanında bulunamadı. '{}' kaydedilemedi.", currentTenantId, finalParentId, product.getName());
                 throw new IllegalArgumentException("Belirtilen ana ürün bulunamadı.");
             }
-            logger.info("SAVE LOG: '{}' ürünü ALT ÜRÜN olarak kaydediliyor (parentProductId: {})", product.getName(), finalParentId);
+            logger.info("SAVE LOG: Tenant '{}' - '{}' ürünü ALT ÜRÜN olarak kaydediliyor (parentProductId: {})", currentTenantId, product.getName(), finalParentId);
         }
 
-        // Kod benzersizlik kontrolü (Mevcut mantık doğru)
-        productRepository.findByTenantIdAndCode(MOCK_TENANT_ID, product.getCode()).ifPresent(existing -> {
-            // Eğer yeni bir ürün ekleniyorsa (ID'si yoksa) VEYA
-            // mevcut bir ürün güncelleniyorsa AMA bulunan ID, güncellenen ID ile aynı değilse hata ver.
+        // --- DEĞİŞİKLİK: MOCK_TENANT_ID yerine TenantContext kullanıldı ---
+        productRepository.findByTenantIdAndCode(currentTenantId, product.getCode()).ifPresent(existing -> {
+            // --- DEĞİŞİKLİK SONU ---
             if (product.getId() == null || !Objects.equals(existing.getId(), product.getId())) {
-                logger.error("HATA: Ürün kodu '{}' zaten '{}' adlı ürün tarafından kullanılıyor. '{}' kaydedilemedi.", product.getCode(), existing.getName(), product.getName());
+                logger.error("HATA: Tenant '{}' - Ürün kodu '{}' zaten '{}' adlı ürün tarafından kullanılıyor. '{}' kaydedilemedi.", currentTenantId, product.getCode(), existing.getName(), product.getName());
                 throw new IllegalArgumentException("Bu ürün kodu zaten mevcut.");
             }
         });
 
         MasterProduct savedProduct = productRepository.save(product);
-        logger.info("Ürün başarıyla kaydedildi/güncellendi: ID={}, Kod={}, Ad={}", savedProduct.getId(), savedProduct.getCode(), savedProduct.getName());
+        logger.info("Ürün başarıyla kaydedildi/güncellendi: Tenant={}, ID={}, Kod={}, Ad={}", currentTenantId, savedProduct.getId(), savedProduct.getCode(), savedProduct.getName());
         return savedProduct;
     }
 
@@ -110,34 +122,42 @@ public class MasterProductService {
      * Eğer silinmesi istenen ürünün alt ürünleri varsa, önce alt ürünler silinir.
      */
     public void deleteProduct(String id) {
-        // Silinecek ürünün var olup olmadığını kontrol et
+        // --- DEĞİŞİKLİK: MOCK_TENANT_ID yerine TenantContext kullanıldı (veya findById direkt kullanılabilir) ---
+        // Tenant kontrolü eklemek isterseniz:
+        String currentTenantId = TenantContext.getCurrentTenant();
+        if (currentTenantId == null) {
+            logger.error("deleteProduct çağrılırken tenantId bulunamadı!");
+            throw new IllegalStateException("Tenant ID context'te bulunamadı.");
+        }
+        // Silinecek ürünün var olup olmadığını ve doğru tenanta ait olup olmadığını kontrol et
         MasterProduct productToDelete = productRepository.findById(id)
+                .filter(p -> p.getTenantId().equals(currentTenantId)) // Tenant kontrolü
                 .orElseThrow(() -> {
-                    logger.error("Silme Hatası: ID'si '{}' olan ürün bulunamadı.", id);
+                    logger.error("Silme Hatası: Tenant '{}' için ID'si '{}' olan ürün bulunamadı.", currentTenantId, id);
                     return new RuntimeException("Silinecek ürün bulunamadı: " + id);
                 });
+        // --- DEĞİŞİKLİK SONU ---
 
-        logger.info("Silme işlemi başlatıldı: ID={}, Kod={}, Ad={}", productToDelete.getId(), productToDelete.getCode(), productToDelete.getName());
+        logger.info("Silme işlemi başlatıldı: Tenant={}, ID={}, Kod={}, Ad={}", currentTenantId, productToDelete.getId(), productToDelete.getCode(), productToDelete.getName());
 
-        // Rekürsif olarak alt ürünleri bul ve sil
+        // Rekürsif olarak alt ürünleri bul ve sil (Bu fonksiyon zaten ID ile çalıştığı için tenant kontrolüne gerek yok)
         deleteChildrenRecursive(id);
 
         // Ana ürünü sil
         productRepository.deleteById(id);
-        logger.info("Ürün başarıyla silindi: ID={}", id);
+        logger.info("Ürün başarıyla silindi: Tenant={}, ID={}", currentTenantId, id);
     }
 
     /**
      * Belirtilen parentId'ye sahip tüm alt ürünleri ve onların alt ürünlerini rekürsif olarak siler.
+     * Bu metodun içindeki productRepository çağrıları tenant'tan bağımsız çalışır (ID üzerinden).
      */
     private void deleteChildrenRecursive(String parentId) {
         List<MasterProduct> children = productRepository.findByParentProductId(parentId);
         if (!children.isEmpty()) {
             logger.info("ID'si '{}' olan ürünün {} adet alt ürünü bulundu. Siliniyor...", parentId, children.size());
             for (MasterProduct child : children) {
-                // Önce bu çocuğun altındakileri sil
                 deleteChildrenRecursive(child.getId());
-                // Sonra çocuğu sil
                 productRepository.deleteById(child.getId());
                 logger.info("Alt ürün silindi: ID={}, Kod={}, Ad={}", child.getId(), child.getCode(), child.getName());
             }
@@ -148,10 +168,18 @@ public class MasterProductService {
 
 
     public MasterProduct findById(String id) {
+        // --- DEĞİŞİKLİK: MOCK_TENANT_ID yerine TenantContext kullanıldı ---
+        String currentTenantId = TenantContext.getCurrentTenant();
+        if (currentTenantId == null) {
+            logger.error("findById çağrılırken tenantId bulunamadı!");
+            throw new IllegalStateException("Tenant ID context'te bulunamadı.");
+        }
         return productRepository.findById(id)
+                .filter(p -> p.getTenantId().equals(currentTenantId)) // Tenant kontrolü
                 .orElseThrow(() -> {
-                    logger.error("Arama Hatası: ID'si '{}' olan ürün bulunamadı.", id);
+                    logger.error("Arama Hatası: Tenant '{}' için ID'si '{}' olan ürün bulunamadı.", currentTenantId, id);
                     return new RuntimeException("Ürün bulunamadı: " + id);
                 });
+        // --- DEĞİŞİKLİK SONU ---
     }
 }

@@ -285,5 +285,8 @@
   "audit.log.column.username": "Usuario",
   "audit.log.column.action": "Acción",
   "audit.log.column.details": "Detalles",
-  "audit.log.column.ipAddress": "Dirección IP"
+  "audit.log.column.ipAddress": "Dirección IP",
+  "tenantSelection.label": "País de Operación",
+"tenantSelection.placeholder": "Seleccionar país...",
+"validation.tenantRequired": "Por favor, seleccione un país de operación."
 }

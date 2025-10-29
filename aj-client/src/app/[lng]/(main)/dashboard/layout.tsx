@@ -9,8 +9,6 @@ export const dynamic = "force-dynamic";
 import AuthGuard from "./_components/auth-guard";
 import { AuthProvider } from "./_components/auth-provider";
 import { AppSidebar } from "./_components/sidebar/app-sidebar";
-// Separator import removed as it's not used after removing SearchDialog
-// import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { getPreference } from "@/server/server-actions";
@@ -26,20 +24,19 @@ import { AccountSwitcher } from "./_components/sidebar/account-switcher";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { SidebarInitializer } from "./_components/sidebar-initializer";
+// --- YENİ IMPORT ---
+import { TenantSwitcher } from "@/components/tenant-switcher";
+// --- YENİ IMPORT SONU ---
 
-// TİP TANIMI: Next.js'in beklediği parametre yapısını yansıtıyoruz
+
 type LayoutParams = {
   params: { lng: string };
   children: ReactNode;
 };
 
-// Fonksiyonu Promise prop'unu alacak şekilde tanımlıyoruz
 export default async function Layout({ children, params }: Readonly<LayoutParams>) {
   noStore();
-
-  // lng'ye doğrudan erişiyoruz.
   const lng = params.lng;
-
   const cookieStore = await cookies();
 
   const [sidebarVariant, sidebarCollapsible, contentLayout] = await Promise.all([
@@ -62,31 +59,26 @@ export default async function Layout({ children, params }: Readonly<LayoutParams
         data-content-layout={contentLayout}
         className={cn(
           "data-[content-layout=centered]:!mx-auto data-[content-layout=centered]:max-w-screen-2xl",
-          // --- RTL DEĞİŞİKLİĞİ: mr-* -> me-* ---
           "max-[113rem]:peer-data-[variant=inset]:!me-2 min-[101rem]:peer-data-[variant=inset]:peer-data-[state=collapsed]:!me-auto"
-          // --- RTL DEĞİŞİKLİĞİ SONU ---
         )}
       >
         <header className="flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          {/* justify-between flex direction'a göre çalışır, RTL'de sıralamayı otomatik ters çevirir */}
           <div className="flex w-full items-center justify-between px-4 lg:px-6">
             <div className="flex items-center gap-1 lg:gap-2">
-              {/* --- RTL DEĞİŞİKLİĞİ: -ml-1 -> -ms-1 --- */}
               <SidebarTrigger className="-ms-1" />
-              {/* --- RTL DEĞİŞİKLİĞİ SONU --- */}
-              {/* SearchDialog ve Separator kaldırıldı */}
             </div>
-            {/* gap-* iki yönlüdür, RTL'de sorun çıkarmaz */}
+            {/* --- DEĞİŞİKLİK: TenantSwitcher eklendi --- */}
             <div className="flex items-center gap-2">
+              <TenantSwitcher /> {/* &lt;-- BURAYA EKLENDİ */}
               <LanguageSwitcher />
               <ThemeSwitcher />
               <AccountSwitcher lng={lng} />
             </div>
+            {/* --- DEĞİŞİKLİK SONU --- */}
           </div>
         </header>
 
         <AuthProvider>
-          {/* p-* iki yönlüdür, RTL'de sorun çıkarmaz */}
           <div className="h-full p-4 md:p-6">{children}</div>
         </AuthProvider>
 
