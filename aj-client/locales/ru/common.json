@@ -285,5 +285,8 @@
   "audit.log.column.username": "Пользователь",
   "audit.log.column.action": "Действие",
   "audit.log.column.details": "Детали",
-  "audit.log.column.ipAddress": "IP-адрес"
+  "audit.log.column.ipAddress": "IP-адрес",
+  "login.tenantLabel": "Операционная страна",
+  "login.tenantPlaceholder": "Выберите страну...",
+  "toast.loginErrorTenant": "Пользователь не авторизован для этой операционной страны."
 }

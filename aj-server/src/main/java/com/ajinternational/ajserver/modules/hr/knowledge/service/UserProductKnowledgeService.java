@@ -1,5 +1,6 @@
 package com.ajinternational.ajserver.modules.hr.knowledge.service;
 
+import com.ajinternational.ajserver.config.TenantContextHolder; // Eklendi
 import com.ajinternational.ajserver.modules.hr.knowledge.dto.KnowledgeUpdateRequest;
 import com.ajinternational.ajserver.modules.hr.knowledge.model.UserProductKnowledge;
 import com.ajinternational.ajserver.modules.hr.knowledge.repository.UserProductKnowledgeRepository;
@@ -20,11 +21,14 @@ public class UserProductKnowledgeService {
     private final UserProductKnowledgeRepository repository;
 
     public List<UserProductKnowledge> getKnowledgeByUserId(String userId) {
+        // Bu metot kullanıcıya özel çalıştığı için tenantId'ye gerek duymaz
         return repository.findByUserId(userId);
     }
 
     public void saveOrUpdateKnowledge(String userId, List<KnowledgeUpdateRequest> requests) {
-        // Mevcut kayıtları tek seferde çekelim
+        // GÜNCELLENDİ: Eylemi yapan kullanıcının o anki tenant'ını al
+        String currentTenantId = TenantContextHolder.getCurrentTenantId();
+
         Map<String, UserProductKnowledge> existingKnowledgeMap = repository.findByUserId(userId).stream()
                 .collect(Collectors.toMap(UserProductKnowledge::getProductId, Function.identity()));
 
@@ -33,13 +37,16 @@ public class UserProductKnowledgeService {
         for (KnowledgeUpdateRequest req : requests) {
             UserProductKnowledge existing = existingKnowledgeMap.get(req.productId());
             if (existing != null) {
-                // Kayıt varsa, skoru güncelle
                 existing.setScore(req.score());
                 existing.setUpdatedAt(LocalDateTime.now());
+                // GÜNCELLENDİ: Mevcut kaydın tenantId'sini de güncelle (Eğer daha önceden null ise)
+                if (existing.getTenantId() == null) {
+                    existing.setTenantId(currentTenantId);
+                }
                 toSave.add(existing);
             } else {
-                // Kayıt yoksa, yeni oluştur
-                toSave.add(new UserProductKnowledge(userId, req.productId(), req.score()));
+                // GÜNCELLENDİ: Yeni kayıt oluştururken tenantId'yi ekle
+                toSave.add(new UserProductKnowledge(currentTenantId, userId, req.productId(), req.score()));
             }
         }
 

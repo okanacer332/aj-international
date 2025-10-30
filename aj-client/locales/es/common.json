@@ -285,5 +285,8 @@
   "audit.log.column.username": "Usuario",
   "audit.log.column.action": "Acción",
   "audit.log.column.details": "Detalles",
-  "audit.log.column.ipAddress": "Dirección IP"
+  "audit.log.column.ipAddress": "Dirección IP",
+  "login.tenantLabel": "País de Operación",
+  "login.tenantPlaceholder": "Seleccione un país...",
+  "toast.loginErrorTenant": "El usuario no está autorizado para este país de operación."
 }

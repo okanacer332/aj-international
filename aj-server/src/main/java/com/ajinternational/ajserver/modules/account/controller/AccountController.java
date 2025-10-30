@@ -1,8 +1,9 @@
 package com.ajinternational.ajserver.modules.account.controller;
 
-import com.ajinternational.ajserver.modules.hr.knowledge.dto.KnowledgeUpdateRequest; // YENİ EKLENDİ
-import com.ajinternational.ajserver.modules.hr.knowledge.model.UserProductKnowledge; // YENİ EKLENDİ
-import com.ajinternational.ajserver.modules.hr.knowledge.service.UserProductKnowledgeService; // YENİ EKLENDİ
+import com.ajinternational.ajserver.config.TenantContextHolder; // YENİ IMPORT
+import com.ajinternational.ajserver.modules.hr.knowledge.dto.KnowledgeUpdateRequest;
+import com.ajinternational.ajserver.modules.hr.knowledge.model.UserProductKnowledge;
+import com.ajinternational.ajserver.modules.hr.knowledge.service.UserProductKnowledgeService;
 import com.ajinternational.ajserver.modules.iam.dto.ChangePasswordRequest;
 import com.ajinternational.ajserver.modules.iam.dto.UpdateProfileRequest;
 import com.ajinternational.ajserver.modules.iam.model.User;
@@ -15,7 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List; // YENİ EKLENDİ
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/account")
@@ -24,12 +25,14 @@ public class AccountController {
 
     private final UserService userService;
     private final FileStorageService fileStorageService;
-    private final UserProductKnowledgeService knowledgeService; // YENİ EKLENDİ
+    private final UserProductKnowledgeService knowledgeService;
 
     // Giriş yapmış kullanıcının bilgilerini getirir
     @GetMapping("/me")
     public ResponseEntity<User> getMyProfile(Authentication authentication) {
-        return userService.getUserByUsername(authentication.getName())
+        // GÜNCELLEME: authentication.getName() YERİNE TenantContextHolder KULLANILDI
+        String username = TenantContextHolder.getCurrentUsername();
+        return userService.getUserByUsername(username)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -37,20 +40,25 @@ public class AccountController {
     // Giriş yapmış kullanıcının profilini günceller
     @PutMapping("/me")
     public ResponseEntity<User> updateMyProfile(Authentication authentication, @Valid @RequestBody UpdateProfileRequest request) {
-        User updatedUser = userService.updateMyProfile(authentication.getName(), request);
+        // GÜNCELLEME: authentication.getName() YERİNE TenantContextHolder KULLANILDI
+        String username = TenantContextHolder.getCurrentUsername();
+        User updatedUser = userService.updateMyProfile(username, request);
         return ResponseEntity.ok(updatedUser);
     }
 
     // Giriş yapmış kullanıcının şifresini değiştirir
     @PostMapping("/change-password")
     public ResponseEntity<Void> changeMyPassword(Authentication authentication, @Valid @RequestBody ChangePasswordRequest request) {
-        userService.changeMyPassword(authentication.getName(), request);
+        // GÜNCELLEME: authentication.getName() YERİNE TenantContextHolder KULLANILDI
+        String username = TenantContextHolder.getCurrentUsername();
+        userService.changeMyPassword(username, request);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/avatar")
     public ResponseEntity<String> uploadAvatar(Authentication authentication, @RequestParam("file") MultipartFile file) {
-        String username = authentication.getName();
+        // GÜNCELLEME: authentication.getName() YERİNE TenantContextHolder KULLANILDI
+        String username = TenantContextHolder.getCurrentUsername();
         String filePath = fileStorageService.storeFile(file, "avatars");
         userService.updateAvatarUrl(username, filePath);
         return ResponseEntity.ok(filePath);
@@ -60,7 +68,9 @@ public class AccountController {
 
     @GetMapping("/me/knowledge")
     public ResponseEntity<List<UserProductKnowledge>> getMyKnowledge(Authentication authentication) {
-        User user = (User) userService.getUserByUsername(authentication.getName())
+        // GÜNCELLEME: authentication.getName() YERİNE TenantContextHolder KULLANILDI
+        String username = TenantContextHolder.getCurrentUsername();
+        User user = (User) userService.getUserByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
         List<UserProductKnowledge> knowledgeList = knowledgeService.getKnowledgeByUserId(user.getId());
         return ResponseEntity.ok(knowledgeList);
@@ -68,7 +78,9 @@ public class AccountController {
 
     @PostMapping("/me/knowledge")
     public ResponseEntity<Void> saveMyKnowledge(Authentication authentication, @Valid @RequestBody List<KnowledgeUpdateRequest> requests) {
-        User user = (User) userService.getUserByUsername(authentication.getName())
+        // GÜNCELLEME: authentication.getName() YERİNE TenantContextHolder KULLANILDI
+        String username = TenantContextHolder.getCurrentUsername();
+        User user = (User) userService.getUserByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
         knowledgeService.saveOrUpdateKnowledge(user.getId(), requests);
         return ResponseEntity.ok().build();

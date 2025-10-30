@@ -240,5 +240,8 @@
   "validation.emailInvalid": "Geçerli bir email adresi giriniz.",
   "validation.currentPasswordRequired": "Mevcut şifre boş olamaz.",
   "validation.newPasswordMinLength": "Yeni şifre en az 6 karakter olmalıdır.",
-  "validation.newPasswordSameAsCurrent": "Yeni şifre, mevcut şifre ile aynı olamaz."
+  "validation.newPasswordSameAsCurrent": "Yeni şifre, mevcut şifre ile aynı olamaz.",
+  "login.tenantLabel": "Operasyon Ülkesi",
+  "login.tenantPlaceholder": "Bir ülke seçin...",
+  "toast.loginErrorTenant": "Kullanıcı bu operasyon ülkesi için yetkili değil."
 }

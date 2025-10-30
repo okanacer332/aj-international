@@ -18,6 +18,8 @@ public interface MasterProductRepository extends MongoRepository<MasterProduct, 
 
     Optional<MasterProduct> findByTenantIdAndCode(String tenantId, String code);
 
-    long countByTenantIdAndParentProductIdIsNull(String tenantId); // BU SATIRI EKLE
+    long countByTenantIdAndParentProductIdIsNull(String tenantId);
 
+    // YENİ EKLENDİ: Belirli bir tenant'taki belirli bir ürünü ID ile getirir
+    Optional<MasterProduct> findByTenantIdAndId(String tenantId, String id);
 }

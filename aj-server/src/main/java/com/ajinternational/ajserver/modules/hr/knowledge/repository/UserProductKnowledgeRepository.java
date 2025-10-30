@@ -14,4 +14,6 @@ public interface UserProductKnowledgeRepository extends MongoRepository<UserProd
 
     Optional<UserProductKnowledge> findByUserIdAndProductId(String userId, String productId);
 
+    // YENİ EKLENDİ: Belirli bir tenant'taki tüm yetkinlik kayıtlarını getirir (Dashboard için)
+    List<UserProductKnowledge> findByTenantId(String tenantId);
 }

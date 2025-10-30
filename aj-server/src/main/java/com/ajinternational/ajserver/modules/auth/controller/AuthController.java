@@ -1,5 +1,6 @@
 package com.ajinternational.ajserver.modules.auth.controller;
 
+import com.ajinternational.ajserver.config.TenantContextHolder; // YENİ IMPORT
 import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
 import com.ajinternational.ajserver.modules.auth.dto.AuthResponse;
 import com.ajinternational.ajserver.modules.auth.dto.LoginRequest;
@@ -22,7 +23,6 @@ public class AuthController {
     private final AuditLogService auditLogService;
 
     // Register endpoint'i kaldırıldı.
-    // Kullanıcılar artık sadece admin tarafından IAM UserController üzerinden oluşturulacak.
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -32,7 +32,15 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<String> logout(Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()) {
-            auditLogService.logAction(authentication.getName(), "USER_LOGOUT_SUCCESS", "Kullanıcı başarıyla çıkış yaptı.");
+
+            // GÜNCELLENDİ: Artık 4 parametre gönderiyoruz.
+            // O anki tenantId'yi TenantContextHolder'dan alıyoruz.
+            auditLogService.logAction(
+                    TenantContextHolder.getCurrentTenantId(), // 1. tenantId
+                    authentication.getName(),                 // 2. username
+                    "USER_LOGOUT_SUCCESS",                    // 3. action
+                    "Kullanıcı başarıyla çıkış yaptı."         // 4. details
+            );
         }
         return ResponseEntity.ok("Çıkış loglandı.");
     }
