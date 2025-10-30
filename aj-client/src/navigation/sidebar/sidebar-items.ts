@@ -15,6 +15,7 @@ import {
   AreaChart,
   FileClock,
   BarChart3,
+  Bus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -81,8 +82,9 @@ export const sidebarItems: NavGroup[] = [
         subItems: [
           { title: "sidebar.modules.productDefinitions", url: "/dashboard/masterdata/products", icon: BookText, permission: "PAGE_MASTER_PRODUCT:READ" },
           { title: "sidebar.modules.unitDefinitions", url: "/dashboard/masterdata/units", icon: FileText, permission: "PAGE_UNITS:READ" },
-          // --- YENİ SATIRI BURAYA EKLE ---
           { title: "sidebar.modules.skillDefinitions", url: "/dashboard/masterdata/skills", icon: BarChart3, permission: "PAGE_SKILLS:READ" },
+          // --- YENİ SATIRI BURAYA EKLE ---
+          { title: "sidebar.modules.serviceDefinitions", url: "/dashboard/masterdata/services", icon: Bus, permission: "PAGE_SERVICES:READ" },
           // --- MEVCUT SATIRI KORU ---
           { title: "sidebar.modules.generalDefinitions", url: "/dashboard/definitions", icon: FileText, comingSoon: true, permission: "PAGE_DEFINITIONS:READ" },
         ],
