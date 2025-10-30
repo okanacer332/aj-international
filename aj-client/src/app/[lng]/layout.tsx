@@ -19,6 +19,7 @@ const localeConfig: { [key: string]: { dir: 'ltr' | 'rtl' } } = {
   'tr': { dir: 'ltr' },
   'en': { dir: 'ltr' },
   'ru': { dir: 'ltr' },
+  'es': { dir: 'ltr' },
   'ar': { dir: 'rtl' }
 };
 
@@ -33,16 +34,18 @@ export async function generateStaticParams() {
   return supportedLngs.map((lng) => ({ lng }));
 }
 
-// --- DEĞİŞİKLİK BURADA: Fonksiyon imzasında sadece 'params' al ---
+// --- DOĞRU GÜNCELLEME (TEK FONKSİYON) ---
 export default async function RootLayout({
   children,
-  params // '{ lng }' yerine sadece 'params' al
+  params
 }: Readonly<{
   children: ReactNode;
-  params: { lng: string }; // Tip tanımı aynı kalabilir
+  params: { lng: string }; // Tip async fonksiyonda Next.js tarafından çözülür
 }>) {
-  // --- DEĞİŞİKLİK BURADA: 'lng' değişkenini fonksiyon içinde tanımla ---
-  const lng = params.lng;
+
+  // Hata buradaydı: 'params.lng'ye doğrudan erişmek yerine 'params' objesini beklemeliyiz.
+  const resolvedParams = await params;
+  const lng = resolvedParams.lng;
 
   const themeMode = await getPreference<ThemeMode>("theme_mode", THEME_MODE_VALUES, "light");
   const themePreset = await getPreference<ThemePreset>("theme_preset", THEME_PRESET_VALUES, "default");

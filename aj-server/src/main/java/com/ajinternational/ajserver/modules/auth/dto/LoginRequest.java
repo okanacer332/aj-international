@@ -7,5 +7,9 @@ public record LoginRequest(
         String username,
 
         @NotBlank(message = "Şifre boş olamaz")
-        String password
+        String password,
+
+        // YENİ EKLENEN ALAN: Hangi ülkeye giriş yapılacağını belirtir.
+        @NotBlank(message = "Tenant ID (Ülke) boş olamaz")
+        String tenantId
 ) {}

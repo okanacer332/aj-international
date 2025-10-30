@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.Base64;
 import java.util.Date;
+// Gerekli importlar (Map ve HashMap'e gerek kalmadı, .claim() metodu kullanıldı)
 import java.util.function.Function;
 
 @Component
@@ -28,6 +29,12 @@ public class JwtUtil {
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    // YENİ METOT: Token içerisinden tenantId'yi okur
+    public String extractTenantId(String token) {
+        // claims.get(key, Class) metodu ile tipi güvenli bir şekilde alırız.
+        return extractClaim(token, claims -> claims.get("tenantId", String.class));
     }
 
     public Date extractExpiration(String token) {
@@ -51,9 +58,11 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(UserDetails userDetails) {
+    // GÜNCELLENEN METOT: Artık tenantId'yi de alıyor
+    public String generateToken(UserDetails userDetails, String tenantId) {
         return Jwts.builder()
                 .subject(userDetails.getUsername())
+                .claim("tenantId", tenantId) // YENİ EKLENEN SATIR: Tenant bilgisini token'a ekle
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getKey())

@@ -285,5 +285,8 @@
   "audit.log.column.username": "المستخدم",
   "audit.log.column.action": "الإجراء",
   "audit.log.column.details": "التفاصيل",
-  "audit.log.column.ipAddress": "عنوان IP"
+  "audit.log.column.ipAddress": "عنوان IP",
+  "login.tenantLabel": "بلد التشغيل",
+  "login.tenantPlaceholder": "اختر دولة...",
+  "toast.loginErrorTenant": "المستخدم غير مصرح له ببلد التشغيل هذا."
 }

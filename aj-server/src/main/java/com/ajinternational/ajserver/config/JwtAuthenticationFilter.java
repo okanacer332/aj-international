@@ -31,47 +31,47 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
 
-        // 1. Authorization başlığı yoksa veya "Bearer " ile başlamıyorsa, isteği bir sonraki filtreye devret.
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 2. "Bearer " kısmını atarak JWT'yi al.
         final String jwt = authHeader.substring(7);
-        final String userEmail;
+        final String username;
+        final String tenantId; // YENİ: tenantId eklendi
 
         try {
-            userEmail = jwtUtil.extractUsername(jwt);
+            username = jwtUtil.extractUsername(jwt);
+            tenantId = jwtUtil.extractTenantId(jwt); // YENİ: tenantId token'dan çekildi
         } catch (Exception e) {
-            // Token parse edilemezse (geçersiz, süresi dolmuş vb.), isteği filtresiz devam ettir.
-            // Bu durumda kullanıcı kimliği doğrulanmamış olur ve korumalı endpoint'lere erişemez.
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 3. Email'i token'dan alabildiysek ve kullanıcı henüz authenticate olmadıysa...
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            // 4. Veritabanından kullanıcı bilgilerini (UserDetails) yükle.
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+        // 3. Kullanıcı adı ve tenantId'yi token'dan alabildiysek ve kullanıcı henüz authenticate olmadıysa...
+        if (username != null && tenantId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            // 5. Token'ı doğrula.
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+
             if (jwtUtil.validateToken(jwt, userDetails)) {
-                // 6. Token geçerliyse, Spring Security için bir Authentication nesnesi oluştur.
+
+                // YENİ: TenantAwarePrincipal oluşturuluyor
+                TenantAwarePrincipal principal = new TenantAwarePrincipal(userDetails, tenantId);
+
+                // GÜNCELLENDİ: Authentication token'ı UserDetails yerine TenantAwarePrincipal ile oluşturuluyor
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null, // Şifre bilgisi burada gerekli değil
+                        principal, // Principal olarak UserDetails yerine özel nesnemizi veriyoruz
+                        null,
                         userDetails.getAuthorities()
                 );
+
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 // 7. Oluşturulan Authentication nesnesini SecurityContext'e yerleştir.
-                //    Bu işlem, kullanıcının bu istek için "giriş yapmış" olduğunu belirtir.
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
 
-        // 8. İsteği bir sonraki filtreye devret.
         filterChain.doFilter(request, response);
     }
 }

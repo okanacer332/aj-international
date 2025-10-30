@@ -1,16 +1,19 @@
 package com.ajinternational.ajserver.modules.masterdata.service;
 
+import com.ajinternational.ajserver.config.TenantContextHolder; // Eklendi
+import com.ajinternational.ajserver.modules.audit.service.AuditLogService; // Eklendi
 import com.ajinternational.ajserver.modules.masterdata.model.MasterProduct;
 import com.ajinternational.ajserver.modules.masterdata.repository.MasterProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails; // Eklendi
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList; // ArrayList eklendi
-import java.util.HashMap; // HashMap eklendi
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional; // Optional importu korundu
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -23,77 +26,87 @@ public class MasterProductService {
     private static final Logger logger = LoggerFactory.getLogger(MasterProductService.class);
 
     private final MasterProductRepository productRepository;
-    // Mock Tenant ID'sini bir sabit olarak tanımlayalım
-    private static final String MOCK_TENANT_ID = "TR";
+    private final AuditLogService auditLogService; // Eklendi
+
+    // Mock Tenant ID kaldırıldı.
 
     /**
-     * Tüm ürünleri çeker ve sonsuz derinlikte hiyerarşik yapıyı kurarak sadece kök (ana) ürünleri döner.
-     * Alt ürünler, ilgili ana ürünün 'subProducts' listesi içinde yer alır.
+     * Güncellendi: Artık o anki kullanıcının tenant'ına göre ürünleri çeker.
+     * Süper Admin ise tüm tenant'lardaki ürünleri hiyerarşik olarak görür.
      */
     public List<MasterProduct> findAllHierarchicalProducts() {
-        List<MasterProduct> allProducts = productRepository.findByTenantId(MOCK_TENANT_ID);
-        logger.info("Tenant '{}' için tüm ürünler çekildi: {} adet.", MOCK_TENANT_ID, allProducts.size());
+        UserDetails userDetails = TenantContextHolder.getCurrentUserDetails();
+        String tenantId = TenantContextHolder.getCurrentTenantId();
+        boolean isSuperAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
-        // Hızlı erişim için tüm ürünleri ID'lerine göre map'leyelim.
+        List<MasterProduct> allProducts;
+        if (isSuperAdmin) {
+            allProducts = productRepository.findAll();
+            logger.info("Süper Admin için tüm tenant'lardaki ürünler çekildi: {} adet.", allProducts.size());
+        } else {
+            allProducts = productRepository.findByTenantId(tenantId);
+            logger.info("Tenant '{}' için tüm ürünler çekildi: {} adet.", tenantId, allProducts.size());
+        }
+
+        // Hiyerarşi kurma mantığı (değişmedi)
         Map<String, MasterProduct> productMap = new HashMap<>();
         for (MasterProduct product : allProducts) {
-            product.setSubProducts(new ArrayList<>()); // Alt ürün listesini initialize et
+            product.setSubProducts(new ArrayList<>());
             productMap.put(product.getId(), product);
         }
 
         List<MasterProduct> rootProducts = new ArrayList<>();
-
-        // Hiyerarşiyi kuralım
         for (MasterProduct product : allProducts) {
             Optional<String> parentIdOpt = product.getParentProductId().filter(s -> !s.trim().isEmpty());
-
             if (parentIdOpt.isPresent()) {
-                String parentId = parentIdOpt.get();
-                MasterProduct parent = productMap.get(parentId);
+                MasterProduct parent = productMap.get(parentIdOpt.get());
                 if (parent != null) {
-                    // Mevcut getSubProducts null olamayacağı için direkt ekleme yapabiliriz.
                     parent.getSubProducts().add(product);
-                    logger.debug("Alt ürün '{}' ({}), ana ürün '{}' ({}) altına eklendi.", product.getName(), product.getId(), parent.getName(), parent.getId());
                 } else {
-                    // Bu durum normalde olmamalı (veritabanı tutarlılığı varsa)
-                    logger.warn("Alt ürün '{}' ({}) için ana ürün ID'si '{}' bulundu ancak ilgili ana ürün map'te bulunamadı!", product.getName(), product.getId(), parentId);
-                    // Ana ürünü bulunamayanları da kök olarak ekleyebiliriz (opsiyonel)
-                    // rootProducts.add(product);
+                    logger.warn("Alt ürün '{}' ({}) için ana ürün ID'si '{}' bulundu ancak ilgili ana ürün map'te bulunamadı!", product.getName(), product.getId(), parentIdOpt.get());
                 }
             } else {
-                // parentProductId'si olmayanlar kök ürünlerdir.
                 rootProducts.add(product);
-                logger.debug("Kök ürün bulundu: '{}' ({})", product.getName(), product.getId());
             }
         }
-
         logger.info("Hiyerarşik yapı kuruldu. Kök ürün sayısı: {}", rootProducts.size());
         return rootProducts;
     }
 
+    /**
+     * Güncellendi: Artık ürünleri o anki kullanıcının tenant'ına kaydeder/günceller.
+     */
     public MasterProduct saveProduct(MasterProduct product) {
-        product.setTenantId(MOCK_TENANT_ID);
+        String currentTenantId = TenantContextHolder.getCurrentTenantId();
+        String currentUsername = TenantContextHolder.getCurrentUsername();
 
         String rawParentId = product.getParentProductId().orElse(null);
         String finalParentId = (rawParentId != null && !rawParentId.trim().isEmpty()) ? rawParentId.trim() : null;
+        product.setParentProductId(finalParentId);
 
-        product.setParentProductId(finalParentId); // Set the potentially modified parent ID
+        String logAction;
+        String logDetails;
 
-        if (finalParentId == null) {
-            logger.info("SAVE LOG: '{}' ürünü ANA ÜRÜN olarak kaydediliyor (parentProductId: null)", product.getName());
+        if (product.getId() == null) {
+            // YENİ ÜRÜN OLUŞTURMA
+            product.setTenantId(currentTenantId); // Tenant'ı otomatik ata
+            logAction = "PRODUCT_CREATED";
+            logDetails = "Yeni ürün oluşturuldu: " + product.getCode();
         } else {
-            // Kaydetmeden önce parent'ın var olup olmadığını kontrol etmek iyi bir pratik olabilir.
-            if (!productRepository.existsById(finalParentId)) {
-                logger.error("HATA: Belirtilen ana ürün ID'si ({}) veritabanında bulunamadı. '{}' kaydedilemedi.", finalParentId, product.getName());
-                throw new IllegalArgumentException("Belirtilen ana ürün bulunamadı.");
-            }
-            logger.info("SAVE LOG: '{}' ürünü ALT ÜRÜN olarak kaydediliyor (parentProductId: {})", product.getName(), finalParentId);
+            // MEVCUT ÜRÜN GÜNCELLEME
+            // Güvenlik kontrolü: Bu ürünü güncelleme yetkisi var mı?
+            MasterProduct existingProduct = this.findById(product.getId()) // findById artık tenant-aware
+                    .orElseThrow(() -> new RuntimeException("Ürün bulunamadı veya bu ürüne erişim yetkiniz yok: " + product.getId()));
+
+            // Güncellemede tenant'ın değişmediğinden emin ol
+            product.setTenantId(existingProduct.getTenantId());
+            logAction = "PRODUCT_UPDATED";
+            logDetails = "Ürün güncellendi: " + product.getCode();
         }
 
-        // Kod benzersizlik kontrolü (Mevcut mantık doğru)
-        productRepository.findByTenantIdAndCode(MOCK_TENANT_ID, product.getCode()).ifPresent(existing -> {
-            // Eğer yeni bir ürün ekleniyorsa (ID'si yoksa) VEYA
-            // mevcut bir ürün güncelleniyorsa AMA bulunan ID, güncellenen ID ile aynı değilse hata ver.
+        // Kod benzersizlik kontrolü (Artık currentTenantId kullanılıyor)
+        productRepository.findByTenantIdAndCode(product.getTenantId(), product.getCode()).ifPresent(existing -> {
             if (product.getId() == null || !Objects.equals(existing.getId(), product.getId())) {
                 logger.error("HATA: Ürün kodu '{}' zaten '{}' adlı ürün tarafından kullanılıyor. '{}' kaydedilemedi.", product.getCode(), existing.getName(), product.getName());
                 throw new IllegalArgumentException("Bu ürün kodu zaten mevcut.");
@@ -102,56 +115,66 @@ public class MasterProductService {
 
         MasterProduct savedProduct = productRepository.save(product);
         logger.info("Ürün başarıyla kaydedildi/güncellendi: ID={}, Kod={}, Ad={}", savedProduct.getId(), savedProduct.getCode(), savedProduct.getName());
+
+        // Loglama eklendi
+        auditLogService.logAction(currentTenantId, currentUsername, logAction, logDetails);
+
         return savedProduct;
     }
 
     /**
-     * Bir ürünü ve (varsa) tüm alt ürünlerini rekürsif olarak siler.
-     * Eğer silinmesi istenen ürünün alt ürünleri varsa, önce alt ürünler silinir.
+     * Güncellendi: Artık ürünü silmeden önce tenant sahipliğini kontrol eder.
      */
     public void deleteProduct(String id) {
-        // Silinecek ürünün var olup olmadığını kontrol et
-        MasterProduct productToDelete = productRepository.findById(id)
+        String currentTenantId = TenantContextHolder.getCurrentTenantId();
+        String currentUsername = TenantContextHolder.getCurrentUsername();
+
+        // Güvenlik kontrolü: Önce ürünü tenant'a göre bul
+        MasterProduct productToDelete = this.findById(id) // findById artık tenant-aware
                 .orElseThrow(() -> {
-                    logger.error("Silme Hatası: ID'si '{}' olan ürün bulunamadı.", id);
-                    return new RuntimeException("Silinecek ürün bulunamadı: " + id);
+                    logger.error("Silme Hatası: ID'si '{}' olan ürün bulunamadı veya erişim yetkiniz yok.", id);
+                    return new RuntimeException("Silinecek ürün bulunamadı veya bu ürüne erişim yetkiniz yok: " + id);
                 });
 
         logger.info("Silme işlemi başlatıldı: ID={}, Kod={}, Ad={}", productToDelete.getId(), productToDelete.getCode(), productToDelete.getName());
 
-        // Rekürsif olarak alt ürünleri bul ve sil
-        deleteChildrenRecursive(id);
+        deleteChildrenRecursive(id); // Bu metot zaten ID'ye göre çalıştığı için tenant-safe
 
-        // Ana ürünü sil
         productRepository.deleteById(id);
         logger.info("Ürün başarıyla silindi: ID={}", id);
+
+        // Loglama eklendi
+        auditLogService.logAction(currentTenantId, currentUsername, "PRODUCT_DELETED", "Ürün silindi: " + productToDelete.getCode());
     }
 
-    /**
-     * Belirtilen parentId'ye sahip tüm alt ürünleri ve onların alt ürünlerini rekürsif olarak siler.
-     */
     private void deleteChildrenRecursive(String parentId) {
+        // Bu metot, üst metot (deleteProduct) tarafından zaten tenant kontrolünden geçmiş
+        // bir parentId'den başladığı için, alt ürünler de aynı tenant'ta olacaktır.
         List<MasterProduct> children = productRepository.findByParentProductId(parentId);
         if (!children.isEmpty()) {
             logger.info("ID'si '{}' olan ürünün {} adet alt ürünü bulundu. Siliniyor...", parentId, children.size());
             for (MasterProduct child : children) {
-                // Önce bu çocuğun altındakileri sil
                 deleteChildrenRecursive(child.getId());
-                // Sonra çocuğu sil
                 productRepository.deleteById(child.getId());
                 logger.info("Alt ürün silindi: ID={}, Kod={}, Ad={}", child.getId(), child.getCode(), child.getName());
             }
-        } else {
-            logger.debug("ID'si '{}' olan ürünün silinecek alt ürünü bulunamadı.", parentId);
         }
     }
 
+    /**
+     * Güncellendi: Artık multi-tenant güvenli.
+     */
+    public Optional<MasterProduct> findById(String id) {
+        UserDetails userDetails = TenantContextHolder.getCurrentUserDetails();
+        String tenantId = TenantContextHolder.getCurrentTenantId();
 
-    public MasterProduct findById(String id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> {
-                    logger.error("Arama Hatası: ID'si '{}' olan ürün bulunamadı.", id);
-                    return new RuntimeException("Ürün bulunamadı: " + id);
-                });
+        boolean isSuperAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+
+        if (isSuperAdmin) {
+            return productRepository.findById(id);
+        } else {
+            return productRepository.findByTenantIdAndId(tenantId, id);
+        }
     }
 }
