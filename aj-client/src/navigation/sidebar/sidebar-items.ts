@@ -14,6 +14,7 @@ import {
   HeartHandshake,
   AreaChart,
   FileClock,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 
@@ -79,8 +80,9 @@ export const sidebarItems: NavGroup[] = [
         icon: BookText,
         subItems: [
           { title: "sidebar.modules.productDefinitions", url: "/dashboard/masterdata/products", icon: BookText, permission: "PAGE_MASTER_PRODUCT:READ" },
-          // --- YENİ SATIRI BURAYA EKLE ---
           { title: "sidebar.modules.unitDefinitions", url: "/dashboard/masterdata/units", icon: FileText, permission: "PAGE_UNITS:READ" },
+          // --- YENİ SATIRI BURAYA EKLE ---
+          { title: "sidebar.modules.skillDefinitions", url: "/dashboard/masterdata/skills", icon: BarChart3, permission: "PAGE_SKILLS:READ" },
           // --- MEVCUT SATIRI KORU ---
           { title: "sidebar.modules.generalDefinitions", url: "/dashboard/definitions", icon: FileText, comingSoon: true, permission: "PAGE_DEFINITIONS:READ" },
         ],
