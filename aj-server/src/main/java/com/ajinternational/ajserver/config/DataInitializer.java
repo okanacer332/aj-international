@@ -32,9 +32,12 @@ public class DataInitializer implements CommandLineRunner {
         // 1. Sistemdeki tüm yetkileri çek
         Set<String> allPermissions = permissionService.getSystemPermissions();
 
+        // --- YENİ EKLENDİ: Sadece kısıtlı yetkiler (Sadece Dashboard'u görsün) ---
+        Set<String> personnelPermissions = Set.of("PAGE_DASHBOARD:READ");
+        // --- BİTTİ ---
+
         // 2. Süper Admin Rolünü Oluştur (Tenant ID: SYSTEM)
         Role superAdminRole = roleRepository.findByTenantIdAndName(SYSTEM_TENANT, "SUPER_ADMIN").orElseGet(() -> {
-            // Bir önceki adımda Role kurucusunu (constructor) tenantId alacak şekilde güncellemiştik.
             Role newRole = new Role(SYSTEM_TENANT, "SUPER_ADMIN");
             newRole.setPermissions(allPermissions); // Süper admin tüm yetkilere sahiptir
             System.out.println(">>> Varsayılan 'SUPER_ADMIN' rolü oluşturuldu.");
@@ -45,17 +48,17 @@ public class DataInitializer implements CommandLineRunner {
         if (!userRepository.existsByUsername("superadmin")) {
             User superAdminUser = new User();
             superAdminUser.setUsername("superadmin");
-            superAdminUser.setPassword(passwordEncoder.encode("superadmin")); // Şifreyi de superadmin yapalım
+            superAdminUser.setPassword(passwordEncoder.encode("superadmin"));
             superAdminUser.setFullName("Süper Admin");
             superAdminUser.setEmail("superadmin@ajinternational.com");
             superAdminUser.setRoleIds(Set.of(superAdminRole.getId()));
             superAdminUser.setActive(true);
-            superAdminUser.setTenantId(SYSTEM_TENANT); // Bu kullanıcı SYSTEM tenant'ına bağlı
+            superAdminUser.setTenantId(SYSTEM_TENANT);
             userRepository.save(superAdminUser);
             System.out.println(">>> Varsayılan 'superadmin' kullanıcısı oluşturuldu.");
         }
 
-        // 4. Her Operasyonel Ülke (Tenant) için Admin Rolleri ve Kullanıcıları Oluştur
+        // 4. Her Operasyonel Ülke (Tenant) için Roller ve Kullanıcılar Oluştur
         for (String tenantId : OPERATIONAL_TENANTS) {
 
             // 4a. O ülkenin ADMIN rolünü oluştur
@@ -66,7 +69,17 @@ public class DataInitializer implements CommandLineRunner {
                 return roleRepository.save(newRole);
             });
 
-            // 4b. O ülkenin admin kullanıcısını oluştur (örn: admin.tr)
+            // --- YENİ EKLENDİ: 4b. O ülkenin PERSONEL rolünü oluştur ---
+            Role tenantPersonnelRole = roleRepository.findByTenantIdAndName(tenantId, "PERSONNEL").orElseGet(() -> {
+                Role newRole = new Role(tenantId, "PERSONNEL");
+                newRole.setPermissions(personnelPermissions); // Sadece kısıtlı yetkiler
+                System.out.println(">>> '" + tenantId + "' ülkesi için 'PERSONNEL' rolü oluşturuldu.");
+                return roleRepository.save(newRole);
+            });
+            // --- BİTTİ ---
+
+
+            // 4c. O ülkenin admin kullanıcısını oluştur (örn: admin.tr)
             String tenantAdminUsername = "admin." + tenantId.toLowerCase();
             if (!userRepository.existsByUsername(tenantAdminUsername)) {
                 User tenantAdminUser = new User();
@@ -76,7 +89,7 @@ public class DataInitializer implements CommandLineRunner {
                 tenantAdminUser.setEmail("admin@" + tenantId.toLowerCase() + ".ajinternational.com");
                 tenantAdminUser.setRoleIds(Set.of(tenantAdminRole.getId()));
                 tenantAdminUser.setActive(true);
-                tenantAdminUser.setTenantId(tenantId); // Bu kullanıcı o ülkenin tenant'ına bağlı
+                tenantAdminUser.setTenantId(tenantId);
                 userRepository.save(tenantAdminUser);
                 System.out.println(">>> '" + tenantAdminUsername + "' kullanıcısı '" + tenantId + "' ülkesi için oluşturuldu.");
             }

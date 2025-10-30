@@ -71,8 +71,6 @@ export const sidebarItems: NavGroup[] = [
         icon: HeartHandshake,
         subItems: [
           { title: "sidebar.modules.personnelManagement", url: "/dashboard/personnel", icon: Users, permission: "PAGE_PERSONNEL:READ" },
-          { title: "sidebar.modules.leaveManagement", url: "/dashboard/leaves", icon: Calendar, comingSoon: true, permission: "PAGE_LEAVES:READ" },
-          { title: "sidebar.modules.shiftManagement", url: "/dashboard/shifts", icon: Clock, comingSoon: true, permission: "PAGE_SHIFTS:READ" },
         ],
       },
       {
