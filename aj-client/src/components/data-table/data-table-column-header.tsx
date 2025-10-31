@@ -11,9 +11,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-interface DataTableColumnHeaderProps<TData, TValue> extends React.HTMLAttributes<HTMLDivElement> {
+// 1. YENİ PROP: 't' fonksiyonunu ekle
+interface DataTableColumnHeaderProps<TData, TValue>
+  extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>;
   title: string;
+  t: (key: string) => string; // Çeviri fonksiyonu
 }
 
 function getSortIcon(sort: "asc" | "desc" | false | undefined) {
@@ -31,6 +34,7 @@ export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
   className,
+  t, // 2. 't' fonksiyonunu props'tan al
 }: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort()) {
     return <div className={cn(className)}>{title}</div>;
@@ -39,26 +43,33 @@ export function DataTableColumnHeader<TData, TValue>({
     <div className={cn("flex items-center space-x-2", className)}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="data-[state=open]:bg-accent -ml-3 h-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="data-[state=open]:bg-accent -ml-3 h-8"
+          >
             <span>{title}</span>
             {getSortIcon(column.getIsSorted())}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
+          {/* 3. ÇEVİRİ: "Asc" */}
           <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
             <ArrowUp className="text-muted-foreground/70 h-3.5 w-3.5" />
-            Asc
+            {t("datatable.sortAsc")}
           </DropdownMenuItem>
+          {/* 4. ÇEVİRİ: "Desc" */}
           <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
             <ArrowDown className="text-muted-foreground/70 h-3.5 w-3.5" />
-            Desc
+            {t("datatable.sortDesc")}
           </DropdownMenuItem>
           {column.columnDef.enableHiding !== false && (
             <>
               <DropdownMenuSeparator />
+              {/* 5. ÇEVİRİ: "Hide" */}
               <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
                 <EyeOff className="text-muted-foreground/70 h-3.5 w-3.5" />
-                Hide
+                {t("datatable.hideColumn")}
               </DropdownMenuItem>
             </>
           )}

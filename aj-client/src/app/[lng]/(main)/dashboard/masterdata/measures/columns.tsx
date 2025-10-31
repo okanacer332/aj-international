@@ -4,6 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { MeasureDefinition } from "@/types/measure-definition";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
+// 1. GÜNCELLEME: DataTableColumnHeader import edildi
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 
 export const createMeasureDefinitionColumns = ({
@@ -17,10 +18,12 @@ export const createMeasureDefinitionColumns = ({
 }): ColumnDef<MeasureDefinition>[] => [
   {
     accessorKey: "name",
+    // 2. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.measure.column.name")}
+        t={t} // 't' fonksiyonu aktarıldı
       />
     ),
   },
