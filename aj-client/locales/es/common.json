@@ -487,5 +487,6 @@
   "datatable.capacity.medium": "Media (11-20)",
   "datatable.capacity.high": "Alta (21+)",
   "hr.personnel.departmentGeneral": "General",
-  "datatable.noResult": "No se encontraron resultados."
+  "datatable.noResult": "No se encontraron resultados.",
+  "datatable.searchRoles": "Buscar roles..."
 }

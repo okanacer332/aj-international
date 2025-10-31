@@ -487,5 +487,6 @@
   "datatable.capacity.medium": "Средняя (11-20)",
   "datatable.capacity.high": "Высокая (21+)",
   "hr.personnel.departmentGeneral": "Общий",
-  "datatable.noResult": "Результаты не найдены."
+  "datatable.noResult": "Результаты не найдены.",
+  "datatable.searchRoles": "Поиск ролей..."
 }

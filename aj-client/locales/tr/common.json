@@ -442,6 +442,7 @@
   "datatable.capacity.medium": "Orta (11-20)",
   "datatable.capacity.high": "Yüksek (21+)",
   "hr.personnel.departmentGeneral": "Genel",
-  "datatable.noResult": "Sonuç bulunamadı."
+  "datatable.noResult": "Sonuç bulunamadı.",
+  "datatable.searchRoles": "Rollerde ara..."
   
 }
