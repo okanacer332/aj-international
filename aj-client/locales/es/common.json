@@ -451,5 +451,10 @@
   "masterdata.product.column.waste": "Desperdicio (%)",
   "masterdata.product.column.premium": "Prima",
   "masterdata.product.status.active": "Activo",
-  "masterdata.product.status.passive": "Pasivo"
+  "masterdata.product.status.passive": "Pasivo",
+  "masterdata.unit.column.nameHierarchy": "Jerarquía de Departamento / Unidad",
+  "masterdata.unit.field.name": "Nombre (Departamento o Unidad)",
+  "masterdata.unit.field.parent": "Departamento Padre",
+  "masterdata.unit.selectOptionMaster": "Departamento Principal (Sin Padre)",
+  "masterdata.unit.placeholderParent": "Seleccione un departamento..."
 }

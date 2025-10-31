@@ -451,5 +451,10 @@
   "masterdata.product.column.waste": "Waste (%)",
   "masterdata.product.column.premium": "Premium",
   "masterdata.product.status.active": "Active",
-  "masterdata.product.status.passive": "Passive"
+  "masterdata.product.status.passive": "Passive",
+  "masterdata.unit.column.nameHierarchy": "Department / Unit Hierarchy",
+  "masterdata.unit.field.name": "Name (Department or Unit)",
+  "masterdata.unit.field.parent": "Parent Department",
+  "masterdata.unit.selectOptionMaster": "Main Department (No Parent)",
+  "masterdata.unit.placeholderParent": "Select a department..."
 }

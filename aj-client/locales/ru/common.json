@@ -451,5 +451,10 @@
   "masterdata.product.column.waste": "Отходы (%)",
   "masterdata.product.column.premium": "Премия",
   "masterdata.product.status.active": "Активен",
-  "masterdata.product.status.passive": "Пассивен"
+  "masterdata.product.status.passive": "Пассивен",
+  "masterdata.unit.column.nameHierarchy": "Иерархия Отдела / Подразделения",
+  "masterdata.unit.field.name": "Название (Отдел или Подразделение)",
+  "masterdata.unit.field.parent": "Родительский Отдел",
+  "masterdata.unit.selectOptionMaster": "Главный Отдел (Нет Родителя)",
+  "masterdata.unit.placeholderParent": "Выберите отдел..."
 }

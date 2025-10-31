@@ -406,5 +406,11 @@
   "masterdata.product.column.waste": "Fire (%)",
   "masterdata.product.column.premium": "Prim",
   "masterdata.product.status.active": "Aktif",
-  "masterdata.product.status.passive": "Pasif"
+  "masterdata.product.status.passive": "Pasif",
+  "masterdata.unit.column.nameHierarchy": "Departman / Ünite Hiyerarşisi",
+  "masterdata.unit.field.name": "Ad (Departman veya Ünite)",
+  "masterdata.unit.field.parent": "Bağlı Olduğu Departman",
+  "masterdata.unit.selectOptionMaster": "Ana Departman (Üst Birim Yok)",
+  "masterdata.unit.placeholderParent": "Bir departman seçin..."
+  
 }

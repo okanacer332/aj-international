@@ -451,5 +451,10 @@
   "masterdata.product.column.waste": "الهدر (٪)",
   "masterdata.product.column.premium": "العلاوة",
   "masterdata.product.status.active": "نشط",
-  "masterdata.product.status.passive": "غير نشط"
+  "masterdata.product.status.passive": "غير نشط",
+  "masterdata.unit.column.nameHierarchy": "التسلسل الهرمي للقسم / الوحدة",
+  "masterdata.unit.field.name": "الاسم (القسم أو الوحدة)",
+  "masterdata.unit.field.parent": "القسم الأصلي",
+  "masterdata.unit.selectOptionMaster": "قسم رئيسي (لا يوجد أصل)",
+  "masterdata.unit.placeholderParent": "اختر قسماً..."
 }
