@@ -414,7 +414,7 @@
 "hr.personnel.toast.updateError": "خطأ أثناء تحديث الموظف.",
 "hr.personnel.status.noUnit": "لم يتم تعيين وحدة",
 "hr.personnel.column.skill": "المهارة",
-"hr.personnel.status.noSkill": "لم يتم تعيين مهارة"
+"hr.personnel.status.noSkill": "لم يتم تعيين مهارة",
   "sidebar.modules.measureDefinitions": "وحدات القياس",
   "masterdata.measure.pageTitle": "تعريفات وحدات القياس",
   "masterdata.measure.pageDescription": "إدارة وحدات القياس (مثل كجم، طن، بالة) المستخدمة في النظام.",
