@@ -414,7 +414,7 @@
 "hr.personnel.toast.updateError": "Error updating personnel.",
 "hr.personnel.status.noUnit": "No Unit Assigned",
 "hr.personnel.column.skill": "Skill",
-"hr.personnel.status.noSkill": "No Skill Assigned"
+"hr.personnel.status.noSkill": "No Skill Assigned",
   "sidebar.modules.measureDefinitions": "Unit of Measures",
   "masterdata.measure.pageTitle": "Unit of Measure Definitions",
   "masterdata.measure.pageDescription": "Manage units of measure (e.g., kg, tonnage, bale) used in the system.",

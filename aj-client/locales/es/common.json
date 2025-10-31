@@ -414,7 +414,7 @@
 "hr.personnel.toast.updateError": "Error al actualizar el personal.",
 "hr.personnel.status.noUnit": "Unidad No Asignada",
 "hr.personnel.column.skill": "Habilidad",
-"hr.personnel.status.noSkill": "Habilidad No Asignada"
+"hr.personnel.status.noSkill": "Habilidad No Asignada",
   "sidebar.modules.measureDefinitions": "Unidades de Medida",
   "masterdata.measure.pageTitle": "Definiciones de Unidades de Medida",
   "masterdata.measure.pageDescription": "Administrar unidades de medida (ej. kg, tonelada, fardo) utilizadas en el sistema.",

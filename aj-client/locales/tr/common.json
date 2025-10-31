@@ -369,7 +369,7 @@
 "hr.personnel.toast.updateError": "Personel güncellenirken hata oluştu.",
 "hr.personnel.status.noUnit": "Birim Atanmamış",
 "hr.personnel.column.skill": "Yetenek",
-"hr.personnel.status.noSkill": "Yetenek Atanmamış"
+"hr.personnel.status.noSkill": "Yetenek Atanmamış",
   "sidebar.modules.measureDefinitions": "Ölçü Birimleri",
   "masterdata.measure.pageTitle": "Ölçü Birimi Tanımları",
   "masterdata.measure.pageDescription": "Sistemde kullanılacak ölçü birimlerini (kg, ton, balya vb.) yönetin.",
