@@ -29,6 +29,18 @@ const nextConfig = {
         port: '8080',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3344', // Hata mesajındaki port
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '192.168.1.203',
+        port: '8080',
+        pathname: '/uploads/**',
+      },
     ],
   },
 
