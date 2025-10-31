@@ -435,5 +435,21 @@
   "masterdata.measure.validation.nameRequired": "Unit name is required.",
   "masterdata.measure.updateButton": "Save Changes",
   "masterdata.measure.createButton": "Create Unit",
-  "iam.permission.PAGE_MEASURES": "Unit of Measure Definitions (General)"
+  "iam.permission.PAGE_MEASURES": "Unit of Measure Definitions (General)",
+  "masterdata.product.fieldTarget": "Target Value",
+  "masterdata.product.placeholderTarget": "E.g: 100",
+  "masterdata.product.fieldMeasureUnit": "Unit of Measure",
+  "masterdata.product.placeholderMeasureUnit": "Select unit...",
+  "masterdata.product.fieldActiveStatus": "Active Status",
+  "masterdata.product.fieldActiveStatusDesc": "Sets the active/passive status for this sub-product.",
+  "masterdata.product.fieldWasteRate": "Waste Rate (%)",
+  "masterdata.product.placeholderWasteRate": "E.g: 1.25",
+  "masterdata.product.fieldPremium": "Premium Value",
+  "masterdata.product.placeholderPremium": "E.g: 2000",
+  "masterdata.product.column.status": "Status",
+  "masterdata.product.column.target": "Target (Unit)",
+  "masterdata.product.column.waste": "Waste (%)",
+  "masterdata.product.column.premium": "Premium",
+  "masterdata.product.status.active": "Active",
+  "masterdata.product.status.passive": "Passive"
 }
