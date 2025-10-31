@@ -435,5 +435,21 @@
   "masterdata.measure.validation.nameRequired": "Требуется название единицы.",
   "masterdata.measure.updateButton": "Сохранить изменения",
   "masterdata.measure.createButton": "Создать Единицу",
-  "iam.permission.PAGE_MEASURES": "Определения Единиц Измерения (Общее)"
+  "iam.permission.PAGE_MEASURES": "Определения Единиц Измерения (Общее)",
+  "masterdata.product.fieldTarget": "Целевое значение",
+  "masterdata.product.placeholderTarget": "Напр: 100",
+  "masterdata.product.fieldMeasureUnit": "Единица изм.",
+  "masterdata.product.placeholderMeasureUnit": "Выберите ед. изм...",
+  "masterdata.product.fieldActiveStatus": "Статус (Активен)",
+  "masterdata.product.fieldActiveStatusDesc": "Устанавливает статус (активен/пассивен) для этого подпродукта.",
+  "masterdata.product.fieldWasteRate": "Норма отходов (%)",
+  "masterdata.product.placeholderWasteRate": "Напр: 1.25",
+  "masterdata.product.fieldPremium": "Значение премии",
+  "masterdata.product.placeholderPremium": "Напр: 2000",
+  "masterdata.product.column.status": "Статус",
+  "masterdata.product.column.target": "Цель (Ед. изм.)",
+  "masterdata.product.column.waste": "Отходы (%)",
+  "masterdata.product.column.premium": "Премия",
+  "masterdata.product.status.active": "Активен",
+  "masterdata.product.status.passive": "Пассивен"
 }

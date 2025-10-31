@@ -10,6 +10,14 @@ export type MasterProduct = {
   subProducts?: MasterProduct[]; 
   
   isExpanded?: boolean; 
+
+  // --- YENİ ALANLAR ---
+  active: boolean;
+  targetValue?: number | null;
+  measureDefinitionId?: string | null;
+  wasteRate?: number | null;
+  premiumValue?: number | null;
+  // --- BİTTİ ---
 };
 
 export type MasterProductFormValues = {
@@ -19,4 +27,12 @@ export type MasterProductFormValues = {
   description: string;
   
   parentProductId: string | null; 
+
+  // --- YENİ ALANLAR ---
+  active: boolean;
+  targetValue?: number | null;
+  measureDefinitionId?: string | null;
+  wasteRate?: number | null;
+  premiumValue?: number | null;
+  // --- BİTTİ ---
 };

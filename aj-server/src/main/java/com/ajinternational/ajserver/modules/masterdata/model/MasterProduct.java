@@ -31,6 +31,14 @@ public class MasterProduct {
     // Hiyerarşi: Bu alan null ise Ana Ürün'dür.
     private String parentProductId;
 
+    // --- YENİ ALANLAR (SADECE ALT ÜRÜNLER İÇİN) ---
+    private Double targetValue; // Hedef (örn: 100)
+    private String measureDefinitionId; // Ölçü Birimi ID'si (örn: "kg"nin ID'si)
+    private boolean active = true; // Durum (varsayılan: aktif)
+    private Double wasteRate; // Fire Oranı (örn: 1.25)
+    private Double premiumValue; // Prim (örn: 2000)
+    // --- YENİ ALANLAR BİTTİ ---
+
     @Transient
     private List<MasterProduct> subProducts;
 

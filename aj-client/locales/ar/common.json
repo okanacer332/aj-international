@@ -435,5 +435,21 @@
   "masterdata.measure.validation.nameRequired": "اسم الوحدة مطلوب.",
   "masterdata.measure.updateButton": "حفظ التغييرات",
   "masterdata.measure.createButton": "إنشاء الوحدة",
-  "iam.permission.PAGE_MEASURES": "تعريفات وحدات القياس (عام)"
+  "iam.permission.PAGE_MEASURES": "تعريفات وحدات القياس (عام)",
+  "masterdata.product.fieldTarget": "القيمة المستهدفة",
+  "masterdata.product.placeholderTarget": "مثال: 100",
+  "masterdata.product.fieldMeasureUnit": "وحدة القياس",
+  "masterdata.product.placeholderMeasureUnit": "اختر وحدة...",
+  "masterdata.product.fieldActiveStatus": "الحالة (نشط)",
+  "masterdata.product.fieldActiveStatusDesc": "يحدد ما إذا كان هذا المنتج الفرعي نشطًا أم غير نشط.",
+  "masterdata.product.fieldWasteRate": "نسبة الهدر (٪)",
+  "masterdata.product.placeholderWasteRate": "مثال: 1.25",
+  "masterdata.product.fieldPremium": "قيمة العلاوة",
+  "masterdata.product.placeholderPremium": "مثال: 2000",
+  "masterdata.product.column.status": "الحالة",
+  "masterdata.product.column.target": "الهدف (الوحدة)",
+  "masterdata.product.column.waste": "الهدر (٪)",
+  "masterdata.product.column.premium": "العلاوة",
+  "masterdata.product.status.active": "نشط",
+  "masterdata.product.status.passive": "غير نشط"
 }

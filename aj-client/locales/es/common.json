@@ -435,5 +435,21 @@
   "masterdata.measure.validation.nameRequired": "Se requiere el nombre de la unidad.",
   "masterdata.measure.updateButton": "Guardar Cambios",
   "masterdata.measure.createButton": "Crear Unidad",
-  "iam.permission.PAGE_MEASURES": "Definiciones de Unidades de Medida (General)"
+  "iam.permission.PAGE_MEASURES": "Definiciones de Unidades de Medida (General)",
+  "masterdata.product.fieldTarget": "Valor Objetivo",
+  "masterdata.product.placeholderTarget": "Ej: 100",
+  "masterdata.product.fieldMeasureUnit": "Unidad de Medida",
+  "masterdata.product.placeholderMeasureUnit": "Seleccione unidad...",
+  "masterdata.product.fieldActiveStatus": "Estado Activo",
+  "masterdata.product.fieldActiveStatusDesc": "Establece el estado activo/pasivo para este subproducto.",
+  "masterdata.product.fieldWasteRate": "Tasa de Desperdicio (%)",
+  "masterdata.product.placeholderWasteRate": "Ej: 1.25",
+  "masterdata.product.fieldPremium": "Valor de Prima",
+  "masterdata.product.placeholderPremium": "Ej: 2000",
+  "masterdata.product.column.status": "Estado",
+  "masterdata.product.column.target": "Objetivo (Unidad)",
+  "masterdata.product.column.waste": "Desperdicio (%)",
+  "masterdata.product.column.premium": "Prima",
+  "masterdata.product.status.active": "Activo",
+  "masterdata.product.status.passive": "Pasivo"
 }

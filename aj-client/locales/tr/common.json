@@ -390,5 +390,21 @@
   "masterdata.measure.validation.nameRequired": "Birim adı zorunludur.",
   "masterdata.measure.updateButton": "Değişiklikleri Kaydet",
   "masterdata.measure.createButton": "Birimi Oluştur",
-  "iam.permission.PAGE_MEASURES": "Ölçü Birimi Tanımları (Genel)"
+  "iam.permission.PAGE_MEASURES": "Ölçü Birimi Tanımları (Genel)",
+  "masterdata.product.fieldTarget": "Hedef Değer",
+  "masterdata.product.placeholderTarget": "Örn: 100",
+  "masterdata.product.fieldMeasureUnit": "Ölçü Birimi",
+  "masterdata.product.placeholderMeasureUnit": "Birim seçin...",
+  "masterdata.product.fieldActiveStatus": "Aktif Durum",
+  "masterdata.product.fieldActiveStatusDesc": "Bu alt ürünün aktif/pasif durumunu belirler.",
+  "masterdata.product.fieldWasteRate": "Fire Oranı (%)",
+  "masterdata.product.placeholderWasteRate": "Örn: 1.25",
+  "masterdata.product.fieldPremium": "Prim Değeri",
+  "masterdata.product.placeholderPremium": "Örn: 2000",
+  "masterdata.product.column.status": "Durum",
+  "masterdata.product.column.target": "Hedef (Birim)",
+  "masterdata.product.column.waste": "Fire (%)",
+  "masterdata.product.column.premium": "Prim",
+  "masterdata.product.status.active": "Aktif",
+  "masterdata.product.status.passive": "Pasif"
 }
