@@ -488,5 +488,6 @@
   "datatable.capacity.high": "Alta (21+)",
   "hr.personnel.departmentGeneral": "General",
   "datatable.noResult": "No se encontraron resultados.",
-  "datatable.searchRoles": "Buscar roles..."
+  "datatable.searchRoles": "Buscar roles...",
+  "datatable.searchLogs": "Buscar en registros..."
 }

@@ -1,13 +1,11 @@
-// aj-client/src/app/[lng]/(main)/dashboard/audit/logs/columns.tsx
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
 import { AuditLog } from "@/types/audit-log";
 import { Badge } from "@/components/ui/badge";
+// 1. YENİ İMPORT: Sıralama için başlık bileşeni
+import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 
-// Bu bileşen action'ı alır ancak çevirisi statik değil,
-// backend'den gelen action key'ine (USER_LOGIN_SUCCESS, USER_DELETED vb.) göre renk verir.
-// Action metninin kendisi (action) backend'den geldiği için sadece renk ayarı çeviriye ihtiyaç duymaz.
 const ActionBadge = ({ action }: { action: string }) => {
   let variant: "secondary" | "destructive" | "default" = "default";
   if (action.includes("SUCCESS")) {
@@ -18,40 +16,64 @@ const ActionBadge = ({ action }: { action: string }) => {
   return <Badge variant={variant}>{action}</Badge>;
 };
 
-// KRİTİK DEĞİŞİKLİK: columns array'i bir fonksiyona dönüştürüldü.
-export const createAuditLogColumns = (t: (key: string) => string): ColumnDef<AuditLog>[] => [
+export const createAuditLogColumns = (
+  t: (key: string) => string
+): ColumnDef<AuditLog>[] => [
   {
     accessorKey: "timestamp",
-    // ÇEVİRİ: Sütun Başlığı
-    header: t("audit.log.column.timestamp"),
+    // 2. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={t("audit.log.column.timestamp")}
+        t={t} // 't' fonksiyonu aktarıldı
+      />
+    ),
     cell: ({ row }) => {
       const date = new Date(row.getValue("timestamp"));
-      // KRİTİK DÜZELTME: toLocaleString dil kodunu (lng) almadığı için,
-      // her iki dil için de (tr ve en) doğru formatta görünmesi için
-      // basitçe toLocaleString() çağırılabilir ya da 'en-US' formatı zorlanabilir.
-      // Şimdilik tr-TR kuralını koruyalım.
-      return <span>{date.toLocaleString('tr-TR')}</span>; 
+      // 'tr-TR' sabit kalabilir, veya 'lng' prop'u buraya da taşınabilir.
+      // Şimdilik stabilite için 'tr-TR' bırakıyorum.
+      return <span>{date.toLocaleString("tr-TR")}</span>;
     },
   },
   {
     accessorKey: "username",
-    // ÇEVİRİ: Sütun Başlığı
-    header: t("audit.log.column.username"),
+    // 3. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={t("audit.log.column.username")}
+        t={t}
+      />
+    ),
   },
   {
     accessorKey: "action",
-    // ÇEVİRİ: Sütun Başlığı
-    header: t("audit.log.column.action"),
+    // 4. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={t("audit.log.column.action")}
+        t={t}
+      />
+    ),
     cell: ({ row }) => <ActionBadge action={row.getValue("action")} />,
   },
   {
     accessorKey: "details",
-    // ÇEVİRİ: Sütun Başlığı
+    // 5. GÜNCELLEME: (Sıralanamaz)
     header: t("audit.log.column.details"),
+    enableSorting: false,
   },
   {
     accessorKey: "ipAddress",
-    // ÇEVİRİ: Sütun Başlığı
-    header: t("audit.log.column.ipAddress"),
+    // 6. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={t("audit.log.column.ipAddress")}
+        t={t}
+      />
+    ),
   },
 ];

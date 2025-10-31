@@ -488,5 +488,6 @@
   "datatable.capacity.high": "عالية (21+)",
   "hr.personnel.departmentGeneral": "عام",
   "datatable.noResult": "لم يتم العثور على نتائج.",
-  "datatable.searchRoles": "...بحث عن أدوار"
+  "datatable.searchRoles": "...بحث عن أدوار",
+  "datatable.searchLogs": "...البحث في السجلات"
 }

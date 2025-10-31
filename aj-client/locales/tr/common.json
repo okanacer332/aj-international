@@ -443,6 +443,7 @@
   "datatable.capacity.high": "Yüksek (21+)",
   "hr.personnel.departmentGeneral": "Genel",
   "datatable.noResult": "Sonuç bulunamadı.",
-  "datatable.searchRoles": "Rollerde ara..."
+  "datatable.searchRoles": "Rollerde ara...",
+  "datatable.searchLogs": "Loglarda ara..."
   
 }
