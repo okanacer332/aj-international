@@ -4,8 +4,9 @@ import { ColumnDef } from "@tanstack/react-table";
 import { SkillDefinition } from "@/types/skill-definition";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
+// 1. YENİ İMPORT: Sıralama için başlık bileşeni
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { Progress } from "@/components/ui/progress"; // Progress bar eklendi
+import { Progress } from "@/components/ui/progress";
 
 export const createSkillDefinitionColumns = ({
   onEdit,
@@ -18,19 +19,23 @@ export const createSkillDefinitionColumns = ({
 }): ColumnDef<SkillDefinition>[] => [
   {
     accessorKey: "skillName",
+    // 2. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.skill.column.skillName")}
+        t={t} // 't' fonksiyonu aktarıldı
       />
     ),
   },
   {
     accessorKey: "targetExperiencePercent",
+    // 3. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.skill.column.targetExperiencePercent")}
+        t={t} // 't' fonksiyonu aktarıldı
       />
     ),
     cell: ({ row }) => {
@@ -43,6 +48,18 @@ export const createSkillDefinitionColumns = ({
           </span>
         </div>
       );
+    },
+    // 4. YENİ EKLEME: Filtreleme fonksiyonu (Aralığa göre)
+    filterFn: (row, id, value: string[]) => {
+      const percent = row.original.targetExperiencePercent;
+      if (value.length === 0) return true;
+
+      return value.some(range => {
+        if (range === "0-49") return percent < 50;
+        if (range === "50-79") return percent >= 50 && percent < 80;
+        if (range === "80-100") return percent >= 80;
+        return false;
+      });
     },
   },
   {

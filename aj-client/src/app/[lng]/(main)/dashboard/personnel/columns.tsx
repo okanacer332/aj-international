@@ -2,6 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Personnel } from "@/types/personnel";
+import { UnitDefinition } from "@/types/unit-definition"; // YENİ İMPORT
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
@@ -10,32 +11,39 @@ import { getInitials } from "@/lib/utils";
 import { API_BASE } from "@/lib/api";
 import { format } from "date-fns";
 import { tr, enUS, es, ru } from "date-fns/locale";
-import { Progress } from "@/components/ui/progress"; // <-- 1. YENİ İMPORT
+import { Progress } from "@/components/ui/progress";
 
-// Dil haritası
 const locales: { [key: string]: Locale } = {
   tr: tr,
   en: enUS,
   es: es,
   ru: ru,
-  ar: enUS, 
+  ar: enUS,
 };
 
+// 1. YENİ PROP: unitMap eklendi
 export const createPersonnelColumns = ({
   onEdit,
   onDelete,
   t,
   lng,
+  unitMap, // Birim ID'sinden isim bulmak için
 }: {
   onEdit: (personnel: Personnel) => void;
   onDelete: (personnel: Personnel) => void;
   t: (key: string) => string;
   lng: string;
+  unitMap: Map<string, UnitDefinition>; // YENİ
 }): ColumnDef<Personnel>[] => [
-  // Avatar ve Ad Soyad (Aynı)
   {
     accessorKey: "user.fullName",
-    header: t("hr.personnel.column.fullName"),
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={t("hr.personnel.column.fullName")}
+        t={t}
+      />
+    ),
     cell: ({ row }) => {
       const user = row.original.user;
       const fullName = user?.fullName || row.original.onxCode;
@@ -53,6 +61,11 @@ export const createPersonnelColumns = ({
         </div>
       );
     },
+    filterFn: (row, id, value) => {
+      const user = row.original.user;
+      const fullName = user?.fullName || "";
+      return fullName.toLowerCase().includes(String(value).toLowerCase());
+    },
   },
   {
     accessorKey: "onxCode",
@@ -60,6 +73,7 @@ export const createPersonnelColumns = ({
       <DataTableColumnHeader
         column={column}
         title={t("hr.personnel.column.onxCode")}
+        t={t}
       />
     ),
   },
@@ -69,6 +83,7 @@ export const createPersonnelColumns = ({
       <DataTableColumnHeader
         column={column}
         title={t("hr.personnel.column.hireDate")}
+        t={t}
       />
     ),
     cell: ({ row }) => {
@@ -77,12 +92,21 @@ export const createPersonnelColumns = ({
       });
     },
   },
-  // Birim (Aynı)
+  // 2. GÜNCELLEME: "Birim" sütunu
   {
-    accessorKey: "unit.departmentName",
-    header: t("hr.personnel.column.unit"),
+    // accessorKey artık 'unit.departmentName' değil, 'unitDefinitionId'
+    accessorKey: "unitDefinitionId",
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={t("hr.personnel.column.unit")}
+        t={t}
+      />
+    ),
     cell: ({ row }) => {
-      const unit = row.original.unit;
+      const unitId = row.original.unitDefinitionId;
+      const unit = unitMap.get(unitId); // Haritadan birimi bul
+
       if (!unit) {
         return (
           <span className="text-muted-foreground">
@@ -90,17 +114,31 @@ export const createPersonnelColumns = ({
           </span>
         );
       }
-      return `${unit.departmentName} / ${unit.unitName}`;
+
+      // Birimin parent'ını (departmanını) bul
+      const parentUnit = unit.parentUnitId ? unitMap.get(unit.parentUnitId) : null;
+
+      if (parentUnit) {
+        // Bu bir Ünite: "Departman Adı / Ünite Adı"
+        return `${parentUnit.name} / ${unit.name}`;
+      } else {
+        // Bu bir Departman (nadiren): "Departman Adı"
+        return unit.name;
+      }
+    },
+    // Filtreleme fonksiyonu 'unitDefinitionId' üzerinden doğru çalışır
+    filterFn: (row, id, value: string[]) => {
+      const unitId = row.original.unitDefinitionId;
+      return value.includes(unitId);
     },
   },
-
-  // --- 2. YENİ SÜTUN: YETENEK ---
   {
     accessorKey: "skill.skillName",
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("hr.personnel.column.skill")}
+        t={t}
       />
     ),
     cell: ({ row }) => {
@@ -128,11 +166,15 @@ export const createPersonnelColumns = ({
       );
     },
   },
-  // --- YENİ SÜTUN BİTTİ ---
-
   {
     accessorKey: "phone",
-    header: t("hr.personnel.column.phone"),
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={t("hr.personnel.column.phone")}
+        t={t}
+      />
+    ),
   },
   {
     id: "actions",
@@ -159,5 +201,7 @@ export const createPersonnelColumns = ({
         </Button>
       </div>
     ),
+    enableSorting: false,
+    enableHiding: false,
   },
 ];

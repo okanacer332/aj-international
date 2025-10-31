@@ -1,3 +1,5 @@
+"use client";
+
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { MasterProduct } from "@/types/master-product";
 import { Button } from "@/components/ui/button";
@@ -8,44 +10,45 @@ import {
   ChevronDown,
   BookText,
   Package,
-  CheckCircle, // İkon eklendi
-  XCircle, // İkon eklendi
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+// 1. YENİ İMPORT: Sıralama için başlık bileşeni
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { MeasureDefinition } from "@/types/measure-definition"; // Ölçü birimi tipi eklendi
+import { MeasureDefinition } from "@/types/measure-definition";
 
-// Interface güncellendi: originalSubProducts opsiyonel yapıldı ve yeni alanlar eklendi
 interface HierarchicalMasterProduct extends MasterProduct {
   level: number;
   originalSubProducts?: MasterProduct[];
-  // Yeni alanlar zaten MasterProduct tipinde var
 }
 
-// Props güncellendi: measureMap eklendi
 export const createMasterProductColumns = ({
   onEdit,
   onDelete,
   onToggleExpand,
   t,
-  measureMap, // Ölçü birimi haritasını al
+  measureMap,
 }: {
   onEdit: (product: MasterProduct) => void;
   onDelete: (product: MasterProduct) => void;
   onToggleExpand: (id: string) => void;
   t: (key: string) => string;
-  measureMap: Map<string, string>; // ID'den isme map
+  measureMap: Map<string, string>;
 }): ColumnDef<HierarchicalMasterProduct>[] => [
   {
     accessorKey: "name",
+    // 2. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.product.column.name")}
+        t={t} // 't' fonksiyonu aktarıldı
       />
     ),
     cell: ({ row }: { row: Row<HierarchicalMasterProduct> }) => {
+      // ... (cell içeriği aynı kalır) ...
       const product = row.original;
       const level = product.level ?? 0;
       const hasChildren =
@@ -90,7 +93,7 @@ export const createMasterProductColumns = ({
           className={cn(
             "flex items-center space-x-1",
             level > 0
-              ? "text-muted-foreground font-normal" // Alt ürünler artık italik değil
+              ? "text-muted-foreground font-normal"
               : "font-semibold"
           )}
           style={{ paddingLeft: indentPadding }}
@@ -101,19 +104,21 @@ export const createMasterProductColumns = ({
         </div>
       );
     },
-    // minSize ve size ayarları eklendi
     minSize: 300,
     size: 400,
   },
   {
     accessorKey: "code",
+    // 3. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.product.column.code")}
+        t={t}
       />
     ),
     cell: ({ row }: { row: Row<HierarchicalMasterProduct> }) => {
+      // ... (cell içeriği aynı kalır) ...
       const isRoot = (row.original.level ?? 0) === 0;
       return (
         <Badge
@@ -127,23 +132,22 @@ export const createMasterProductColumns = ({
         </Badge>
       );
     },
-    size: 150, // Genişlik ayarı
+    size: 150,
   },
-  
-  // --- YENİ SÜTUN: DURUM ---
   {
     accessorKey: "active",
+    // 4. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.product.column.status")}
+        t={t}
       />
     ),
     cell: ({ row }) => {
+      // ... (cell içeriği aynı kalır) ...
       const product = row.original;
-      // Sadece alt ürünler için durumu göster
-      if (product.level === 0) return null; 
-      
+      if (product.level === 0) return null;
       const isActive = product.active;
       
       return isActive ? (
@@ -158,77 +162,97 @@ export const createMasterProductColumns = ({
         </Badge>
       );
     },
-    size: 100, // Genişlik ayarı
+    // 5. YENİ EKLEME: Filtreleme fonksiyonu
+    filterFn: (row, id, value: string[]) => {
+      const rowValue = row.getValue(id) ? "true" : "false";
+      return value.includes(rowValue);
+    },
+    size: 100,
   },
-
-  // --- YENİ SÜTUN: HEDEF (BİRİM) ---
   {
     accessorKey: "targetValue",
+    // 6. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.product.column.target")}
+        t={t}
       />
     ),
     cell: ({ row }) => {
+      // ... (cell içeriği aynı kalır) ...
       const product = row.original;
-      if (product.level === 0 || !product.targetValue) return <span className="text-muted-foreground">---</span>;
+      if (product.level === 0 || !product.targetValue)
+        return <span className="text-muted-foreground">---</span>;
       
-      const unitName = measureMap.get(product.measureDefinitionId ?? "") || "";
+      const unitName =
+        measureMap.get(product.measureDefinitionId ?? "") || "";
       return (
         <span className="font-medium">
           {product.targetValue} {unitName}
         </span>
       );
     },
-    size: 150, // Genişlik ayarı
+    size: 150,
   },
-  
-  // --- YENİ SÜTUN: FİRE (%) ---
   {
     accessorKey: "wasteRate",
+    // 7. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.product.column.waste")}
+        t={t}
       />
     ),
     cell: ({ row }) => {
+      // ... (cell içeriği aynı kalır) ...
       const product = row.original;
-      if (product.level === 0 || product.wasteRate === null || product.wasteRate === undefined) return <span className="text-muted-foreground">---</span>;
+      if (
+        product.level === 0 ||
+        product.wasteRate === null ||
+        product.wasteRate === undefined
+      )
+        return <span className="text-muted-foreground">---</span>;
       return <span>{product.wasteRate}%</span>;
     },
-    size: 100, // Genişlik ayarı
+    size: 100,
   },
-
-  // --- YENİ SÜTUN: PRİM ---
   {
     accessorKey: "premiumValue",
+    // 8. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.product.column.premium")}
+        t={t}
       />
     ),
     cell: ({ row }) => {
+      // ... (cell içeriği aynı kalır) ...
       const product = row.original;
-      if (product.level === 0 || product.premiumValue === null || product.premiumValue === undefined) return <span className="text-muted-foreground">---</span>;
-      // TODO: Para birimi formatlaması eklenebilir
+      if (
+        product.level === 0 ||
+        product.premiumValue === null ||
+        product.premiumValue === undefined
+      )
+        return <span className="text-muted-foreground">---</span>;
       return <span className="font-medium">{product.premiumValue}</span>;
     },
-    size: 100, // Genişlik ayarı
+    size: 100,
   },
-
-  // --- AÇIKLAMA SÜTUNU GÜNCELLENDİ (Sona alındı) ---
   {
     accessorKey: "description",
+    // 9. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.product.column.description")}
+        t={t}
       />
     ),
     cell: ({ row }: { row: Row<HierarchicalMasterProduct> }) => (
+      // ... (cell içeriği aynı kalır) ...
       <span
         className="text-muted-foreground text-sm block max-w-xs truncate"
         title={row.original.description}
@@ -236,21 +260,20 @@ export const createMasterProductColumns = ({
         {row.original.description || t("masterdata.product.noDescription")}
       </span>
     ),
-    size: 200, // Genişlik ayarı
+    size: 200,
   },
-
-  // --- AKSİYONLAR SÜTUNU (Aynen kalır) ---
   {
     id: "actions",
     header: () => (
       <div className="text-right">{t("masterdata.product.column.actions")}</div>
     ),
     cell: ({ row }: { row: Row<HierarchicalMasterProduct> }) => (
+      // ... (cell içeriği aynı kalır) ...
       <div className="flex justify-end space-x-1">
         <Button
           variant="ghost"
           size="sm"
-          className="size-8 p-0" 
+          className="size-8 p-0"
           onClick={(e) => {
             e.stopPropagation();
             onEdit(row.original);
@@ -262,7 +285,7 @@ export const createMasterProductColumns = ({
         <Button
           variant="ghost"
           size="sm"
-          className="size-8 p-0" 
+          className="size-8 p-0"
           onClick={(e) => {
             e.stopPropagation();
             onDelete(row.original);
@@ -275,6 +298,6 @@ export const createMasterProductColumns = ({
     ),
     enableSorting: false,
     enableHiding: false,
-    size: 80, 
+    size: 80,
   },
 ];

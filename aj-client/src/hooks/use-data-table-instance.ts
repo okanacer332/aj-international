@@ -2,6 +2,7 @@ import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
+  filterFns,
   getCoreRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
@@ -11,6 +12,7 @@ import {
   OnChangeFn,
   PaginationState,
   SortingState,
+  TableState, 
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
@@ -19,59 +21,81 @@ type UseDataTableInstanceProps<TData, TValue> = {
   data: TData[];
   columns: ColumnDef<TData, TValue>[];
   getRowId?: (row: TData, index: number) => string;
-  
-  // SUNUCU TARAFLI SAYFALAMA İÇİN YENİ PROPLAR
+
+  // Sunucu taraflı sayfalama
   manualPagination?: boolean;
   pageCount?: number;
   pagination?: PaginationState;
   onPaginationChange?: OnChangeFn<PaginationState>;
+  
+  // Global Filtre (Arama)
+  onGlobalFilterChange?: OnChangeFn<string>;
+  
+  // Kolon Filtreleme (Durum vb.)
+  onColumnFiltersChange?: OnChangeFn<ColumnFiltersState>; // <-- BU SATIR EKLENDİ
+  
+  // Dışarıdan state'i almak için
+  state?: Partial<TableState>;
 };
 
 export function useDataTableInstance<TData, TValue>({
   data,
   columns,
   getRowId,
-  // Yeni propları al
   manualPagination = false,
   pageCount,
-  pagination: controlledPagination,
+  controlledPagination,
   onPaginationChange,
+  onGlobalFilterChange,
+  onColumnFiltersChange, // <-- PROP ALINDI
+  state: controlledState = {},
 }: UseDataTableInstanceProps<TData, TValue>) {
   
+  // Kendi iç state'leri (sayfa tarafından yönetilmeyenler)
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  
-  // Manuel sayfalama yoksa, kendi state'ini kullan
-  const [internalPagination, setInternalPagination] = React.useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
-  
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [sorting, setSorting] = React.useState<SortingState>([]); // <-- Sıralama state'i burada
+
+  // Sayfalama state'i
+  const [internalPagination, setInternalPagination] =
+    React.useState<PaginationState>({
+      pageIndex: 0,
+      pageSize: 10,
+    });
+
   const pagination = controlledPagination ?? internalPagination;
   const setPagination = onPaginationChange ?? setInternalPagination;
 
   const table = useReactTable({
     data,
     columns,
+
+    // GÜNCELLEME: Dışarıdan gelen state ({ globalFilter, columnFilters })
+    // ile içeride yönetilen state'leri ({ sorting, ... }) birleştiriyoruz.
     state: {
       sorting,
       columnVisibility,
       rowSelection,
-      columnFilters,
       pagination,
+      ...controlledState, // { globalFilter, columnFilters } buraya gelecek
     },
-    // Yeni eklenen ayarlar
+
     manualPagination,
     pageCount,
     onPaginationChange: setPagination,
 
+    globalFilterFn: filterFns.includesString,
+    onGlobalFilterChange: onGlobalFilterChange,
+    
+    // GÜNCELLEME: Filtre değişikliği fonksiyonunu bağlıyoruz
+    onColumnFiltersChange: onColumnFiltersChange, // <-- BU SATIR EKLENDİ
+
+    onSortingChange: setSorting, // <-- Sıralama fonksiyonunu bağlıyoruz
+
     enableRowSelection: true,
     getRowId: getRowId ?? ((row) => (row as any).id.toString()),
     onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),

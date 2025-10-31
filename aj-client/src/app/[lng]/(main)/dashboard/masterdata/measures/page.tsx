@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { MeasureDefinition } from "@/types/measure-definition";
 import { createMeasureDefinitionColumns } from "./columns";
 import { DataTable } from "@/components/data-table/data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, FileDown } from "lucide-react"; // Filter ikonu kaldırıldı
 import { apiFetchAuth } from "@/lib/api-auth";
 import { toast } from "sonner";
 import { useDataTableInstance } from "@/hooks/use-data-table-instance";
@@ -34,10 +34,40 @@ import { useTranslation } from "@/lib/i18n-client";
 import { useParams } from "next/navigation";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 
+// YENİ İMPORTLAR
+import { ColumnFiltersState } from "@tanstack/react-table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
 export default function MeasureDefinitionsPage() {
   const [data, setData] = useState<MeasureDefinition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // YENİ STATE'LER
   const [globalFilter, setGlobalFilter] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // columnFilters state'ine gerek yok çünkü filtre butonu kullanmıyoruz
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -71,6 +101,7 @@ export default function MeasureDefinitionsPage() {
     }
   }, [ready, fetchData]);
 
+  // Handler Fonksiyonları (Aynı)
   const handleEdit = useCallback((item: MeasureDefinition) => {
     setSelectedItem(item);
     setIsFormOpen(true);
@@ -105,6 +136,13 @@ export default function MeasureDefinitionsPage() {
     fetchData();
   };
 
+  // Arama çubuğu için Effect
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
+
   const columns = useMemo(
     () =>
       createMeasureDefinitionColumns({
@@ -115,6 +153,7 @@ export default function MeasureDefinitionsPage() {
     [handleEdit, handleDelete, t]
   );
 
+  // GÜNCELLEME: Table Instance (columnFilters kaldırıldı)
   const table = useDataTableInstance({
     data: data,
     columns: columns,
@@ -124,98 +163,205 @@ export default function MeasureDefinitionsPage() {
     onGlobalFilterChange: setGlobalFilter,
   });
 
+  // Skeleton
   if (isLoading || !ready) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-10 w-1/3" />
-        <Skeleton className="h-6 w-2/3" />
-        <div className="flex justify-end gap-2 py-4">
-          <Skeleton className="h-9 w-32" />
-          <Skeleton className="h-9 w-24" />
-        </div>
+        <Skeleton className="h-8 w-1/3" />
+        <Skeleton className="h-20 w-full" />
         <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
+  // --- YENİ RENDER YAPISI ---
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {t("masterdata.measure.pageTitle")}
-          </h1>
-          <p className="text-muted-foreground">
-            {t("masterdata.measure.pageDescription")}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t("masterdata.product.searchPlaceholder")}
-              value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(event.target.value)}
-              className="h-9 w-full sm:w-64 pl-8"
-            />
+      {/* 1. BREADCRUMB */}
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href={`/${lng}/dashboard/default`}>
+              {t("sidebar.managementPanel.home")}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <span className="text-sm font-medium">
+              {t("sidebar.modules.definitions")}
+            </span>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>
+              {t("masterdata.measure.pageTitle")}
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <Card>
+        {/* 2. KONTROL ÇUBUĞU */}
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            
+            {/* Sol Taraf */}
+            <div className="flex flex-col gap-2">
+              <h2 className="text-lg font-semibold">
+                {t("masterdata.measure.pageTitle")}
+              </h2>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="px-2.5 py-1 text-sm">
+                  <strong className="mr-1.5 font-semibold">
+                    {t("datatable.total", "Toplam")}
+                  </strong>
+                  {data.length}
+                </Badge>
+                <Dialog
+                  open={isFormOpen}
+                  onOpenChange={setIsFormOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button onClick={() => setSelectedItem(null)} size="sm" className="h-8">
+                      <Plus className="mr-1.5 h-4 w-4" />
+                      {t("datatable.add_new", "Yeni")} 
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {selectedItem
+                          ? t("masterdata.measure.dialogTitleEdit")
+                          : t("masterdata.measure.dialogTitleNew")}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {t("masterdata.measure.dialogDescription")}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <MeasureDefinitionForm
+                      initialData={selectedItem}
+                      onSuccess={handleFormSuccess}
+                      lng={lng}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+
+            {/* Sağ Taraf: Aksiyonlar (Filtre butonu yok) */}
+            <div className="flex w-full sm:w-auto items-center gap-2">
+              {/* Arama */}
+              {isSearchOpen ? (
+                <div className="relative w-full sm:w-48">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    ref={searchInputRef}
+                    placeholder={t("datatable.search", "Ara...")}
+                    value={globalFilter ?? ""}
+                    onChange={(event) => setGlobalFilter(event.target.value)}
+                    onBlur={() => {
+                      if (globalFilter === "") {
+                        setIsSearchOpen(false);
+                      }
+                    }}
+                    className="h-9 pl-8 w-full"
+                  />
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => setIsSearchOpen(true)}
+                  aria-label={t("datatable.search", "Ara...")}
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              )}
+
+              {/* Dışa Aktar */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9">
+                    <FileDown className="mr-2 h-4 w-4" />
+                    {t("datatable.export", "Dışa Aktar")}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>
+                    {t("datatable.exportPdf", "PDF olarak aktar")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    {t("datatable.exportExcel", "Excel olarak aktar")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setSelectedItem(null)} className="h-9">
-                <Plus className="mr-2 h-4 w-4" />
-                {t("masterdata.measure.newButton")}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>
-                  {selectedItem
-                    ? t("masterdata.measure.dialogTitleEdit")
-                    : t("masterdata.measure.dialogTitleNew")}
-                </DialogTitle>
-                <DialogDescription>
-                  {t("masterdata.measure.dialogDescription")}
-                </DialogDescription>
-              </DialogHeader>
-              <MeasureDefinitionForm
-                initialData={selectedItem}
-                onSuccess={handleFormSuccess}
-                lng={lng}
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+        </CardHeader>
 
-      <div className="rounded-md border">
-        <DataTable table={table} columns={columns} />
-      </div>
-      <DataTablePagination table={table} />
+        {/* 3. DATA TABLOSU */}
+        <CardContent className="p-0">
+          <div className="rounded-t-none border-t">
+            <DataTable table={table} columns={columns} />
+          </div>
+        </CardContent>
 
-      <AlertDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("masterdata.measure.deleteDialogTitle")}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              <b>{itemToDelete?.name}</b>{" "}
-              {t("masterdata.measure.deleteDialogText")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setItemToDelete(null)}>
-              {t("masterdata.product.cancelButton")}
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
-              {t("masterdata.product.deleteButton")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* 4. SAYFALAMA */}
+        <CardFooter className="p-4 sm:p-6 border-t">
+          <DataTablePagination table={table} t={t} />
+        </CardFooter>
+      </Card>
+
+      {/* 5. MODALLAR (Aynı) */}
+      {isFormOpen && (
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+           <DialogContent className="sm:max-w-md">
+             <DialogHeader>
+               <DialogTitle>
+                 {selectedItem
+                   ? t("masterdata.measure.dialogTitleEdit")
+                   : t("masterdata.measure.dialogTitleNew")}
+               </DialogTitle>
+               <DialogDescription>
+                 {t("masterdata.measure.dialogDescription")}
+               </DialogDescription>
+             </DialogHeader>
+             <MeasureDefinitionForm
+               initialData={selectedItem}
+               onSuccess={handleFormSuccess}
+               lng={lng}
+             />
+           </DialogContent>
+         </Dialog>
+      )}
+
+      {itemToDelete && (
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("masterdata.measure.deleteDialogTitle")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                <b>{itemToDelete?.name}</b>{" "}
+                {t("masterdata.measure.deleteDialogText")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setItemToDelete(null)}>
+                {t("masterdata.product.cancelButton")}
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete}>
+                {t("masterdata.product.deleteButton")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }

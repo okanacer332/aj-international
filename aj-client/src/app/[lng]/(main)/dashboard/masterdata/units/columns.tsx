@@ -10,40 +10,44 @@ import {
   ChevronDown,
   CheckCircle,
   XCircle,
-  Building, // Departman ikonu
-  Users,    // Ünite ikonu
+  Building,
+  Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+// 1. YENİ İMPORT: Sıralama için başlık bileşeni
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 
-// Hiyerarşi için arayüz (Product'tan kopyalandı)
+// Hiyerarşi için Arayüz (Aynı)
 interface HierarchicalUnitDefinition extends UnitDefinition {
   level: number;
-  originalSubUnits?: UnitDefinition[]; // 'subProducts' yerine 'subUnits'
+  originalSubUnits?: UnitDefinition[];
+  isExpanded?: boolean;
 }
 
 export const createUnitDefinitionColumns = ({
   onEdit,
   onDelete,
-  onToggleExpand, // Hiyerarşi için eklendi
+  onToggleExpand,
   t,
 }: {
   onEdit: (unit: UnitDefinition) => void;
   onDelete: (unit: UnitDefinition) => void;
-  onToggleExpand: (id: string) => void; // Hiyerarşi için eklendi
+  onToggleExpand: (id: string) => void;
   t: (key: string) => string;
 }): ColumnDef<HierarchicalUnitDefinition>[] => [
   {
     accessorKey: "name",
+    // 2. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
-        // YENİ ÇEVİRİ ANAHTARI
         title={t("masterdata.unit.column.nameHierarchy")}
+        t={t} // 't' fonksiyonu aktarıldı
       />
     ),
     cell: ({ row }: { row: Row<HierarchicalUnitDefinition> }) => {
+      // ... (cell içeriği aynı kalır)
       const unit = row.original;
       const level = unit.level ?? 0;
       const hasChildren =
@@ -62,7 +66,6 @@ export const createUnitDefinitionColumns = ({
           }}
           aria-label={
             isExpanded
-              // Product'tan çeviri anahtarı ödünç alındı
               ? t("masterdata.product.aria.collapse")
               : t("masterdata.product.aria.expand")
           }
@@ -74,10 +77,9 @@ export const createUnitDefinitionColumns = ({
           )}
         </Button>
       ) : (
-        <div className="size-6 mr-2 shrink-0" /> // Boşluk
+        <div className="size-6 mr-2 shrink-0" />
       );
 
-      // Departman için 'Building', Ünite için 'Users' ikonu
       const icon =
         level === 0 ? (
           <Building className="size-4 text-primary mr-1" />
@@ -103,13 +105,16 @@ export const createUnitDefinitionColumns = ({
   },
   {
     accessorKey: "competencyRequired",
+    // 3. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.unit.column.isCompetencyRequired")}
+        t={t} // 't' fonksiyonu aktarıldı
       />
     ),
     cell: ({ row }) => {
+      // ... (cell içeriği aynı kalır)
       const isRequired = row.original.competencyRequired;
       return isRequired ? (
         <Badge variant="secondary" className="text-green-600">
@@ -123,6 +128,11 @@ export const createUnitDefinitionColumns = ({
         </Badge>
       );
     },
+    // 4. YENİ EKLEME: Filtreleme fonksiyonu
+    filterFn: (row, id, value: string[]) => {
+      const rowValue = row.getValue(id) ? "true" : "false";
+      return value.includes(rowValue);
+    },
     size: 150,
   },
   {
@@ -130,7 +140,8 @@ export const createUnitDefinitionColumns = ({
     header: () => (
       <div className="text-right">{t("masterdata.unit.column.actions")}</div>
     ),
-    cell: ({ row }) => (
+    cell: ({ row }: { row: Row<HierarchicalUnitDefinition> }) => (
+      // ... (cell içeriği aynı kalır)
       <div className="flex justify-end space-x-1">
         <Button
           variant="ghost"
@@ -140,7 +151,6 @@ export const createUnitDefinitionColumns = ({
             e.stopPropagation();
             onEdit(row.original);
           }}
-          // Product'tan çeviri anahtarı ödünç alındı
           aria-label={t("masterdata.product.aria.edit")}
         >
           <Edit className="size-4" />
@@ -153,7 +163,6 @@ export const createUnitDefinitionColumns = ({
             e.stopPropagation();
             onDelete(row.original);
           }}
-          // Product'tan çeviri anahtarı ödünç alındı
           aria-label={t("masterdata.product.aria.delete")}
         >
           <Trash2 className="size-4 text-destructive" />

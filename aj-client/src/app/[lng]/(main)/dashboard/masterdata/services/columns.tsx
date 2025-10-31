@@ -4,6 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { ServiceDefinition } from "@/types/service-definition";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Users } from "lucide-react";
+// 1. YENİ İMPORT: Sıralama için başlık bileşeni
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 
@@ -18,28 +19,34 @@ export const createServiceDefinitionColumns = ({
 }): ColumnDef<ServiceDefinition>[] => [
   {
     accessorKey: "driverName",
+    // 2. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.service.column.driverName")}
+        t={t} // 't' fonksiyonu aktarıldı
       />
     ),
   },
   {
     accessorKey: "phone",
+    // 3. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.service.column.phone")}
+        t={t} // 't' fonksiyonu aktarıldı
       />
     ),
   },
   {
     accessorKey: "vehiclePlate",
+    // 4. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.service.column.vehiclePlate")}
+        t={t} // 't' fonksiyonu aktarıldı
       />
     ),
     cell: ({ row }) => {
@@ -52,11 +59,13 @@ export const createServiceDefinitionColumns = ({
   },
   {
     accessorKey: "vehicleCapacity",
+    // 5. GÜNCELLEME: Başlık 'DataTableColumnHeader' ile sarıldı
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title={t("masterdata.service.column.vehicleCapacity")}
-        className="justify-end" // Sağa yasla
+        className="justify-end"
+        t={t} // 't' fonksiyonu aktarıldı
       />
     ),
     cell: ({ row }) => {
@@ -66,6 +75,18 @@ export const createServiceDefinitionColumns = ({
           <Users className="h-4 w-4 text-muted-foreground" />
         </div>
       );
+    },
+    // 6. YENİ EKLEME: Filtreleme fonksiyonu (Aralığa göre)
+    filterFn: (row, id, value: string[]) => {
+      const capacity = row.original.vehicleCapacity;
+      if (value.length === 0) return true;
+
+      return value.some(range => {
+        if (range === "0-10") return capacity <= 10;
+        if (range === "11-20") return capacity > 10 && capacity <= 20;
+        if (range === "21+") return capacity > 20;
+        return false;
+      });
     },
   },
   {
