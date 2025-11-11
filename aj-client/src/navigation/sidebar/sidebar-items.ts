@@ -1,4 +1,4 @@
-// src/navigation/sidebar/sidebar-items.ts
+// aj-client/src/navigation/sidebar/sidebar-items.ts
 import {
   LayoutDashboard,
   ClipboardList,
@@ -17,6 +17,7 @@ import {
   BarChart3,
   Bus,
   Ruler,
+  Warehouse, // YENİ İKON EKLENDİ
   type LucideIcon,
 } from "lucide-react";
 
@@ -66,6 +67,19 @@ export const sidebarItems: NavGroup[] = [
           { title: "sidebar.modules.taskManagement", url: "/dashboard/tasks", icon: ClipboardList, permission: "PAGE_TASKS:READ" },
         ],
       },
+      // --- YENİ MODÜL BAŞLANGICI ---
+      {
+        title: "sidebar.modules.inventory", // Yeni Çeviri Anahtarı
+        url: "#",
+        icon: Warehouse, // Yeni İkon
+        subItems: [
+          { title: "inventory.entry.title", url: "/dashboard/inventory/entry", icon: ClipboardList, permission: "PAGE_INVENTORY_ENTRY:READ" },
+          { title: "inventory.dispatch.title", url: "/dashboard/inventory/dispatch", icon: Bus, permission: "PAGE_INVENTORY_DISPATCH:READ" },
+          { title: "inventory.definitions.title", url: "/dashboard/inventory/definitions", icon: BookText, permission: "PAGE_INVENTORY_DEFINITIONS:READ" },
+          { title: "inventory.reports.title", url: "/dashboard/inventory/reports/stock", icon: AreaChart, permission: "PAGE_INVENTORY_REPORTS:READ" },
+        ],
+      },
+      // --- YENİ MODÜL SONU ---
       {
         title: "sidebar.modules.humanResources",
         url: "#",
@@ -83,9 +97,7 @@ export const sidebarItems: NavGroup[] = [
           { title: "sidebar.modules.unitDefinitions", url: "/dashboard/masterdata/units", icon: FileText, permission: "PAGE_UNITS:READ" },
           { title: "sidebar.modules.skillDefinitions", url: "/dashboard/masterdata/skills", icon: BarChart3, permission: "PAGE_SKILLS:READ" },
           { title: "sidebar.modules.serviceDefinitions", url: "/dashboard/masterdata/services", icon: Bus, permission: "PAGE_SERVICES:READ" },
-          // --- YENİ SATIRI BURAYA EKLE ---
           { title: "sidebar.modules.measureDefinitions", url: "/dashboard/masterdata/measures", icon: Ruler, permission: "PAGE_MEASURES:READ" },
-          // --- MEVCUT SATIRI KORU ---
           { title: "sidebar.modules.generalDefinitions", url: "/dashboard/definitions", icon: FileText, comingSoon: true, permission: "PAGE_DEFINITIONS:READ" },
         ],
       },
