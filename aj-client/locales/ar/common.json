@@ -697,5 +697,11 @@
   "inventory.reports.stockAmount": "كمية المخزون (طن)",
   "inventory.reports.noStock": "لا يوجد مخزون في هذا المستودع.",
   "inventory.reports.depotStockTitle": "حالة مخزون المستودع",
-  "inventory.reports.toast.fetchError": "فشل جلب بيانات تقرير المخزون."
+  "inventory.reports.toast.fetchError": "فشل جلب بيانات تقرير المخزون.",
+  "sidebar.modules.departmentDefinitions": "تعريفات الأقسام",
+  "masterdata.unit.column.name": "الاسم",
+  "masterdata.unit.column.type": "النوع",
+  "masterdata.unit.column.parentName": "القسم الأصلي",
+  "masterdata.unit.type.department": "قسم",
+  "masterdata.unit.type.unit": "وحدة"
 }

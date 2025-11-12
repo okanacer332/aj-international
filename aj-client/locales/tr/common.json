@@ -652,6 +652,12 @@
   "inventory.reports.stockAmount": "Stok Miktarı (Ton)",
   "inventory.reports.noStock": "Bu depoda stok bulunmamaktadır.",
   "inventory.reports.depotStockTitle": "Depo Stok Durumu",
-  "inventory.reports.toast.fetchError": "Stok raporu verileri getirilemedi."
+  "inventory.reports.toast.fetchError": "Stok raporu verileri getirilemedi.",
+  "sidebar.modules.departmentDefinitions": "Departman Tanımları",
+  "masterdata.unit.column.name": "Adı",
+  "masterdata.unit.column.type": "Tipi",
+  "masterdata.unit.column.parentName": "Bağlı Olduğu Departman",
+  "masterdata.unit.type.department": "Departman",
+  "masterdata.unit.type.unit": "Ünite"
   
 }

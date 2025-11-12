@@ -697,5 +697,11 @@
   "inventory.reports.stockAmount": "Cantidad (Ton)",
   "inventory.reports.noStock": "No hay stock disponible en este depósito.",
   "inventory.reports.depotStockTitle": "Estado del Stock del Depósito",
-  "inventory.reports.toast.fetchError": "Error al obtener los datos del informe de stock."
+  "inventory.reports.toast.fetchError": "Error al obtener los datos del informe de stock.",
+  "sidebar.modules.departmentDefinitions": "Definiciones de Departamentos",
+  "masterdata.unit.column.name": "Nombre",
+  "masterdata.unit.column.type": "Tipo",
+  "masterdata.unit.column.parentName": "Departamento Padre",
+  "masterdata.unit.type.department": "Departamento",
+  "masterdata.unit.type.unit": "Unidad"
 }

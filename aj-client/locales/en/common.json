@@ -697,5 +697,11 @@
   "inventory.reports.stockAmount": "Stock Amount (Ton)",
   "inventory.reports.noStock": "No stock available in this depot.",
   "inventory.reports.depotStockTitle": "Depot Stock Status",
-  "inventory.reports.toast.fetchError": "Failed to fetch stock report data."
+  "inventory.reports.toast.fetchError": "Failed to fetch stock report data.",
+  "sidebar.modules.departmentDefinitions": "Department Definitions",
+  "masterdata.unit.column.name": "Name",
+  "masterdata.unit.column.type": "Type",
+  "masterdata.unit.column.parentName": "Parent Department",
+  "masterdata.unit.type.department": "Department",
+  "masterdata.unit.type.unit": "Unit"
 }

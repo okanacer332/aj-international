@@ -697,5 +697,11 @@
   "inventory.reports.stockAmount": "Остаток (Тонн)",
   "inventory.reports.noStock": "На этом складе нет остатков.",
   "inventory.reports.depotStockTitle": "Остатки на складе",
-  "inventory.reports.toast.fetchError": "Не удалось загрузить данные отчета по остаткам."
+  "inventory.reports.toast.fetchError": "Не удалось загрузить данные отчета по остаткам.",
+  "sidebar.modules.departmentDefinitions": "Определения Отделов",
+  "masterdata.unit.column.name": "Название",
+  "masterdata.unit.column.type": "Тип",
+  "masterdata.unit.column.parentName": "Родительский Отдел",
+  "masterdata.unit.type.department": "Отдел",
+  "masterdata.unit.type.unit": "Подразделение"
 }
