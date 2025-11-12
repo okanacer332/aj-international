@@ -728,5 +728,19 @@
   "production.unit.selectOptionMaster": "Main Group (No Parent)",
   "production.unit.placeholderParent": "Select a main group...",
   "production.unit.field.name": "Name (Group or Section)",
-  "production.unit.field.parent": "Parent Group"
+  "production.unit.field.parent": "Parent Group",
+  "sidebar.modules.production.products": "Product Definitions",
+  "masterdata.product.pageTitle.production": "Product Definitions (Production)",
+  "masterdata.product.pageDescription.production": "Manage products and their recipes, linked to production groups and sections.",
+  "masterdata.product.fieldGroup": "Group (Main)",
+  "masterdata.product.placeholderGroup": "Select the group the product belongs to...",
+  "masterdata.product.fieldSection": "Section (Sub)",
+  "masterdata.product.placeholderSection": "Select the section within the group...",
+  "masterdata.product.fieldUnitPrice": "Product Unit Price (KG)",
+  "masterdata.product.placeholderUnitPrice": "E.g: 15.5",
+  "masterdata.product.column.productionUnit": "Group / Section",
+  "masterdata.product.column.unitPrice": "Unit Price (KG)",
+  "masterdata.product.noGroupAssigned": "No Group Assigned",
+  "masterdata.product.validation.groupRequired": "Production group is required.",
+  "masterdata.product.validation.sectionRequired": "Production section is required."
 }

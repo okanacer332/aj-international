@@ -728,5 +728,19 @@
   "production.unit.selectOptionMaster": "مجموعة رئيسية (لا يوجد أصل)",
   "production.unit.placeholderParent": "اختر مجموعة رئيسية...",
   "production.unit.field.name": "الاسم (مجموعة أو قسم)",
-  "production.unit.field.parent": "المجموعة الأصلية"
+  "production.unit.field.parent": "المجموعة الأصلية",
+  "sidebar.modules.production.products": "تعريفات المنتج",
+  "masterdata.product.pageTitle.production": "تعريفات المنتج (الإنتاج)",
+  "masterdata.product.pageDescription.production": "إدارة المنتجات ووصفاتها المرتبطة بمجموعات وأقسام الإنتاج.",
+  "masterdata.product.fieldGroup": "المجموعة (رئيسي)",
+  "masterdata.product.placeholderGroup": "اختر المجموعة التي ينتمي إليها المنتج...",
+  "masterdata.product.fieldSection": "القسم (فرعي)",
+  "masterdata.product.placeholderSection": "اختر القسم داخل المجموعة...",
+  "masterdata.product.fieldUnitPrice": "سعر وحدة المنتج (كجم)",
+  "masterdata.product.placeholderUnitPrice": "مثال: 15.5",
+  "masterdata.product.column.productionUnit": "المجموعة / القسم",
+  "masterdata.product.column.unitPrice": "سعر الوحدة (كجم)",
+  "masterdata.product.noGroupAssigned": "لم يتم تعيين مجموعة",
+  "masterdata.product.validation.groupRequired": "مجموعة الإنتاج مطلوبة.",
+  "masterdata.product.validation.sectionRequired": "قسم الإنتاج مطلوب."
 }

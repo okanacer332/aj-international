@@ -21,7 +21,8 @@ public class MasterProductController {
     @HasPermission("PAGE_MASTER_PRODUCT:READ")
     @PreAuthorize("hasAuthority('PAGE_MASTER_PRODUCT:READ')")
     public ResponseEntity<List<MasterProduct>> getAllProducts() {
-        List<MasterProduct> products = productService.findAllHierarchicalProducts();
+        // GÜNCELLENDİ: Hiyerarşik metot yerine düz listeyi çağır
+        List<MasterProduct> products = productService.findAllProducts();
         return ResponseEntity.ok(products);
     }
 

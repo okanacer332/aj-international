@@ -683,6 +683,20 @@
   "production.unit.selectOptionMaster": "Ana Grup (Bağlı olduğu grup yok)",
   "production.unit.placeholderParent": "Bir ana grup seçin...",
   "production.unit.field.name": "Ad (Grup veya Bölüm)",
-  "production.unit.field.parent": "Bağlı Olduğu Grup"
+  "production.unit.field.parent": "Bağlı Olduğu Grup",
+  "sidebar.modules.production.products": "Ürün Tanımları",
+  "masterdata.product.pageTitle.production": "Ürün Tanımları (Üretim)",
+  "masterdata.product.pageDescription.production": "Üretim gruplarına ve bölümlerine bağlı ürünleri ve reçetelerini yönetin.",
+  "masterdata.product.fieldGroup": "Grup (Ana)",
+  "masterdata.product.placeholderGroup": "Ürünün ait olduğu grubu seçin...",
+  "masterdata.product.fieldSection": "Bölüm (Alt)",
+  "masterdata.product.placeholderSection": "Gruba bağlı bölümü seçin...",
+  "masterdata.product.fieldUnitPrice": "Ürün Birim Fiyatı (KG)",
+  "masterdata.product.placeholderUnitPrice": "Örn: 15.5",
+  "masterdata.product.column.productionUnit": "Grup / Bölüm",
+  "masterdata.product.column.unitPrice": "Birim Fiyat (KG)",
+  "masterdata.product.noGroupAssigned": "Grup Atanmamış",
+  "masterdata.product.validation.groupRequired": "Üretim grubu seçmek zorunludur.",
+  "masterdata.product.validation.sectionRequired": "Üretim bölümü seçmek zorunludur."
   
 }

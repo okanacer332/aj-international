@@ -1,38 +1,40 @@
 export type MasterProduct = {
   id: string;
   tenantId: string;
-  code: string; // Örn: ANO, ANO-CR
-  name: string; // Örn: Ana Tekstil Malzemesi, ANO BABY (CR)
-  description?: string; 
+  code: string;
+  name: string;
+  description?: string;
   
-  parentProductId: string | null; // Ana ürünün ID'si (alt ürün ise)
+  // Hiyerarşi kaldırıldı, yerine bu geldi
+  productionUnitId: string | null; // Bölüm ID'si
   
-  subProducts?: MasterProduct[]; 
+  // subProducts kaldırıldı.
   
-  isExpanded?: boolean; 
-
-  // --- YENİ ALANLAR ---
   active: boolean;
   targetValue?: number | null;
   measureDefinitionId?: string | null;
   wasteRate?: number | null;
-  premiumValue?: number | null;
-  // --- BİTTİ ---
+  
+  // Değişen alan
+  unitPrice?: number | null; // 'premiumValue' yerine
+
+  // Backend servisinden join'lenerek gelen ekstra alanlar
+  groupName?: string;
+  sectionName?: string;
 };
 
+// Form tipi de güncellendi
 export type MasterProductFormValues = {
   id?: string;
   name: string;
   code: string;
-  description: string;
+  description?: string;
   
-  parentProductId: string | null; 
-
-  // --- YENİ ALANLAR ---
+  productionUnitId: string | null;
+  
   active: boolean;
   targetValue?: number | null;
   measureDefinitionId?: string | null;
   wasteRate?: number | null;
-  premiumValue?: number | null;
-  // --- BİTTİ ---
+  unitPrice?: number | null;
 };

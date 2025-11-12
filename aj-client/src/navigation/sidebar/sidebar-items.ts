@@ -19,31 +19,32 @@ import {
   Ruler,
   Warehouse,
   Building,
-  Factory, // YENİ İKON (Factory)
+  Factory,
+  Package, // YENİ İKON (Package)
   type LucideIcon,
 } from "lucide-react";
 
+// ... (Arayüzler aynı kalır) ...
 export interface NavSubItem {
-  title: string; // Artık bu bir çeviri anahtarı olacak (örn: "sidebar.tasks.title")
+  title: string;
   url: string;
   icon?: LucideIcon;
   comingSoon?: boolean;
   permission?: string;
 }
-
 export interface NavMainItem {
-  title: string; // Artık bu bir çeviri anahtarı olacak (örn: "sidebar.operation.title")
+  title: string;
   url: string;
   icon?: LucideIcon;
   subItems?: NavSubItem[];
   comingSoon?: boolean;
 }
-
 export interface NavGroup {
   id: number;
-  label?: string; // Artık bu bir çeviri anahtarı olacak (örn: "sidebar.management.label")
+  label?: string;
   items: NavMainItem[];
 }
+// ... (Arayüzler biter) ...
 
 export const sidebarItems: NavGroup[] = [
   {
@@ -89,22 +90,22 @@ export const sidebarItems: NavGroup[] = [
           { title: "sidebar.modules.departmentDefinitions", url: "/dashboard/hr/departments", icon: Building, permission: "PAGE_UNITS:READ" },
         ],
       },
-      // --- YENİ MODÜL BAŞLANGICI ---
       {
         title: "sidebar.modules.production",
         url: "#",
-        icon: Factory, // Yeni İkon
+        icon: Factory,
         subItems: [
+          // YENİ EKLENDİ:
+          { title: "sidebar.modules.production.products", url: "/dashboard/production/products", icon: Package, permission: "PAGE_MASTER_PRODUCT:READ" },
           { title: "sidebar.modules.productionDefinitions", url: "/dashboard/production/definitions", icon: Building, permission: "PAGE_PRODUCTION_UNITS:READ" },
         ],
       },
-      // --- YENİ MODÜL SONU ---
       {
         title: "sidebar.modules.definitions",
         url: "#",
         icon: BookText,
         subItems: [
-          { title: "sidebar.modules.productDefinitions", url: "/dashboard/masterdata/products", icon: BookText, permission: "PAGE_MASTER_PRODUCT:READ" },
+          // { title: "sidebar.modules.productDefinitions", url: "/dashboard/masterdata/products", icon: BookText, permission: "PAGE_MASTER_PRODUCT:READ" }, // TAŞINDI
           { title: "sidebar.modules.skillDefinitions", url: "/dashboard/masterdata/skills", icon: BarChart3, permission: "PAGE_SKILLS:READ" },
           { title: "sidebar.modules.serviceDefinitions", url: "/dashboard/masterdata/services", icon: Bus, permission: "PAGE_SERVICES:READ" },
           { title: "sidebar.modules.measureDefinitions", url: "/dashboard/masterdata/measures", icon: Ruler, permission: "PAGE_MEASURES:READ" },

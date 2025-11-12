@@ -728,5 +728,19 @@
   "production.unit.selectOptionMaster": "Основная Группа (Нет родителя)",
   "production.unit.placeholderParent": "Выберите основную группу...",
   "production.unit.field.name": "Название (Группа или Секция)",
-  "production.unit.field.parent": "Родительская Группа"
+  "production.unit.field.parent": "Родительская Группа",
+  "sidebar.modules.production.products": "Definiciones de Productos",
+  "masterdata.product.pageTitle.production": "Definiciones de Productos (Producción)",
+  "masterdata.product.pageDescription.production": "Gestionar productos y sus recetas, vinculados a grupos y secciones de producción.",
+  "masterdata.product.fieldGroup": "Grupo (Principal)",
+  "masterdata.product.placeholderGroup": "Seleccione el grupo al que pertenece el producto...",
+  "masterdata.product.fieldSection": "Sección (Sub)",
+  "masterdata.product.placeholderSection": "Seleccione la sección dentro del grupo...",
+  "masterdata.product.fieldUnitPrice": "Precio Unitario (KG)",
+  "masterdata.product.placeholderUnitPrice": "Ej: 15.5",
+  "masterdata.product.column.productionUnit": "Grupo / Sección",
+  "masterdata.product.column.unitPrice": "Precio Unitario (KG)",
+  "masterdata.product.noGroupAssigned": "Grupo No Asignado",
+  "masterdata.product.validation.groupRequired": "Se requiere el grupo de producción.",
+  "masterdata.product.validation.sectionRequired": "Se requiere la sección de producción."
 }

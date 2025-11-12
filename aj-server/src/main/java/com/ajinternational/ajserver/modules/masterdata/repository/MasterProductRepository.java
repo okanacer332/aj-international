@@ -12,14 +12,15 @@ public interface MasterProductRepository extends MongoRepository<MasterProduct, 
 
     List<MasterProduct> findByTenantId(String tenantId);
 
-    List<MasterProduct> findByTenantIdAndParentProductIdIsNull(String tenantId);
-
-    List<MasterProduct> findByParentProductId(String parentProductId);
-
     Optional<MasterProduct> findByTenantIdAndCode(String tenantId, String code);
 
-    long countByTenantIdAndParentProductIdIsNull(String tenantId);
+    // Ana/Alt ürün sayısı metodu kaldırıldı, çünkü o hiyerarşi artık yok.
+    // long countByTenantIdAndParentProductIdIsNull(String tenantId);
 
-    // YENİ EKLENDİ: Belirli bir tenant'taki belirli bir ürünü ID ile getirir
     Optional<MasterProduct> findByTenantIdAndId(String tenantId, String id);
+
+    // YENİ: Bir üretim birimini (Grup/Bölüm) kullanan ürün var mı? (Silme kontrolü için)
+    boolean existsByTenantIdAndProductionUnitId(String tenantId, String productionUnitId);
+
+    // 'findByParentProductId' metodu kaldırıldı.
 }
