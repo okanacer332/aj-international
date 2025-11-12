@@ -38,6 +38,7 @@ type RoleFormProps = {
 // YENİ YARDIMCI FONKSİYON: Yetki Key'inin çevirisini bulur.
 const getPermissionTranslation = (pageKey: string, t: (key: string) => string): string => {
     // Örn: PAGE_USERS key'i için iam.permission.PAGE_USERS çevirisini arar.
+    if (pageKey === "PAGE_PRODUCTION_UNITS") return t("iam.permission.PAGE_PRODUCTION_UNITS");
     return t(`iam.permission.${pageKey}`) || pageKey;
 };
 

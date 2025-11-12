@@ -18,12 +18,13 @@ import {
   Bus,
   Ruler,
   Warehouse,
-  Building, // YENİ İKON (Building)
+  Building,
+  Factory, // YENİ İKON (Factory)
   type LucideIcon,
 } from "lucide-react";
 
 export interface NavSubItem {
-  title: string;
+  title: string; // Artık bu bir çeviri anahtarı olacak (örn: "sidebar.tasks.title")
   url: string;
   icon?: LucideIcon;
   comingSoon?: boolean;
@@ -31,7 +32,7 @@ export interface NavSubItem {
 }
 
 export interface NavMainItem {
-  title: string;
+  title: string; // Artık bu bir çeviri anahtarı olacak (örn: "sidebar.operation.title")
   url: string;
   icon?: LucideIcon;
   subItems?: NavSubItem[];
@@ -40,7 +41,7 @@ export interface NavMainItem {
 
 export interface NavGroup {
   id: number;
-  label?: string;
+  label?: string; // Artık bu bir çeviri anahtarı olacak (örn: "sidebar.management.label")
   items: NavMainItem[];
 }
 
@@ -85,17 +86,25 @@ export const sidebarItems: NavGroup[] = [
         icon: HeartHandshake,
         subItems: [
           { title: "sidebar.modules.personnelManagement", url: "/dashboard/personnel", icon: Users, permission: "PAGE_PERSONNEL:READ" },
-          // YENİ EKLENDİ:
           { title: "sidebar.modules.departmentDefinitions", url: "/dashboard/hr/departments", icon: Building, permission: "PAGE_UNITS:READ" },
         ],
       },
+      // --- YENİ MODÜL BAŞLANGICI ---
+      {
+        title: "sidebar.modules.production",
+        url: "#",
+        icon: Factory, // Yeni İkon
+        subItems: [
+          { title: "sidebar.modules.productionDefinitions", url: "/dashboard/production/definitions", icon: Building, permission: "PAGE_PRODUCTION_UNITS:READ" },
+        ],
+      },
+      // --- YENİ MODÜL SONU ---
       {
         title: "sidebar.modules.definitions",
         url: "#",
         icon: BookText,
         subItems: [
           { title: "sidebar.modules.productDefinitions", url: "/dashboard/masterdata/products", icon: BookText, permission: "PAGE_MASTER_PRODUCT:READ" },
-          // { title: "sidebar.modules.unitDefinitions", url: "/dashboard/masterdata/units", icon: FileText, permission: "PAGE_UNITS:READ" }, // SİLİNDİ
           { title: "sidebar.modules.skillDefinitions", url: "/dashboard/masterdata/skills", icon: BarChart3, permission: "PAGE_SKILLS:READ" },
           { title: "sidebar.modules.serviceDefinitions", url: "/dashboard/masterdata/services", icon: Bus, permission: "PAGE_SERVICES:READ" },
           { title: "sidebar.modules.measureDefinitions", url: "/dashboard/masterdata/measures", icon: Ruler, permission: "PAGE_MEASURES:READ" },
