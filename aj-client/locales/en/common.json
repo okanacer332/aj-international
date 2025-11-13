@@ -760,5 +760,12 @@
   "hr.bonus.validation.currencyRequired": "Select a currency.",
   "hr.bonus.toast.saveSuccess": "Bonus saved successfully.",
   "hr.bonus.toast.saveError": "An error occurred.",
-  "iam.permission.PAGE_BONUS_DEFINITIONS": "Bonus Definitions (HR)"
+  "iam.permission.PAGE_BONUS_DEFINITIONS": "Bonus Definitions (HR)",
+  "hr.personnel.bonus.title": "Personnel Bonuses",
+  "hr.personnel.bonus.add": "Add Bonus",
+  "hr.personnel.bonus.empty": "No bonuses assigned yet.",
+  "hr.personnel.bonus.header.name": "Bonus Name",
+  "hr.personnel.bonus.header.amount": "Amount",
+  "hr.personnel.bonus.validation.select": "Select a bonus.",
+  "hr.personnel.bonus.validation.amount": "Amount cannot be less than 0."
 }

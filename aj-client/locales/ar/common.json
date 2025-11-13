@@ -760,6 +760,13 @@
   "hr.bonus.validation.currencyRequired": "اختر عملة.",
   "hr.bonus.toast.saveSuccess": "تم حفظ المكافأة بنجاح.",
   "hr.bonus.toast.saveError": "حدث خطأ.",
-  "iam.permission.PAGE_BONUS_DEFINITIONS": "تعريفات المكافآت (الموارد البشرية)"
+  "iam.permission.PAGE_BONUS_DEFINITIONS": "تعريفات المكافآت (الموارد البشرية)",
+  "hr.personnel.bonus.title": "مكافآت الموظفين",
+  "hr.personnel.bonus.add": "إضافة مكافأة",
+  "hr.personnel.bonus.empty": "لم يتم تعيين مكافآت بعد.",
+  "hr.personnel.bonus.header.name": "اسم المكافأة",
+  "hr.personnel.bonus.header.amount": "المبلغ",
+  "hr.personnel.bonus.validation.select": "اختر مكافأة.",
+  "hr.personnel.bonus.validation.amount": "لا يمكن أن يكون المبلغ أقل من 0."
  
 }

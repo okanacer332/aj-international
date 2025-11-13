@@ -760,6 +760,13 @@
   "hr.bonus.validation.currencyRequired": "Seleccione una moneda.",
   "hr.bonus.toast.saveSuccess": "Bono guardado exitosamente.",
   "hr.bonus.toast.saveError": "Ocurrió un error.",
-  "iam.permission.PAGE_BONUS_DEFINITIONS": "Definiciones de Bonos (RRHH)"
+  "iam.permission.PAGE_BONUS_DEFINITIONS": "Definiciones de Bonos (RRHH)",
+  "hr.personnel.bonus.title": "Bonificaciones del Personal",
+  "hr.personnel.bonus.add": "Añadir Bono",
+  "hr.personnel.bonus.empty": "No hay bonos asignados todavía.",
+  "hr.personnel.bonus.header.name": "Nombre del Bono",
+  "hr.personnel.bonus.header.amount": "Monto",
+  "hr.personnel.bonus.validation.select": "Seleccione un bono.",
+  "hr.personnel.bonus.validation.amount": "El monto no puede ser menor a 0."
  
 }

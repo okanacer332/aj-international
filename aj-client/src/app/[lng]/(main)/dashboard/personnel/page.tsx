@@ -294,7 +294,7 @@ export default function Page() {
                       {t("datatable.add_new", "Yeni")}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-xl">
+                  <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>
                         {selectedItem

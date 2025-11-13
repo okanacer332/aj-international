@@ -774,5 +774,12 @@
 "hr.bonus.validation.currencyRequired": "Para birimi seçiniz.",
 "hr.bonus.toast.saveSuccess": "Prim kaydedildi.",
 "hr.bonus.toast.saveError": "Hata oluştu.",
-"iam.permission.PAGE_BONUS_DEFINITIONS": "Prim Tanımları (İK)"
+"iam.permission.PAGE_BONUS_DEFINITIONS": "Prim Tanımları (İK)",
+"hr.personnel.bonus.title": "Personel Primleri",
+  "hr.personnel.bonus.add": "Prim Ekle",
+  "hr.personnel.bonus.empty": "Henüz prim atanmamış.",
+  "hr.personnel.bonus.header.name": "Prim Adı",
+  "hr.personnel.bonus.header.amount": "Tutar",
+  "hr.personnel.bonus.validation.select": "Prim seçiniz.",
+  "hr.personnel.bonus.validation.amount": "Tutar 0'dan küçük olamaz."
 }

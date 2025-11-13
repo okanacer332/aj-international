@@ -760,7 +760,14 @@
   "hr.bonus.validation.currencyRequired": "Выберите валюту.",
   "hr.bonus.toast.saveSuccess": "Премия успешно сохранена.",
   "hr.bonus.toast.saveError": "Произошла ошибка.",
-  "iam.permission.PAGE_BONUS_DEFINITIONS": "Определения Премий (HR)"
+  "iam.permission.PAGE_BONUS_DEFINITIONS": "Определения Премий (HR)",
+  "hr.personnel.bonus.title": "Бонусы персонала",
+  "hr.personnel.bonus.add": "Добавить бонус",
+  "hr.personnel.bonus.empty": "Бонусы еще не назначены.",
+  "hr.personnel.bonus.header.name": "Название бонуса",
+  "hr.personnel.bonus.header.amount": "Сумма",
+  "hr.personnel.bonus.validation.select": "Выберите бонус.",
+  "hr.personnel.bonus.validation.amount": "Сумма не может быть меньше 0."
 
  
 }

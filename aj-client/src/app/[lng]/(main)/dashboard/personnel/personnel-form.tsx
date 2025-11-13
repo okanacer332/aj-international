@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useForm, useFieldArray } from "react-hook-form"; // useFieldArray Eklendi
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -31,17 +31,26 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Loader2, Plus, Trash2 } from "lucide-react"; // Ikonlar
+import { CalendarIcon, Loader2, Plus, Trash2, ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { UnitDefinition } from "@/types/unit-definition";
 import { SkillDefinition } from "@/types/skill-definition";
 import { ServiceDefinition } from "@/types/service-definition";
 import { Personnel } from "@/types/personnel";
-import { BonusDefinition } from "@/types/bonus-definition"; // Prim tipi
+import { BonusDefinition } from "@/types/bonus-definition";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
+// Zod şeması artık çeviri anahtarlarını kullanıyor
 const createFormSchema = (t: (key: string) => string) =>
   z.object({
     id: z.string().optional(),
@@ -52,17 +61,16 @@ const createFormSchema = (t: (key: string) => string) =>
     fullName: z.string().min(3, t("validation.fullNameMinLength")),
     phone: z.string().min(10, t("masterdata.service.validation.phoneRequired")),
     
-    // Form state'i için geçici 'departmentId' alanı (API'ye gitmez)
     departmentId: z.string().min(1, "Departman seçimi zorunludur."), 
     unitDefinitionId: z.string().min(1, t("hr.personnel.validation.unitRequired")),
     
     skillDefinitionId: z.string().nullable().optional(),
     serviceDefinitionId: z.string().nullable().optional(),
 
-    // YENİ: Prim Listesi
+    // YENİ: Prim Listesi Validasyonu (Çevirili)
     bonuses: z.array(z.object({
-        bonusDefinitionId: z.string().min(1, "Prim seçiniz"),
-        amount: z.coerce.number().min(0, "Tutar 0'dan küçük olamaz")
+        bonusDefinitionId: z.string().min(1, t("hr.personnel.bonus.validation.select")),
+        amount: z.coerce.number().min(0, t("hr.personnel.bonus.validation.amount"))
     })).optional()
   });
 
@@ -76,13 +84,13 @@ type PersonnelFormProps = {
 
 export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [comboboxOpen, setComboboxOpen] = useState(false);
   
-  // Tüm Tanımlamalar
   const [definitions, setDefinitions] = useState<{
     units: UnitDefinition[];
     skills: SkillDefinition[];
     services: ServiceDefinition[];
-    bonuses: BonusDefinition[]; // Primler eklendi
+    bonuses: BonusDefinition[];
   }>({ units: [], skills: [], services: [], bonuses: [] });
 
   const { t, ready } = useTranslation(lng, "common");
@@ -97,82 +105,73 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
       onxCode: initialData?.onxCode || "",
       fullName: initialData?.user?.fullName || "",
       phone: initialData?.phone || "",
-      // Edit modunda başlangıç değerleri
-      departmentId: "", // useEffect ile doldurulacak
+      departmentId: "", 
       unitDefinitionId: initialData?.unitDefinitionId || "",
       skillDefinitionId: initialData?.skillDefinitionId || null,
       serviceDefinitionId: initialData?.serviceDefinitionId || null,
-      bonuses: initialData?.assignedBonuses || [], // Mevcut primler
+      bonuses: initialData?.assignedBonuses || [],
     },
   });
 
-  // Dinamik Prim Satırları için
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "bonuses",
   });
 
-  // --- CASCADING SELECT MANTIĞI (Departman -> Birim) ---
-  
-  // 1. Tüm birimler içinden "Departman" olanları (parentUnitId == null) filtrele
+  // --- Cascading Select Logic ---
   const departments = useMemo(() => 
     definitions.units.filter(u => !u.parentUnitId), 
   [definitions.units]);
 
-  // 2. Seçilen Departmana göre "Alt Birimleri" filtrele
   const selectedDepartmentId = form.watch("departmentId");
   
   const subUnits = useMemo(() => {
     if (!selectedDepartmentId) return [];
-    // Hiyerarşik yapıdan (subUnits array) veya düz listeden çekebiliriz. 
-    // UnitDefinitionService hiyerarşik dönüyordu.
     const dept = definitions.units.find(u => u.id === selectedDepartmentId);
     return dept?.subUnits || [];
   }, [selectedDepartmentId, definitions.units]);
 
-  // 3. Birim değiştiğinde Yetkinlik gerekliliğini kontrol et
   const watchedUnitId = form.watch("unitDefinitionId");
   const [isCompetencyVisible, setIsCompetencyVisible] = useState(false);
 
   useEffect(() => {
-    // Seçili birimin özelliklerini bul
-    const selectedUnit = subUnits.find(u => u.id === watchedUnitId);
+    const allUnitsFlat: UnitDefinition[] = [];
+    const flatten = (list: UnitDefinition[]) => {
+        list.forEach(u => {
+            allUnitsFlat.push(u);
+            if(u.subUnits) flatten(u.subUnits);
+        })
+    }
+    flatten(definitions.units);
+
+    const selectedUnit = allUnitsFlat.find(u => u.id === watchedUnitId);
     setIsCompetencyVisible(!!selectedUnit?.competencyRequired);
     
     if (!selectedUnit?.competencyRequired) {
         form.setValue("skillDefinitionId", null);
     }
-  }, [watchedUnitId, subUnits, form]);
+  }, [watchedUnitId, definitions.units, form]);
 
-  // --- INITIAL DATA HAZIRLIĞI ---
-  // Edit modunda açıldığında, personelin mevcut biriminden yola çıkarak Departmanı bulup seçtirmeliyiz.
   useEffect(() => {
     if (isEditMode && initialData && definitions.units.length > 0) {
-        // Personelin birimi (unitDefinitionId) hangi departmanın altında?
-        // definitions.units (Kökler/Departmanlar) içinde gezerek alt birimi bul.
         const parentDept = definitions.units.find(dept => 
             dept.subUnits?.some(sub => sub.id === initialData.unitDefinitionId)
         );
-
         if (parentDept) {
-            // Formun departmentId alanını set et ki ilk select dolsun
-            // setValue tetiklendiğinde 'subUnits' useMemo sayesinde otomatik hesaplanacak
             form.setValue("departmentId", parentDept.id);
         }
     }
   }, [isEditMode, initialData, definitions.units, form]);
 
-
-  // Verileri Çek
   useEffect(() => {
     if (!ready) return;
     const fetchDefinitions = async () => {
       try {
         const [unitsRes, skillsRes, servicesRes, bonusesRes] = await Promise.all([
-          apiFetchAuth("/api/masterdata/units"), // Hiyerarşik
+          apiFetchAuth("/api/masterdata/units"),
           apiFetchAuth("/api/masterdata/skills"),
           apiFetchAuth("/api/masterdata/services"),
-          apiFetchAuth("/api/hr/bonus-definitions"), // Primler
+          apiFetchAuth("/api/hr/bonus-definitions"),
         ]);
         
         setDefinitions({
@@ -188,12 +187,11 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
     fetchDefinitions();
   }, [ready, t]);
 
-  // Prim seçildiğinde varsayılan tutarı getir
   const handleBonusChange = (index: number, bonusId: string) => {
     const bonusDef = definitions.bonuses.find(b => b.id === bonusId);
     if (bonusDef) {
         form.setValue(`bonuses.${index}.bonusDefinitionId`, bonusId);
-        form.setValue(`bonuses.${index}.amount`, bonusDef.amount); // Varsayılan tutarı bas
+        form.setValue(`bonuses.${index}.amount`, bonusDef.amount);
     }
   };
 
@@ -205,16 +203,14 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
       : "/api/hr/personnel";
     const method = isEditMode ? "PUT" : "POST";
 
-    // API'ye gidecek temiz obje (departmentId'yi çıkarıyoruz)
     const cleanValues = {
       ...values,
       hireDate: format(values.hireDate, "yyyy-MM-dd"),
-      // null string kontrolü
       skillDefinitionId: values.skillDefinitionId === "null" ? null : values.skillDefinitionId,
       serviceDefinitionId: values.serviceDefinitionId === "null" ? null : values.serviceDefinitionId,
     };
     // @ts-ignore
-    delete cleanValues.departmentId; // Bu alan sadece UI içindi
+    delete cleanValues.departmentId;
 
     if (isEditMode) {
       delete (cleanValues as any).onxCode;
@@ -247,7 +243,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         
-        {/* TEMEL BİLGİLER */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -316,9 +311,8 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
             />
         </div>
 
-        {/* BİRİM SEÇİMİ (İKİ AŞAMALI SELECT) */}
+        {/* BİRİM SEÇİMİ - COMBOMOX */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10">
-            {/* 1. Departman Seçimi */}
             <FormField
                 control={form.control}
                 name="departmentId"
@@ -328,7 +322,7 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                     <Select 
                         onValueChange={(val) => {
                             field.onChange(val);
-                            form.setValue("unitDefinitionId", ""); // Departman değişirse birimi sıfırla
+                            form.setValue("unitDefinitionId", "");
                         }} 
                         value={field.value}
                     >
@@ -350,38 +344,67 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                 )}
             />
 
-            {/* 2. Alt Birim Seçimi */}
             <FormField
                 control={form.control}
                 name="unitDefinitionId"
                 render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                     <FormLabel>Birim / Ünite</FormLabel>
-                    <Select 
-                        onValueChange={field.onChange} 
-                        value={field.value}
-                        disabled={!selectedDepartmentId} // Departman seçilmeden pasif
-                    >
-                    <FormControl>
-                        <SelectTrigger>
-                        <SelectValue placeholder="Birim Seçiniz" />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        {subUnits.map((unit) => (
-                        <SelectItem key={unit.id} value={unit.id}>
-                            {unit.name}
-                        </SelectItem>
-                        ))}
-                    </SelectContent>
-                    </Select>
+                    <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={comboboxOpen}
+                            className={cn(
+                              "w-full justify-between",
+                              !field.value && "text-muted-foreground"
+                            )}
+                            disabled={!selectedDepartmentId}
+                          >
+                            {field.value
+                              ? subUnits.find((unit) => unit.id === field.value)?.name
+                              : "Birim Seçiniz"}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                          <CommandInput placeholder="Birim Ara..." />
+                          <CommandList className="max-h-[200px] overflow-y-auto">
+                            <CommandEmpty>{t("datatable.noResult")}</CommandEmpty>
+                            <CommandGroup>
+                              {subUnits.map((unit) => (
+                                <CommandItem
+                                  key={unit.id}
+                                  value={unit.name}
+                                  onSelect={() => {
+                                    form.setValue("unitDefinitionId", unit.id);
+                                    setComboboxOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      field.value === unit.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {unit.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                 </FormItem>
                 )}
             />
         </div>
 
-        {/* YETENEK VE SERVİS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {isCompetencyVisible && (
             <FormField
@@ -438,28 +461,32 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
             />
         </div>
 
-        {/* --- PRİM ATAMA TABLOSU (LOJİSTİK STİLİ) --- */}
+        {/* PRİM ATAMA TABLOSU */}
         <Card>
             <CardHeader className="flex flex-row items-center justify-between py-4">
-                <CardTitle className="text-base">Personel Primleri</CardTitle>
+                {/* Çeviri: Personel Primleri */}
+                <CardTitle className="text-base">{t("hr.personnel.bonus.title")}</CardTitle>
                 <Button type="button" variant="outline" size="sm" onClick={() => append({ bonusDefinitionId: "", amount: 0 })}>
-                    <Plus className="mr-2 h-4 w-4" /> Prim Ekle
+                    <Plus className="mr-2 h-4 w-4" /> {t("hr.personnel.bonus.add")}
                 </Button>
             </CardHeader>
             <CardContent className="p-0">
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[50%]">Prim Adı</TableHead>
-                            <TableHead>Tutar</TableHead>
+                            {/* Çeviri: Prim Adı */}
+                            <TableHead className="w-[50%]">{t("hr.personnel.bonus.header.name")}</TableHead>
+                            {/* Çeviri: Tutar */}
+                            <TableHead>{t("hr.personnel.bonus.header.amount")}</TableHead>
                             <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {fields.length === 0 && (
                             <TableRow>
+                                {/* Çeviri: Henüz prim atanmamış */}
                                 <TableCell colSpan={3} className="text-center text-muted-foreground h-24">
-                                    Henüz prim atanmamış.
+                                    {t("hr.personnel.bonus.empty")}
                                 </TableCell>
                             </TableRow>
                         )}
@@ -477,7 +504,7 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                                                 >
                                                     <FormControl>
                                                         <SelectTrigger>
-                                                            <SelectValue placeholder="Prim Seçiniz" />
+                                                            <SelectValue placeholder={t("hr.personnel.bonus.validation.select")} />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
