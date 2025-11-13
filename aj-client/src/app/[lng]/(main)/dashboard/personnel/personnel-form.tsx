@@ -50,7 +50,6 @@ import {
   CommandList,
 } from "@/components/ui/command";
 
-// Zod şeması artık çeviri anahtarlarını kullanıyor
 const createFormSchema = (t: (key: string) => string) =>
   z.object({
     id: z.string().optional(),
@@ -67,7 +66,6 @@ const createFormSchema = (t: (key: string) => string) =>
     skillDefinitionId: z.string().nullable().optional(),
     serviceDefinitionId: z.string().nullable().optional(),
 
-    // YENİ: Prim Listesi Validasyonu (Çevirili)
     bonuses: z.array(z.object({
         bonusDefinitionId: z.string().min(1, t("hr.personnel.bonus.validation.select")),
         amount: z.coerce.number().min(0, t("hr.personnel.bonus.validation.amount"))
@@ -118,7 +116,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
     name: "bonuses",
   });
 
-  // --- Cascading Select Logic ---
   const departments = useMemo(() => 
     definitions.units.filter(u => !u.parentUnitId), 
   [definitions.units]);
@@ -259,7 +256,8 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  {/* FIX: z-[9999] eklendi */}
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start">
                     <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
                   </PopoverContent>
                 </Popover>
@@ -331,7 +329,8 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                         <SelectValue placeholder="Departman Seçiniz" />
                         </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    {/* FIX: z-[9999] eklendi */}
+                    <SelectContent className="z-[9999]">
                         {departments.map((dept) => (
                         <SelectItem key={dept.id} value={dept.id}>
                             {dept.name}
@@ -370,7 +369,8 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                      {/* FIX: z-[9999] eklendi */}
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[9999]">
                         <Command>
                           <CommandInput placeholder="Birim Ara..." />
                           <CommandList className="max-h-[200px] overflow-y-auto">
@@ -419,7 +419,8 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                         <SelectValue placeholder={t("hr.personnel.placeholder.skill")} />
                         </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    {/* FIX: z-[9999] eklendi */}
+                    <SelectContent className="z-[9999]">
                         <SelectItem value="null">{t("hr.personnel.placeholder.skill")}</SelectItem>
                         {definitions.skills.map((skill) => (
                         <SelectItem key={skill.id} value={skill.id}>
@@ -446,7 +447,8 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                     <SelectValue placeholder={t("hr.personnel.placeholder.service")} />
                     </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                {/* FIX: z-[9999] eklendi */}
+                <SelectContent className="z-[9999]">
                     <SelectItem value="null">{t("hr.personnel.placeholder.noService")}</SelectItem>
                     {definitions.services.map((service) => (
                     <SelectItem key={service.id} value={service.id}>
@@ -464,7 +466,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
         {/* PRİM ATAMA TABLOSU */}
         <Card>
             <CardHeader className="flex flex-row items-center justify-between py-4">
-                {/* Çeviri: Personel Primleri */}
                 <CardTitle className="text-base">{t("hr.personnel.bonus.title")}</CardTitle>
                 <Button type="button" variant="outline" size="sm" onClick={() => append({ bonusDefinitionId: "", amount: 0 })}>
                     <Plus className="mr-2 h-4 w-4" /> {t("hr.personnel.bonus.add")}
@@ -474,9 +475,7 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            {/* Çeviri: Prim Adı */}
                             <TableHead className="w-[50%]">{t("hr.personnel.bonus.header.name")}</TableHead>
-                            {/* Çeviri: Tutar */}
                             <TableHead>{t("hr.personnel.bonus.header.amount")}</TableHead>
                             <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
@@ -484,7 +483,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                     <TableBody>
                         {fields.length === 0 && (
                             <TableRow>
-                                {/* Çeviri: Henüz prim atanmamış */}
                                 <TableCell colSpan={3} className="text-center text-muted-foreground h-24">
                                     {t("hr.personnel.bonus.empty")}
                                 </TableCell>
@@ -507,7 +505,8 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                                                             <SelectValue placeholder={t("hr.personnel.bonus.validation.select")} />
                                                         </SelectTrigger>
                                                     </FormControl>
-                                                    <SelectContent>
+                                                    {/* FIX: z-[9999] eklendi */}
+                                                    <SelectContent className="z-[9999]">
                                                         {definitions.bonuses.map((b) => (
                                                             <SelectItem key={b.id} value={b.id}>
                                                                 {b.name} ({b.amount} {b.currencyCode})
