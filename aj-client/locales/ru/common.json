@@ -737,6 +737,30 @@
   "masterdata.currency.column.actions": "Действия",
   "masterdata.currency.createButton": "Создать",
   "masterdata.currency.updateButton": "Сохранить",
-  "iam.permission.PAGE_CURRENCIES": "Определения Валют"
+  "iam.permission.PAGE_CURRENCIES": "Определения Валют",
+  "sidebar.modules.bonusDefinitions": "Определения Премий",
+  "hr.bonus.pageTitle": "Определения Премий",
+  "hr.bonus.newTitle": "Новое Определение Премии",
+  "hr.bonus.editTitle": "Редактировать Премию",
+  "hr.bonus.field.name": "Название Премии",
+  "hr.bonus.field.amount": "Сумма Премии",
+  "hr.bonus.field.threshold": "Начальный Процент (%)",
+  "hr.bonus.field.group": "Производственная Группа",
+  "hr.bonus.field.section": "Производственная Секция",
+  "hr.bonus.field.currency": "Валюта",
+  "hr.bonus.column.name": "Название Премии",
+  "hr.bonus.column.production": "Группа / Секция",
+  "hr.bonus.column.threshold": "Порог %",
+  "hr.bonus.column.amount": "Сумма",
+  "hr.bonus.validation.nameRequired": "Название премии обязательно.",
+  "hr.bonus.validation.amountRequired": "Пожалуйста, введите сумму.",
+  "hr.bonus.validation.percentError": "Введите значение от 0 до 100.",
+  "hr.bonus.validation.groupRequired": "Выберите группу.",
+  "hr.bonus.validation.sectionRequired": "Выберите секцию.",
+  "hr.bonus.validation.currencyRequired": "Выберите валюту.",
+  "hr.bonus.toast.saveSuccess": "Премия успешно сохранена.",
+  "hr.bonus.toast.saveError": "Произошла ошибка.",
+  "iam.permission.PAGE_BONUS_DEFINITIONS": "Определения Премий (HR)"
+
  
 }

@@ -22,6 +22,7 @@ import {
   Factory,
   Package,
   Banknote,
+  Coins,
   type LucideIcon,
 } from "lucide-react";
 
@@ -89,6 +90,7 @@ export const sidebarItems: NavGroup[] = [
         subItems: [
           { title: "sidebar.modules.personnelManagement", url: "/dashboard/personnel", icon: Users, permission: "PAGE_PERSONNEL:READ" },
           { title: "sidebar.modules.departmentDefinitions", url: "/dashboard/hr/departments", icon: Building, permission: "PAGE_UNITS:READ" },
+          { title: "sidebar.modules.bonusDefinitions", url: "/dashboard/hr/definitions/bonus", icon: Coins, permission: "PAGE_BONUS_DEFINITIONS:READ" },
         ],
       },
       {
