@@ -32,7 +32,7 @@ const createFormSchema = (t: (key: string) => string) =>
     phone: z.string().min(10, t("masterdata.service.validation.phoneRequired")),
     vehiclePlate: z
       .string()
-      .min(2, t("masterdata.service.validation.plateRequired")),
+      .min(2, t("masterdata.service.validation.vehiclePlateRequired")),
     vehicleCapacity: z.coerce // coerce string|number to number
       .number()
       .int()

@@ -25,7 +25,7 @@ export const createAuditLogColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
-        title={t("audit.log.column.timestamp")}
+        title={t("iam.logs.column.timestamp")} // DÜZELTİLDİ
         t={t} // 't' fonksiyonu aktarıldı
       />
     ),
@@ -42,7 +42,7 @@ export const createAuditLogColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
-        title={t("audit.log.column.username")}
+        title={t("iam.logs.column.user")} // DÜZELTİLDİ
         t={t}
       />
     ),
@@ -53,7 +53,7 @@ export const createAuditLogColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
-        title={t("audit.log.column.action")}
+        title={t("iam.logs.column.action")} // DÜZELTİLDİ
         t={t}
       />
     ),
@@ -62,7 +62,7 @@ export const createAuditLogColumns = (
   {
     accessorKey: "details",
     // 5. GÜNCELLEME: (Sıralanamaz)
-    header: t("audit.log.column.details"),
+    header: t("iam.logs.column.details"), // DÜZELTİLDİ
     enableSorting: false,
   },
   {
@@ -71,7 +71,7 @@ export const createAuditLogColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
-        title={t("audit.log.column.ipAddress")}
+        title={t("iam.logs.column.ipAddress")} // DÜZELTİLDİ (Bu anahtar aşağıda eklenecek)
         t={t}
       />
     ),

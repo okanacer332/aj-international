@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef, useCallback } from "react"; // useRef, useCallback eklendi
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { AuditLog, PaginatedResponse } from "@/types/audit-log";
 import { createAuditLogColumns } from "./columns";
 import { DataTable } from "@/components/data-table/data-table";
@@ -96,7 +96,7 @@ export default function AuditLogsPage() {
       const pageData = await res.json();
       setData(pageData);
     } catch (error: any) {
-      toast.error(t("audit.log.toast.fetchError"));
+      toast.error(t("iam.logs.toast.fetchError")); // DÜZELTİLDİ
     } finally {
       setIsLoading(false);
     }
@@ -183,7 +183,7 @@ export default function AuditLogsPage() {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>{t("audit.log.pageTitle")}</BreadcrumbPage>
+            <BreadcrumbPage>{t("iam.logs.pageTitle")}</BreadcrumbPage> 
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -195,7 +195,7 @@ export default function AuditLogsPage() {
             {/* Sol Taraf */}
             <div className="flex flex-col gap-2">
               <h2 className="text-lg font-semibold">
-                {t("audit.log.pageTitle")}
+                {t("iam.logs.pageTitle")} 
               </h2>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="px-2.5 py-1 text-sm">
@@ -216,7 +216,7 @@ export default function AuditLogsPage() {
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     ref={searchInputRef}
-                    placeholder={t("datatable.searchLogs", "Loglarda ara...")}
+                    placeholder={t("iam.logs.searchPlaceholder")} 
                     value={globalFilter ?? ""}
                     onChange={(event) => setGlobalFilter(event.target.value)}
                     onBlur={() => {
@@ -233,7 +233,7 @@ export default function AuditLogsPage() {
                   size="icon"
                   className="h-9 w-9"
                   onClick={() => setIsSearchOpen(true)}
-                  aria-label={t("datatable.searchLogs", "Loglarda ara...")}
+                  aria-label={t("iam.logs.searchPlaceholder")} 
                 >
                   <Search className="h-4 w-4" />
                 </Button>
@@ -260,7 +260,7 @@ export default function AuditLogsPage() {
                   className="max-h-[300px] overflow-y-auto"
                 >
                   <DropdownMenuLabel>
-                    {t("audit.log.column.action")}
+                    {t("iam.logs.column.action")} 
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {actionFilterOptions.map((action) => (
