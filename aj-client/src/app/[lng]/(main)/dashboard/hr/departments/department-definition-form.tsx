@@ -246,7 +246,7 @@ export function UnitDefinitionForm({
                     <CommandInput
                       placeholder={t("masterdata.unit.placeholderParent")}
                     />
-                    <CommandList>
+                    <CommandList className="max-h-none">
                       <CommandEmpty>Birim bulunamadı.</CommandEmpty>
                       <CommandGroup>
                         {comboboxOptions.map((option) => (
