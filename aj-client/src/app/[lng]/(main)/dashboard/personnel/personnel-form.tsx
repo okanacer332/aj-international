@@ -132,6 +132,9 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
   const [isCompetencyVisible, setIsCompetencyVisible] = useState(false);
 
   useEffect(() => {
+    // DÜZELTME: Tanımlar henüz yüklenmediyse işlem yapma (Race condition engelleme)
+    if (definitions.units.length === 0) return;
+
     const allUnitsFlat: UnitDefinition[] = [];
     const flatten = (list: UnitDefinition[]) => {
         list.forEach(u => {
@@ -142,10 +145,14 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
     flatten(definitions.units);
 
     const selectedUnit = allUnitsFlat.find(u => u.id === watchedUnitId);
-    setIsCompetencyVisible(!!selectedUnit?.competencyRequired);
+    const isRequired = !!selectedUnit?.competencyRequired;
+    setIsCompetencyVisible(isRequired);
     
-    if (!selectedUnit?.competencyRequired) {
-        form.setValue("skillDefinitionId", null);
+    if (!isRequired) {
+        // Sadece değer varsa null yap
+        if (form.getValues("skillDefinitionId")) {
+             form.setValue("skillDefinitionId", null);
+        }
     }
   }, [watchedUnitId, definitions.units, form]);
 

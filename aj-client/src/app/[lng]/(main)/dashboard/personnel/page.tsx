@@ -18,7 +18,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -88,7 +87,6 @@ export default function Page() {
       ]);
       
       const personnelData: Personnel[] = await personnelRes.json();
-      // GÜNCELLEME: Birimleri hiyerarşik değil, düz liste olarak alıyoruz (harita için)
       const unitsData: UnitDefinition[] = await unitsRes.json();
       
       setData(personnelData);
@@ -107,7 +105,6 @@ export default function Page() {
     }
   }, [ready, fetchData]);
 
-  // Handler Fonksiyonları (Aynı)
   const handleEdit = useCallback((item: Personnel) => {
     setSelectedItem(item);
     setIsFormOpen(true);
@@ -148,7 +145,6 @@ export default function Page() {
     }
   }, [isSearchOpen]);
   
-  // 1. GÜNCELLEME: Filtreleme handler'ı 'unitDefinitionId'yi hedef alıyor
   const handleUnitFilterChange = (value: string, isChecked: boolean) => {
     const currentFilters = table.getState().columnFilters;
     const filter = currentFilters.find((f) => f.id === "unitDefinitionId");
@@ -176,11 +172,8 @@ export default function Page() {
     }
   };
 
-  // 2. YENİ: Düz bir Unit haritası oluştur (ID -> Unit)
   const unitMap = useMemo(() => {
     const map = new Map<string, UnitDefinition>();
-    // 'units' artık backend'den düz bir liste olarak gelmeli (Service'i buna göre düzeltmiştik)
-    // Düzeltme: `findAllUnits` hiyerarşik getiriyordu. Düz liste için backend'den gelen 'units' state'ini düzleştirmeliyiz.
     const allUnitsFlat: UnitDefinition[] = [];
     const flatten = (unitList: UnitDefinition[]) => {
       for (const unit of unitList) {
@@ -190,7 +183,7 @@ export default function Page() {
         }
       }
     };
-    flatten(units); // 'units' state'i hiyerarşikse düzleştir
+    flatten(units);
     
     for (const unit of allUnitsFlat) {
       map.set(unit.id, unit);
@@ -198,7 +191,6 @@ export default function Page() {
     return map;
   }, [units]);
 
-  // 3. GÜNCELLEME: 'columns' artık 'unitMap' prop'unu alıyor
   const columns = useMemo(
     () =>
       createPersonnelColumns({
@@ -206,7 +198,7 @@ export default function Page() {
         onDelete: handleDelete,
         t: t,
         lng: lng,
-        unitMap: unitMap, // Haritayı yolla
+        unitMap: unitMap,
       }),
     [handleEdit, handleDelete, t, lng, unitMap]
   );
@@ -222,16 +214,13 @@ export default function Page() {
     onColumnFiltersChange: setColumnFilters,
   });
 
-  // 4. GÜNCELLEME: Filtre değerleri 'unitDefinitionId'yi dinliyor
   const filterValues =
     (table.getColumn("unitDefinitionId")?.getFilterValue() as string[]) || [];
     
-  // 5. GÜNCELLEME: Filtre menüsü için departmanları ve birimleri ayır
   const departments = useMemo(() => units.filter(u => !u.parentUnitId), [units]);
 
 
   if (isLoading || !ready) {
-    // ... (Skeleton aynı kalır) ...
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-1/3" />
@@ -241,10 +230,8 @@ export default function Page() {
     );
   }
 
-  // --- RENDER YAPISI ---
   return (
     <div className="flex flex-col gap-6">
-      {/* 1. BREADCRUMB (Aynı) */}
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -268,11 +255,10 @@ export default function Page() {
       </Breadcrumb>
 
       <Card>
-        {/* 2. KONTROL ÇUBUĞU (Aynı) */}
         <CardHeader className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             
-            {/* Sol Taraf (Aynı) */}
+            {/* Sol Taraf */}
             <div className="flex flex-col gap-2">
               <h2 className="text-lg font-semibold">
                 {t("hr.personnelManagement.title")}
@@ -284,42 +270,25 @@ export default function Page() {
                   </strong>
                   {data.length}
                 </Badge>
-                <Dialog
-                  open={isFormOpen}
-                  onOpenChange={setIsFormOpen}
+                
+                {/* DÜZELTME: Fazladan Dialog Wrapper kaldırıldı, sadece buton bırakıldı */}
+                <Button 
+                  onClick={() => {
+                    setSelectedItem(null);
+                    setIsFormOpen(true);
+                  }} 
+                  size="sm" 
+                  className="h-8"
                 >
-                  <DialogTrigger asChild>
-                    <Button onClick={() => setSelectedItem(null)} size="sm" className="h-8">
-                      <Plus className="mr-1.5 h-4 w-4" />
-                      {t("datatable.add_new", "Yeni")}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {selectedItem
-                          ? t("hr.personnel.dialogTitleEdit")
-                          : t("hr.personnel.dialogTitleNew")}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {selectedItem
-                          ? t("hr.personnel.dialogDescriptionEdit")
-                          : t("hr.personnel.dialogDescriptionNew")}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <PersonnelForm
-                      initialData={selectedItem}
-                      onSuccess={handleFormSuccess}
-                      lng={lng}
-                    />
-                  </DialogContent>
-                </Dialog>
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  {t("datatable.add_new", "Yeni")}
+                </Button>
+
               </div>
             </div>
 
-            {/* Sağ Taraf: Aksiyonlar (Aynı) */}
+            {/* Sağ Taraf: Aksiyonlar */}
             <div className="flex w-full sm:w-auto items-center gap-2">
-              {/* Arama (Aynı) */}
               {isSearchOpen ? (
                 <div className="relative w-full sm:w-48">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -348,7 +317,6 @@ export default function Page() {
                 </Button>
               )}
 
-              {/* 6. GÜNCELLEME: Filtre Menüsü (Birimler için) */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-9">
@@ -366,11 +334,9 @@ export default function Page() {
                     {t("hr.personnel.column.unit")}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {/* Departmanlara göre grupla */}
                   {departments.map(dept => (
                     <div key={dept.id} className="px-2 py-1">
                       <h4 className="text-xs font-semibold text-muted-foreground mb-1 px-2">{dept.name}</h4>
-                      {/* Departmanın kendisi de filtrelenebilir (parentUnitId'si olmayanlar) */}
                       <DropdownMenuCheckboxItem
                         key={dept.id}
                         checked={filterValues.includes(dept.id)}
@@ -380,7 +346,6 @@ export default function Page() {
                       >
                         {dept.name} (Departman Geneli)
                       </DropdownMenuCheckboxItem>
-                      {/* Alt Birimler */}
                       {dept.subUnits && dept.subUnits.map(unit => (
                         <DropdownMenuCheckboxItem
                           key={unit.id}
@@ -388,7 +353,7 @@ export default function Page() {
                           onCheckedChange={(isChecked) =>
                             handleUnitFilterChange(unit.id, isChecked)
                           }
-                          className="pl-6" // Alt birim olduğunu göstermek için girinti
+                          className="pl-6"
                         >
                           {unit.name}
                         </DropdownMenuCheckboxItem>
@@ -406,7 +371,6 @@ export default function Page() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Dışa Aktar (Aynı) */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-9">
@@ -427,23 +391,21 @@ export default function Page() {
           </div>
         </CardHeader>
 
-        {/* 3. DATA TABLOSU (Aynı) */}
         <CardContent className="p-0">
           <div className="rounded-t-none border-t">
             <DataTable table={table} columns={columns} />
           </div>
         </CardContent>
 
-        {/* 4. SAYFALAMA (Aynı) */}
         <CardFooter className="p-4 sm:p-6 border-t">
           <DataTablePagination table={table} t={t} />
         </CardFooter>
       </Card>
 
-      {/* 5. MODALLAR (Aynı) */}
+      {/* 5. MODALLAR */}
       {isFormOpen && (
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogContent className="sm:max-w-xl">
+          <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {selectedItem
