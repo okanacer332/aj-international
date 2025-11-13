@@ -20,7 +20,8 @@ import {
   Warehouse,
   Building,
   Factory,
-  Package, // YENİ İKON (Package)
+  Package,
+  Banknote,
   type LucideIcon,
 } from "lucide-react";
 
@@ -109,7 +110,7 @@ export const sidebarItems: NavGroup[] = [
           { title: "sidebar.modules.skillDefinitions", url: "/dashboard/masterdata/skills", icon: BarChart3, permission: "PAGE_SKILLS:READ" },
           { title: "sidebar.modules.serviceDefinitions", url: "/dashboard/masterdata/services", icon: Bus, permission: "PAGE_SERVICES:READ" },
           { title: "sidebar.modules.measureDefinitions", url: "/dashboard/masterdata/measures", icon: Ruler, permission: "PAGE_MEASURES:READ" },
-          { title: "sidebar.modules.generalDefinitions", url: "/dashboard/definitions", icon: FileText, comingSoon: true, permission: "PAGE_DEFINITIONS:READ" },
+          { title: "sidebar.modules.currencyDefinitions", url: "/dashboard/masterdata/currencies", icon: Banknote, permission: "PAGE_CURRENCIES:READ" },
         ],
       },
       {
