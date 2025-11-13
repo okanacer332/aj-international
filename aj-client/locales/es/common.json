@@ -581,6 +581,27 @@
   "iam.logs.dialogDescription": "Detalles de datos brutos sobre la operación.",
   "iam.logs.oldData": "Datos Antiguos",
   "iam.logs.newData": "Datos Nuevos",
-  "iam.logs.close": "Cerrar"
+  "iam.logs.close": "Cerrar",
+  "masterdata.product.validation.nameMinLength": "El nombre del producto debe tener al menos 2 caracteres.",
+  "masterdata.product.validation.codeMinLength": "El código del producto debe tener al menos 2 caracteres.",
+  "masterdata.product.fieldName": "Nombre del Producto",
+  "masterdata.product.placeholderNameExample": "Ej: Perfil de Caja 20x20",
+  "masterdata.product.fieldCode": "Código del Producto",
+  "masterdata.product.placeholderCodeExample": "Ej: K-001",
+  "masterdata.product.fieldDescription": "Descripción (Opcional)",
+  "masterdata.product.placeholderDescription": "Detalles sobre el producto o receta...",
+  "masterdata.product.fieldTarget": "Valor Objetivo",
+  "masterdata.product.placeholderTarget": "Ej: 150",
+  "masterdata.product.fieldMeasureUnit": "Unidad",
+  "masterdata.product.placeholderMeasureUnit": "Seleccione unidad...",
+  "masterdata.product.fieldActiveStatus": "¿Producto Activo?",
+  "masterdata.product.fieldActiveStatusDesc": "Los productos pasivos no se pueden utilizar en la planificación de producción.",
+  "masterdata.product.fieldWasteRate": "Tasa de Desperdicio (%)",
+  "masterdata.product.placeholderWasteRate": "Ej: 1.5",
+  "masterdata.product.toast.updateSuccess": "Producto actualizado con éxito.",
+  "masterdata.product.toast.creationSuccess": "Producto creado con éxito.",
+  "masterdata.product.toast.codeUniqueError": "Este código de producto ya está en uso por otro producto.",
+  "masterdata.product.toast.unknownError": "Ocurrió un error desconocido.",
+  "masterdata.product.toast.operationFailed": "Operación Fallida"
  
 }

@@ -581,6 +581,27 @@
   "iam.logs.dialogDescription": "تفاصيل البيانات الخام حول العملية.",
   "iam.logs.oldData": "البيانات القديمة",
   "iam.logs.newData": "البيانات الجديدة",
-  "iam.logs.close": "إغلاق"
+  "iam.logs.close": "إغلاق",
+  "masterdata.product.validation.nameMinLength": "يجب أن يتكون اسم المنتج من حرفين على الأقل.",
+  "masterdata.product.validation.codeMinLength": "يجب أن يتكون رمز المنتج من حرفين على الأقل.",
+  "masterdata.product.fieldName": "اسم المنتج",
+  "masterdata.product.placeholderNameExample": "مثال: ملف تعريف صندوق 20x20",
+  "masterdata.product.fieldCode": "رمز المنتج",
+  "masterdata.product.placeholderCodeExample": "مثال: K-001",
+  "masterdata.product.fieldDescription": "الوصف (اختياري)",
+  "masterdata.product.placeholderDescription": "تفاصيل حول المنتج أو الوصفة...",
+  "masterdata.product.fieldTarget": "القيمة المستهدفة",
+  "masterdata.product.placeholderTarget": "مثال: 150",
+  "masterdata.product.fieldMeasureUnit": "الوحدة",
+  "masterdata.product.placeholderMeasureUnit": "اختر وحدة...",
+  "masterdata.product.fieldActiveStatus": "هل المنتج نشط؟",
+  "masterdata.product.fieldActiveStatusDesc": "لا يمكن استخدام المنتجات غير النشطة في تخطيط الإنتاج.",
+  "masterdata.product.fieldWasteRate": "معدل الهدر (٪)",
+  "masterdata.product.placeholderWasteRate": "مثال: 1.5",
+  "masterdata.product.toast.updateSuccess": "تم تحديث المنتج بنجاح.",
+  "masterdata.product.toast.creationSuccess": "تم إنشاء المنتج بنجاح.",
+  "masterdata.product.toast.codeUniqueError": "رمز المنتج هذا مستخدم بالفعل من قبل منتج آخر.",
+  "masterdata.product.toast.unknownError": "حدث خطأ غير معروف.",
+  "masterdata.product.toast.operationFailed": "فشلت العملية"
  
 }

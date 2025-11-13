@@ -310,8 +310,8 @@ export function UnitDefinitionForm({
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {initialData
-            ? t("masterdata.product.updateButton")
-            : t("masterdata.product.createButton")}
+            ? t("masterdata.unit.updateButton")
+            : t("masterdata.unit.createButton")}
         </Button>
       </form>
     </Form>

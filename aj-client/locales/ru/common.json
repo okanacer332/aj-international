@@ -581,6 +581,27 @@
   "iam.logs.dialogDescription": "Детали операции (сырые данные).",
   "iam.logs.oldData": "Старые данные",
   "iam.logs.newData": "Новые данные",
-  "iam.logs.close": "Закрыть"
+  "iam.logs.close": "Закрыть",
+  "masterdata.product.validation.nameMinLength": "Название продукта должно содержать не менее 2 символов.",
+  "masterdata.product.validation.codeMinLength": "Код продукта должен содержать не менее 2 символов.",
+  "masterdata.product.fieldName": "Название Продукта",
+  "masterdata.product.placeholderNameExample": "Прим: Профиль 20х20",
+  "masterdata.product.fieldCode": "Код Продукта",
+  "masterdata.product.placeholderCodeExample": "Прим: K-001",
+  "masterdata.product.fieldDescription": "Описание (Необязательно)",
+  "masterdata.product.placeholderDescription": "Детали о продукте или рецепте...",
+  "masterdata.product.fieldTarget": "Целевое Значение",
+  "masterdata.product.placeholderTarget": "Прим: 150",
+  "masterdata.product.fieldMeasureUnit": "Ед. изм.",
+  "masterdata.product.placeholderMeasureUnit": "Выберите ед. изм...",
+  "masterdata.product.fieldActiveStatus": "Продукт Активен?",
+  "masterdata.product.fieldActiveStatusDesc": "Пассивные продукты не могут использоваться в планировании производства.",
+  "masterdata.product.fieldWasteRate": "Норма Отходов (%)",
+  "masterdata.product.placeholderWasteRate": "Прим: 1.5",
+  "masterdata.product.toast.updateSuccess": "Продукт успешно обновлен.",
+  "masterdata.product.toast.creationSuccess": "Продукт успешно создан.",
+  "masterdata.product.toast.codeUniqueError": "Этот код продукта уже используется другим продуктом.",
+  "masterdata.product.toast.unknownError": "Произошла неизвестная ошибка.",
+  "masterdata.product.toast.operationFailed": "Операция не удалась"
  
 }
