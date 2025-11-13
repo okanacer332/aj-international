@@ -3,14 +3,14 @@ package com.ajinternational.ajserver.modules.hr.personnel.service;
 import com.ajinternational.ajserver.config.TenantContextHolder;
 import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
 import com.ajinternational.ajserver.modules.hr.personnel.dto.CreatePersonnelRequest;
-import com.ajinternational.ajserver.modules.hr.personnel.dto.UpdatePersonnelRequest; // Eklendi
+import com.ajinternational.ajserver.modules.hr.personnel.dto.UpdatePersonnelRequest;
 import com.ajinternational.ajserver.modules.hr.personnel.model.Personnel;
+import com.ajinternational.ajserver.modules.hr.personnel.model.PersonnelBonus; // YENİ IMPORT
 import com.ajinternational.ajserver.modules.hr.personnel.repository.PersonnelRepository;
 import com.ajinternational.ajserver.modules.iam.model.Role;
 import com.ajinternational.ajserver.modules.iam.model.User;
 import com.ajinternational.ajserver.modules.iam.repository.RoleRepository;
 import com.ajinternational.ajserver.modules.iam.repository.UserRepository;
-// Gerekli repository'ler eklendi
 import com.ajinternational.ajserver.modules.masterdata.repository.ServiceDefinitionRepository;
 import com.ajinternational.ajserver.modules.masterdata.repository.SkillDefinitionRepository;
 import com.ajinternational.ajserver.modules.masterdata.repository.UnitDefinitionRepository;
@@ -24,11 +24,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map; // Eklendi
+import java.util.Map;
 import java.util.Set;
-import java.util.function.Function; // Eklendi
-import java.util.stream.Collectors; // Eklendi
-import java.util.Optional; // Eklendi
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.Optional;
 
 
 @Service
@@ -41,14 +41,12 @@ public class PersonnelService {
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
 
-    // Diğer repository'ler eklendi
     private final UnitDefinitionRepository unitRepository;
     private final SkillDefinitionRepository skillRepository;
     private final ServiceDefinitionRepository serviceRepository;
 
 
-    // --- LİSTELEME GÜNCELLEMESİ (DISPLAY FIX) ---
-    // Artık User, Unit vb. bilgileri de çekip Personnel nesnesine ekliyoruz.
+    // --- LİSTELEME (DISPLAY FIX) ---
     public List<Personnel> findAllPersonnel() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
 
@@ -82,7 +80,6 @@ public class PersonnelService {
         return personnelList;
     }
 
-    // (createPersonnel metodu öncekiyle aynı, değişiklik yok)
     @Transactional
     public Personnel createPersonnel(CreatePersonnelRequest request) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
@@ -98,6 +95,7 @@ public class PersonnelService {
         Role personnelRole = roleRepository.findByTenantIdAndName(currentTenantId, "PERSONNEL")
                 .orElseThrow(() -> new RuntimeException("PERSONNEL rolü bulunamadı. Lütfen DataInitializer'ı kontrol edin."));
 
+        // 1. Kullanıcıyı (User) oluştur
         User newUser = new User();
         newUser.setTenantId(currentTenantId);
         newUser.setFullName(request.fullName());
@@ -109,6 +107,7 @@ public class PersonnelService {
 
         User savedUser = userRepository.save(newUser);
 
+        // 2. Personeli (Personnel) oluştur
         Personnel newPersonnel = new Personnel();
         newPersonnel.setTenantId(currentTenantId);
         newPersonnel.setUserId(savedUser.getId());
@@ -118,6 +117,14 @@ public class PersonnelService {
         newPersonnel.setUnitDefinitionId(request.unitDefinitionId());
         newPersonnel.setSkillDefinitionId(request.skillDefinitionId());
         newPersonnel.setServiceDefinitionId(request.serviceDefinitionId());
+
+        // YENİ: Primleri Ekle
+        if (request.bonuses() != null) {
+            List<PersonnelBonus> bonuses = request.bonuses().stream()
+                    .map(b -> new PersonnelBonus(b.bonusDefinitionId(), b.amount()))
+                    .collect(Collectors.toList());
+            newPersonnel.setAssignedBonuses(bonuses);
+        }
 
         Personnel savedPersonnel = personnelRepository.save(newPersonnel);
 
@@ -132,7 +139,6 @@ public class PersonnelService {
     }
 
 
-    // --- YENİ METOT: GÜNCELLEME (EDIT) ---
     @Transactional
     public Personnel updatePersonnel(String personnelId, UpdatePersonnelRequest request) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
@@ -148,7 +154,6 @@ public class PersonnelService {
 
         // 3. User (Kullanıcı) verilerini güncelle
         user.setFullName(request.fullName());
-        // (Gelecekte gerekirse email vb. de güncellenebilir)
         userRepository.save(user);
 
         // 4. Personnel (İK) verilerini güncelle
@@ -158,9 +163,19 @@ public class PersonnelService {
         personnel.setSkillDefinitionId(request.skillDefinitionId());
         personnel.setServiceDefinitionId(request.serviceDefinitionId());
 
+        // YENİ: Primleri Güncelle
+        if (request.bonuses() != null) {
+            List<PersonnelBonus> bonuses = request.bonuses().stream()
+                    .map(b -> new PersonnelBonus(b.bonusDefinitionId(), b.amount()))
+                    .collect(Collectors.toList());
+            personnel.setAssignedBonuses(bonuses);
+        } else {
+            // Eğer null gelirse (frontend göndermezse) listeyi temizle
+            personnel.getAssignedBonuses().clear();
+        }
+
         Personnel updatedPersonnel = personnelRepository.save(personnel);
 
-        // 5. Logla
         auditLogService.logAction(
                 currentTenantId,
                 currentUsername,
@@ -171,26 +186,20 @@ public class PersonnelService {
         return updatedPersonnel;
     }
 
-    // --- YENİ METOT: SİLME (DELETE) ---
     @Transactional
     public void deletePersonnel(String personnelId) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();
 
-        // 1. Personel kaydını bul (Tenant güvenli)
         Personnel personnel = personnelRepository.findByTenantIdAndId(currentTenantId, personnelId)
                 .orElseThrow(() -> new RuntimeException("Personel kaydı bulunamadı veya silme yetkiniz yok."));
 
         String userId = personnel.getUserId();
         String onxCode = personnel.getOnxCode();
 
-        // 2. Personel kaydını sil
         personnelRepository.delete(personnel);
-
-        // 3. İlişkili User kaydını sil
         userRepository.deleteById(userId);
 
-        // 4. Logla
         auditLogService.logAction(
                 currentTenantId,
                 currentUsername,
@@ -199,7 +208,6 @@ public class PersonnelService {
         );
     }
 
-    // YENİ METOT: Tek bir personeli ID ile (join'lenmiş) getirme (Güncelleme formu için)
     public Optional<Personnel> findPersonnelById(String id) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         Optional<Personnel> personnelOpt = personnelRepository.findByTenantIdAndId(tenantId, id);
@@ -209,7 +217,6 @@ public class PersonnelService {
         }
 
         Personnel p = personnelOpt.get();
-        // Sadece gerekli olanları hızlıca doldur
         userRepository.findById(p.getUserId()).ifPresent(p::setUser);
         unitRepository.findById(p.getUnitDefinitionId()).ifPresent(p::setUnit);
 

@@ -5,8 +5,9 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+import java.util.List;
 
-// Bu DTO, 'onxCode' (Kullanıcı Adı) alanını içermez, çünkü bu alan güncellenemez olmalı.
+// Bu DTO, 'onxCode' (Kullanıcı Adı) alanını içermez, çünkü bu alan güncellenemez.
 public record UpdatePersonnelRequest(
         @NotNull(message = "İşe giriş tarihi zorunludur")
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -23,5 +24,8 @@ public record UpdatePersonnelRequest(
         @NotBlank(message = "Telefon numarası zorunludur")
         String phone,
 
-        String serviceDefinitionId // Opsiyonel
+        String serviceDefinitionId, // Opsiyonel
+
+        // YENİ ALAN: Prim Listesi
+        List<CreatePersonnelRequest.PersonnelBonusRequest> bonuses
 ) {}

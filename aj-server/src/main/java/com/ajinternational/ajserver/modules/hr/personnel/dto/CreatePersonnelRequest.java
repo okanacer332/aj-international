@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record CreatePersonnelRequest(
         @NotNull(message = "İşe giriş tarihi zorunludur")
@@ -25,5 +26,14 @@ public record CreatePersonnelRequest(
         @NotBlank(message = "Telefon numarası zorunludur")
         String phone,
 
-        String serviceDefinitionId // Opsiyonel
-) {}
+        String serviceDefinitionId, // Opsiyonel
+
+        // YENİ ALAN: Prim Listesi
+        List<PersonnelBonusRequest> bonuses
+) {
+    // İç Record (Request için)
+    public record PersonnelBonusRequest(
+            String bonusDefinitionId,
+            Double amount
+    ) {}
+}

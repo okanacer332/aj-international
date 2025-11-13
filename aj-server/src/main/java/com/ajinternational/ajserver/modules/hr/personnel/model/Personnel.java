@@ -1,18 +1,21 @@
 package com.ajinternational.ajserver.modules.hr.personnel.model;
 
-import com.ajinternational.ajserver.modules.iam.model.User; // Eklendi
-import com.ajinternational.ajserver.modules.masterdata.model.ServiceDefinition; // Eklendi
-import com.ajinternational.ajserver.modules.masterdata.model.SkillDefinition; // Eklendi
-import com.ajinternational.ajserver.modules.masterdata.model.UnitDefinition; // Eklendi
+import com.ajinternational.ajserver.modules.iam.model.User;
+import com.ajinternational.ajserver.modules.masterdata.model.ServiceDefinition;
+import com.ajinternational.ajserver.modules.masterdata.model.SkillDefinition;
+import com.ajinternational.ajserver.modules.masterdata.model.UnitDefinition;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient; // Eklendi
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -50,9 +53,11 @@ public class Personnel {
     @Indexed
     private String serviceDefinitionId; // Boş olabilir
 
-    // --- YENİ EKLENEN GEÇİCİ ALANLAR ---
-    // Bu alanlar veritabanına kaydedilmez, sadece listeleme (findAllPersonnel)
-    // sırasında frontend'e zengin veri göndermek için servis katmanında doldurulur.
+    // YENİ ALAN: Personele atanan primler
+    private List<PersonnelBonus> assignedBonuses = new ArrayList<>();
+
+    // --- GEÇİCİ ALANLAR (Transient) ---
+    // Bu alanlar veritabanına kaydedilmez, sadece listeleme sırasında doldurulur.
     @Transient
     private User user;
 
@@ -64,5 +69,4 @@ public class Personnel {
 
     @Transient
     private ServiceDefinition service;
-    // --- BİTTİ ---
 }

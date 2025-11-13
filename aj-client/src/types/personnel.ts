@@ -1,7 +1,13 @@
 import { UnitDefinition } from "./unit-definition";
 import { SkillDefinition } from "./skill-definition";
 import { ServiceDefinition } from "./service-definition";
-import { User } from "./user"; // User tipini import edelim
+import { User } from "./user";
+
+// YENİ: Prim Tipi
+export type PersonnelBonus = {
+  bonusDefinitionId: string;
+  amount: number;
+};
 
 // Formdan gönderilecek DTO (Create)
 export type CreatePersonnelRequest = {
@@ -12,6 +18,7 @@ export type CreatePersonnelRequest = {
   skillDefinitionId?: string | null;
   phone: string;
   serviceDefinitionId?: string | null;
+  bonuses?: PersonnelBonus[]; // YENİ
 };
 
 // Formdan gönderilecek DTO (Update)
@@ -28,6 +35,9 @@ export type Personnel = {
   unitDefinitionId: string;
   skillDefinitionId?: string;
   serviceDefinitionId?: string;
+  
+  // YENİ: Atanan Primler
+  assignedBonuses?: PersonnelBonus[];
 
   // Backend'de Service katmanında doldurulan @Transient alanlar
   user?: User; // Ad Soyad ve Avatar için
