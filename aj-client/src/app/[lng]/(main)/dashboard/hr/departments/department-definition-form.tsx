@@ -230,7 +230,7 @@ export function UnitDefinitionForm({
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] overflow-y-auto p-0">
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                   <Command
                     filter={(value, search) => {
                       const option = comboboxOptions.find(
@@ -246,7 +246,7 @@ export function UnitDefinitionForm({
                     <CommandInput
                       placeholder={t("masterdata.unit.placeholderParent")}
                     />
-                    <CommandList className="max-h-none">
+                    <CommandList>
                       <CommandEmpty>Birim bulunamadı.</CommandEmpty>
                       <CommandGroup>
                         {comboboxOptions.map((option) => (
