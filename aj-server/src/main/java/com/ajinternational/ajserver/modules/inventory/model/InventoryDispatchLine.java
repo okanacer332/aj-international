@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Field; // <-- 1. BU SATIRI EKLEYİN
 
 @Data
 @NoArgsConstructor
@@ -16,5 +17,6 @@ public class InventoryDispatchLine {
     private String materialId; // MaterialDefinition ID
 
     @NotNull
-    private Double weightKg; // TONAJ -> KG OLARAK GÜNCELLENDİ
+    @Field("weightTon") // <-- 2. BU ANOTASYONU EKLEYİN
+    private Double weightKg; // Java'daki adı 'weightKg' olarak kalacak
 }
