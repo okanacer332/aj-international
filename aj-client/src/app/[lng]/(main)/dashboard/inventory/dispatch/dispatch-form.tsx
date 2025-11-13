@@ -69,7 +69,7 @@ const createFormSchema = (t: (key: string) => string) =>
     
     lines: z.array(z.object({
         materialId: z.string().min(1, t("inventory.dispatch.validation.materialIdRequired")),
-        weightTon: z.coerce.number().min(0.001, t("inventory.dispatch.validation.weightRequired")),
+        weightKg: z.coerce.number().min(0.001, t("inventory.dispatch.validation.weightRequired")), // GÜNCELLENDİ
     })).min(1, t("inventory.dispatch.validation.linesRequired")),
   });
 
@@ -112,7 +112,7 @@ export function DispatchVoucherForm({ onSuccess, lng, initialData }: InventoryDi
       refAmount: initialData?.refAmount || undefined,
       lines: initialData?.lines?.map(line => ({
         materialId: line.materialId,
-        weightTon: line.weightTon ?? 0,
+        weightKg: line.weightKg ?? 0, // GÜNCELLENDİ
       })) || [],
     },
   });
@@ -354,7 +354,7 @@ export function DispatchVoucherForm({ onSuccess, lng, initialData }: InventoryDi
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => append({ materialId: "", weightTon: 0 })}
+              onClick={() => append({ materialId: "", weightKg: 0 })} // GÜNCELLENDİ
             >
               <Plus className="mr-2 h-4 w-4" />
               {t("inventory.dispatch.form.addLine")}
@@ -409,11 +409,11 @@ export function DispatchVoucherForm({ onSuccess, lng, initialData }: InventoryDi
                         )}
                       />
                     </TableCell>
-                    {/* Ağırlık (Ton) */}
+                    {/* Ağırlık (Kg) */}
                     <TableCell className="align-top">
                       <FormField
                         control={form.control}
-                        name={`lines.${index}.weightTon`}
+                        name={`lines.${index}.weightKg`} // GÜNCELLENDİ
                         render={({ field: lineField }) => (
                           <FormItem><FormControl><Input type="number" step="0.01" {...lineField} /></FormControl><FormMessage /></FormItem>
                         )}

@@ -42,7 +42,7 @@ public class InventoryDispatchResponse {
     public static class InventoryDispatchLineResponse {
         private String materialId;
         private String materialName;
-        private Double weightTon;
+        private Double weightKg; // GÜNCELLENDİ (weightTon -> weightKg)
     }
 
     // Mapper Metodu

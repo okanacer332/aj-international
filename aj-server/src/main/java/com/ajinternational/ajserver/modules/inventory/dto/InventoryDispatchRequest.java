@@ -33,6 +33,6 @@ public record InventoryDispatchRequest(
 ) {
     public record InventoryDispatchLineRequest(
             @NotBlank String materialId,
-            @NotNull Double weightTon // TONAJ
+            @NotNull Double weightKg // GÜNCELLENDİ (weightTon -> weightKg)
     ) {}
 }

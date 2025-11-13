@@ -98,7 +98,7 @@ export const createDispatchColumns = ({
       />
     ),
     cell: ({ row }) => {
-        const total = row.original.lines.reduce((acc, line) => acc + (line.weightTon || 0), 0);
+        const total = row.original.lines.reduce((acc, line) => acc + (line.weightKg || 0), 0); // GÜNCELLENDİ
         return <span>{total.toFixed(3)}</span>;
     },
   },

@@ -16,5 +16,5 @@ public class InventoryDispatchLine {
     private String materialId; // MaterialDefinition ID
 
     @NotNull
-    private Double weightTon; // TONAJ
+    private Double weightKg; // TONAJ -> KG OLARAK GÜNCELLENDİ
 }

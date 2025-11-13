@@ -71,7 +71,7 @@ public class StockCalculationService {
             Map<String, Double> materialTotals = dispatchesByDepotAndMaterial.get(depotId);
 
             dispatch.getLines().forEach(line -> {
-                materialTotals.merge(line.getMaterialId(), line.getWeightTon(), Double::sum);
+                materialTotals.merge(line.getMaterialId(), line.getWeightKg(), Double::sum); // GÜNCELLENDİ (getWeightTon -> getWeightKg)
             });
         }
 

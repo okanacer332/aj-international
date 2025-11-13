@@ -67,7 +67,7 @@ public class InventoryDispatchService {
                                 InventoryDispatchResponse.InventoryDispatchLineResponse lineDto = new InventoryDispatchResponse.InventoryDispatchLineResponse();
                                 lineDto.setMaterialId(line.getMaterialId());
                                 lineDto.setMaterialName(materialMap.getOrDefault(line.getMaterialId(), "Bilinmeyen Malzeme"));
-                                lineDto.setWeightTon(line.getWeightTon());
+                                lineDto.setWeightKg(line.getWeightKg()); // GÜNCELLENDİ (getWeightTon -> getWeightKg)
                                 return lineDto;
                             }).collect(Collectors.toList());
 
@@ -146,7 +146,7 @@ public class InventoryDispatchService {
                 .map(lineDto -> {
                     InventoryDispatchLine line = new InventoryDispatchLine();
                     line.setMaterialId(lineDto.materialId());
-                    line.setWeightTon(lineDto.weightTon());
+                    line.setWeightKg(lineDto.weightKg()); // GÜNCELLENDİ (setWeightTon -> setWeightKg)
                     return line;
                 }).collect(Collectors.toList());
         dispatch.setLines(lines);
