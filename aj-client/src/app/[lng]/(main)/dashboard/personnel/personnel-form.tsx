@@ -50,6 +50,13 @@ import {
   CommandList,
 } from "@/components/ui/command";
 
+// --- YENİ IMPORTLAR ---
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitials } from "@/lib/utils";
+import { API_BASE } from "@/lib/api";
+// --- IMPORTLAR SONU ---
+
+
 const createFormSchema = (t: (key: string) => string) =>
   z.object({
     id: z.string().optional(),
@@ -75,7 +82,7 @@ const createFormSchema = (t: (key: string) => string) =>
 type FormSchema = z.infer<ReturnType<typeof createFormSchema>>;
 
 type PersonnelFormProps = {
-  onSuccess: () => void;
+  onSuccess: (keepOpen?: boolean) => void; // Parametre eklendi
   lng: string;
   initialData: Personnel | null;
 };
@@ -83,6 +90,13 @@ type PersonnelFormProps = {
 export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [comboboxOpen, setComboboxOpen] = useState(false);
+  
+  // --- YENİ STATE'LER: AVATAR İÇİN ---
+  const [isAvatarLoading, setIsAvatarLoading] = useState(false);
+  const [preview, setPreview] = useState<string | null>(
+      initialData?.user?.avatarUrl ? `${API_BASE}${initialData.user.avatarUrl}` : null
+  );
+  // --- STATE'LER SONU ---
   
   const [definitions, setDefinitions] = useState<{
     units: UnitDefinition[];
@@ -132,7 +146,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
   const [isCompetencyVisible, setIsCompetencyVisible] = useState(false);
 
   useEffect(() => {
-    // DÜZELTME: Tanımlar henüz yüklenmediyse işlem yapma (Race condition engelleme)
     if (definitions.units.length === 0) return;
 
     const allUnitsFlat: UnitDefinition[] = [];
@@ -149,7 +162,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
     setIsCompetencyVisible(isRequired);
     
     if (!isRequired) {
-        // Sadece değer varsa null yap
         if (form.getValues("skillDefinitionId")) {
              form.setValue("skillDefinitionId", null);
         }
@@ -199,6 +211,38 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
     }
   };
 
+  // --- YENİ: AVATAR YÜKLEME FONKSİYONU ---
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!initialData || !event.target.files || event.target.files.length === 0) {
+      return;
+    }
+    const file = event.target.files[0];
+    
+    setPreview(URL.createObjectURL(file));
+    setIsAvatarLoading(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      // YENİ OLUŞTURDUĞUMUZ ENDPOINT'E İSTEK
+      await apiFetchAuth(`/api/hr/personnel/${initialData.id}/avatar`, {
+        method: "POST",
+        body: formData,
+      });
+      toast.success(t("toast.avatarUpdateSuccess"));
+      // Formu kapatmadan ana tablonun yenilenmesini sağla
+      onSuccess(true); 
+    } catch (error: any) {
+      toast.error(t("toast.avatarUpdateError"), { description: error.message });
+      // Hata olursa eski fotoğrafa dön
+      setPreview(initialData?.user?.avatarUrl ? `${API_BASE}${initialData.user.avatarUrl}` : null);
+    } finally {
+      setIsAvatarLoading(false);
+    }
+  };
+  // --- FONKSİYON SONU ---
+
   const onSubmit = async (values: FormSchema) => {
     setIsLoading(true);
 
@@ -231,7 +275,7 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
         ? t("hr.personnel.toast.updateSuccess")
         : t("hr.personnel.toast.createSuccess");
       toast.success(successMessage);
-      onSuccess();
+      onSuccess(); // Formu kapat
     } catch (error: any) {
       toast.error(isEditMode ? t("hr.personnel.toast.updateError") : t("hr.personnel.toast.createError"), {
         description: error.message,
@@ -246,6 +290,40 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        
+        {/* YENİ: Avatar Yükleme Kartı (Sadece Düzenleme Modunda) */}
+        {isEditMode && (
+          <Card className="bg-muted/30">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base">Profil Fotoğrafı</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center space-x-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={preview || undefined} alt={initialData?.user?.fullName} />
+                  <AvatarFallback>{getInitials(initialData?.user?.fullName || "?")}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 space-y-2">
+                  <Input
+                    id="avatar-file"
+                    type="file"
+                    accept="image/png, image/jpeg"
+                    onChange={handleAvatarUpload}
+                    disabled={isAvatarLoading}
+                    className="file:text-primary file:font-semibold"
+                  />
+                  {isAvatarLoading && (
+                     <div className="flex items-center text-xs text-muted-foreground">
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        Yükleniyor...
+                     </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        {/* YENİ BÖLÜM SONU */}
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
@@ -263,7 +341,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  {/* FIX: z-[9999] eklendi */}
                   <PopoverContent className="w-auto p-0 z-[9999]" align="start">
                     <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
                   </PopoverContent>
@@ -316,7 +393,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
             />
         </div>
 
-        {/* BİRİM SEÇİMİ - COMBOMOX */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10">
             <FormField
                 control={form.control}
@@ -336,7 +412,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                         <SelectValue placeholder="Departman Seçiniz" />
                         </SelectTrigger>
                     </FormControl>
-                    {/* FIX: z-[9999] eklendi */}
                     <SelectContent className="z-[9999]">
                         {departments.map((dept) => (
                         <SelectItem key={dept.id} value={dept.id}>
@@ -376,7 +451,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      {/* FIX: z-[9999] eklendi */}
                       <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[9999]">
                         <Command>
                           <CommandInput placeholder="Birim Ara..." />
@@ -426,7 +500,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                         <SelectValue placeholder={t("hr.personnel.placeholder.skill")} />
                         </SelectTrigger>
                     </FormControl>
-                    {/* FIX: z-[9999] eklendi */}
                     <SelectContent className="z-[9999]">
                         <SelectItem value="null">{t("hr.personnel.placeholder.skill")}</SelectItem>
                         {definitions.skills.map((skill) => (
@@ -454,7 +527,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                     <SelectValue placeholder={t("hr.personnel.placeholder.service")} />
                     </SelectTrigger>
                 </FormControl>
-                {/* FIX: z-[9999] eklendi */}
                 <SelectContent className="z-[9999]">
                     <SelectItem value="null">{t("hr.personnel.placeholder.noService")}</SelectItem>
                     {definitions.services.map((service) => (
@@ -470,7 +542,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
             />
         </div>
 
-        {/* PRİM ATAMA TABLOSU */}
         <Card>
             <CardHeader className="flex flex-row items-center justify-between py-4">
                 <CardTitle className="text-base">{t("hr.personnel.bonus.title")}</CardTitle>
@@ -512,7 +583,6 @@ export function PersonnelForm({ onSuccess, lng, initialData }: PersonnelFormProp
                                                             <SelectValue placeholder={t("hr.personnel.bonus.validation.select")} />
                                                         </SelectTrigger>
                                                     </FormControl>
-                                                    {/* FIX: z-[9999] eklendi */}
                                                     <SelectContent className="z-[9999]">
                                                         {definitions.bonuses.map((b) => (
                                                             <SelectItem key={b.id} value={b.id}>

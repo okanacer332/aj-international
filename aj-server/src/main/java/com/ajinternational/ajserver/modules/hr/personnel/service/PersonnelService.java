@@ -5,7 +5,7 @@ import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
 import com.ajinternational.ajserver.modules.hr.personnel.dto.CreatePersonnelRequest;
 import com.ajinternational.ajserver.modules.hr.personnel.dto.UpdatePersonnelRequest;
 import com.ajinternational.ajserver.modules.hr.personnel.model.Personnel;
-import com.ajinternational.ajserver.modules.hr.personnel.model.PersonnelBonus; // YENİ IMPORT
+import com.ajinternational.ajserver.modules.hr.personnel.model.PersonnelBonus;
 import com.ajinternational.ajserver.modules.hr.personnel.repository.PersonnelRepository;
 import com.ajinternational.ajserver.modules.iam.model.Role;
 import com.ajinternational.ajserver.modules.iam.model.User;
@@ -18,6 +18,11 @@ import com.ajinternational.ajserver.modules.masterdata.model.ServiceDefinition;
 import com.ajinternational.ajserver.modules.masterdata.model.SkillDefinition;
 import com.ajinternational.ajserver.modules.masterdata.model.UnitDefinition;
 
+// --- YENİ IMPORTLAR ---
+import com.ajinternational.ajserver.modules.storage.service.FileStorageService;
+import org.springframework.web.multipart.MultipartFile;
+// --- IMPORTLAR SONU ---
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,6 +34,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.Optional;
+import java.util.Objects; // Objects importu eklendi (deleteUnit içindeydi)
 
 
 @Service
@@ -40,6 +46,7 @@ public class PersonnelService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
+    private final FileStorageService fileStorageService; // YENİ BAĞIMLILIK
 
     private final UnitDefinitionRepository unitRepository;
     private final SkillDefinitionRepository skillRepository;
@@ -50,7 +57,6 @@ public class PersonnelService {
     public List<Personnel> findAllPersonnel() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
 
-        // 1. O tenant'taki tüm verileri harita (map) olarak çek
         List<Personnel> personnelList = personnelRepository.findByTenantId(tenantId);
         Map<String, User> userMap = userRepository.findByTenantId(tenantId).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
@@ -61,7 +67,6 @@ public class PersonnelService {
         Map<String, ServiceDefinition> serviceMap = serviceRepository.findByTenantId(tenantId).stream()
                 .collect(Collectors.toMap(ServiceDefinition::getId, Function.identity()));
 
-        // 2. Personel listesini döngüye al ve geçici (@Transient) alanları doldur
         for (Personnel p : personnelList) {
             if (p.getUserId() != null) {
                 p.setUser(userMap.get(p.getUserId()));
@@ -95,7 +100,6 @@ public class PersonnelService {
         Role personnelRole = roleRepository.findByTenantIdAndName(currentTenantId, "PERSONNEL")
                 .orElseThrow(() -> new RuntimeException("PERSONNEL rolü bulunamadı. Lütfen DataInitializer'ı kontrol edin."));
 
-        // 1. Kullanıcıyı (User) oluştur
         User newUser = new User();
         newUser.setTenantId(currentTenantId);
         newUser.setFullName(request.fullName());
@@ -107,7 +111,6 @@ public class PersonnelService {
 
         User savedUser = userRepository.save(newUser);
 
-        // 2. Personeli (Personnel) oluştur
         Personnel newPersonnel = new Personnel();
         newPersonnel.setTenantId(currentTenantId);
         newPersonnel.setUserId(savedUser.getId());
@@ -118,7 +121,6 @@ public class PersonnelService {
         newPersonnel.setSkillDefinitionId(request.skillDefinitionId());
         newPersonnel.setServiceDefinitionId(request.serviceDefinitionId());
 
-        // YENİ: Primleri Ekle
         if (request.bonuses() != null) {
             List<PersonnelBonus> bonuses = request.bonuses().stream()
                     .map(b -> new PersonnelBonus(b.bonusDefinitionId(), b.amount()))
@@ -144,33 +146,27 @@ public class PersonnelService {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();
 
-        // 1. Personel kaydını bul (Tenant güvenli)
         Personnel personnel = personnelRepository.findByTenantIdAndId(currentTenantId, personnelId)
                 .orElseThrow(() -> new RuntimeException("Personel kaydı bulunamadı veya yetkiniz yok."));
 
-        // 2. İlişkili User kaydını bul
         User user = userRepository.findById(personnel.getUserId())
                 .orElseThrow(() -> new RuntimeException("İlişkili kullanıcı kaydı bulunamadı: " + personnel.getUserId()));
 
-        // 3. User (Kullanıcı) verilerini güncelle
         user.setFullName(request.fullName());
         userRepository.save(user);
 
-        // 4. Personnel (İK) verilerini güncelle
         personnel.setHireDate(request.hireDate());
         personnel.setPhone(request.phone());
         personnel.setUnitDefinitionId(request.unitDefinitionId());
         personnel.setSkillDefinitionId(request.skillDefinitionId());
         personnel.setServiceDefinitionId(request.serviceDefinitionId());
 
-        // YENİ: Primleri Güncelle
         if (request.bonuses() != null) {
             List<PersonnelBonus> bonuses = request.bonuses().stream()
                     .map(b -> new PersonnelBonus(b.bonusDefinitionId(), b.amount()))
                     .collect(Collectors.toList());
             personnel.setAssignedBonuses(bonuses);
         } else {
-            // Eğer null gelirse (frontend göndermezse) listeyi temizle
             personnel.getAssignedBonuses().clear();
         }
 
@@ -207,6 +203,39 @@ public class PersonnelService {
                 "Personel ve ilişkili kullanıcı silindi: " + onxCode
         );
     }
+
+    // --- YENİ METOT: AVATAR GÜNCELLEME ---
+    @Transactional
+    public String updatePersonnelAvatar(String personnelId, MultipartFile file) {
+        String currentTenantId = TenantContextHolder.getCurrentTenantId();
+        String currentUsername = TenantContextHolder.getCurrentUsername();
+
+        // 1. Personeli (ve yetkiyi) kontrol et
+        Personnel personnel = personnelRepository.findByTenantIdAndId(currentTenantId, personnelId)
+                .orElseThrow(() -> new RuntimeException("Personel kaydı bulunamadı veya yetkiniz yok."));
+
+        // 2. İlişkili Kullanıcıyı (User) bul
+        User user = userRepository.findById(personnel.getUserId())
+                .orElseThrow(() -> new RuntimeException("İlişkili kullanıcı kaydı bulunamadı."));
+
+        // 3. Dosyayı kaydet (örneğin "avatars" klasörüne)
+        String filePath = fileStorageService.storeFile(file, "avatars");
+
+        // 4. Kullanıcının avatarUrl alanını güncelle
+        user.setAvatarUrl(filePath);
+        userRepository.save(user);
+
+        // 5. Logla
+        auditLogService.logAction(
+                currentTenantId,
+                currentUsername,
+                "PERSONNEL_AVATAR_UPDATED", // Log tipi
+                "Personel avatarı güncellendi: " + user.getUsername() // Log detayı
+        );
+
+        return filePath;
+    }
+    // --- YENİ METOT SONU ---
 
     public Optional<Personnel> findPersonnelById(String id) {
         String tenantId = TenantContextHolder.getCurrentTenantId();

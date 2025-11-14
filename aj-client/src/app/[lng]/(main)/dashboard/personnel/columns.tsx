@@ -2,13 +2,13 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Personnel } from "@/types/personnel";
-import { UnitDefinition } from "@/types/unit-definition"; // YENİ İMPORT
+import { UnitDefinition } from "@/types/unit-definition";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getInitials } from "@/lib/utils";
-import { API_BASE } from "@/lib/api";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // YENİ IMPORT
+import { getInitials } from "@/lib/utils"; // YENİ IMPORT
+import { API_BASE } from "@/lib/api"; // YENİ IMPORT
 import { format } from "date-fns";
 import { tr, enUS, es, ru } from "date-fns/locale";
 import { Progress } from "@/components/ui/progress";
@@ -21,20 +21,46 @@ const locales: { [key: string]: Locale } = {
   ar: enUS,
 };
 
-// 1. YENİ PROP: unitMap eklendi
+// --- YENİ AVATAR SÜTUNU ---
+const AvatarColumn: ColumnDef<Personnel> = {
+  id: "avatar",
+  header: "", // Başlık göstermeye gerek yok
+  cell: ({ row }) => {
+    const user = row.original.user; // Personnel'e bağlı User objesi
+    const fullName = user?.fullName || row.original.onxCode;
+    const avatarSrc = user?.avatarUrl
+      ? `${API_BASE}${user.avatarUrl}`
+      : undefined;
+
+    return (
+      <Avatar className="h-8 w-8">
+        <AvatarImage src={avatarSrc} alt={fullName} />
+        <AvatarFallback>{getInitials(fullName)}</AvatarFallback>
+      </Avatar>
+    );
+  },
+  size: 40, // Sütun genişliği
+  enableSorting: false,
+  enableHiding: false,
+};
+// --- YENİ SÜTUN SONU ---
+
 export const createPersonnelColumns = ({
   onEdit,
   onDelete,
   t,
   lng,
-  unitMap, // Birim ID'sinden isim bulmak için
+  unitMap,
 }: {
   onEdit: (personnel: Personnel) => void;
   onDelete: (personnel: Personnel) => void;
   t: (key: string) => string;
   lng: string;
-  unitMap: Map<string, UnitDefinition>; // YENİ
+  unitMap: Map<string, UnitDefinition>;
 }): ColumnDef<Personnel>[] => [
+  // --- YENİ SÜTUN BURAYA EKLENDİ ---
+  AvatarColumn,
+  // ---
   {
     accessorKey: "user.fullName",
     header: ({ column }) => (
@@ -47,18 +73,11 @@ export const createPersonnelColumns = ({
     cell: ({ row }) => {
       const user = row.original.user;
       const fullName = user?.fullName || row.original.onxCode;
-      const avatarSrc = user?.avatarUrl
-        ? `${API_BASE}${user.avatarUrl}`
-        : undefined;
-
+      
+      // Avatar zaten ayrı sütunda, buradan kaldırıyoruz
+      // Sadece ismi gösteriyoruz
       return (
-        <div className="flex items-center space-x-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={avatarSrc} alt={fullName} />
-            <AvatarFallback>{getInitials(fullName)}</AvatarFallback>
-          </Avatar>
-          <span className="font-medium">{fullName}</span>
-        </div>
+         <span className="font-medium">{fullName}</span>
       );
     },
     filterFn: (row, id, value) => {
@@ -92,9 +111,7 @@ export const createPersonnelColumns = ({
       });
     },
   },
-  // 2. GÜNCELLEME: "Birim" sütunu
   {
-    // accessorKey artık 'unit.departmentName' değil, 'unitDefinitionId'
     accessorKey: "unitDefinitionId",
     header: ({ column }) => (
       <DataTableColumnHeader
@@ -105,7 +122,7 @@ export const createPersonnelColumns = ({
     ),
     cell: ({ row }) => {
       const unitId = row.original.unitDefinitionId;
-      const unit = unitMap.get(unitId); // Haritadan birimi bul
+      const unit = unitMap.get(unitId); 
 
       if (!unit) {
         return (
@@ -115,18 +132,14 @@ export const createPersonnelColumns = ({
         );
       }
 
-      // Birimin parent'ını (departmanını) bul
       const parentUnit = unit.parentUnitId ? unitMap.get(unit.parentUnitId) : null;
 
       if (parentUnit) {
-        // Bu bir Ünite: "Departman Adı / Ünite Adı"
         return `${parentUnit.name} / ${unit.name}`;
       } else {
-        // Bu bir Departman (nadiren): "Departman Adı"
         return unit.name;
       }
     },
-    // Filtreleme fonksiyonu 'unitDefinitionId' üzerinden doğru çalışır
     filterFn: (row, id, value: string[]) => {
       const unitId = row.original.unitDefinitionId;
       return value.includes(unitId);
