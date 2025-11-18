@@ -32,13 +32,11 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-// Yeni tipleri import et
 import {
   ProductionUnitDefinition,
   ProductionUnitDefinitionFormValues,
 } from "@/types/production-unit-definition";
 
-// Zod şeması (Yetkinlik alanı kaldırıldı)
 const createFormSchema = (t: (key: string) => string) =>
   z.object({
     id: z.string().optional(),
@@ -46,7 +44,6 @@ const createFormSchema = (t: (key: string) => string) =>
     parentProductionUnitId: z.string().nullable().optional(),
   });
 
-// Combobox tipi
 type ComboboxOption = {
   value: string | null;
   label: string;
@@ -54,11 +51,15 @@ type ComboboxOption = {
   disabled?: boolean;
 };
 
+type FormMode = "newGroup" | "newSection" | "edit";
+
 type UnitFormProps = {
   initialData: ProductionUnitDefinition | null;
   onSuccess: () => void;
-  allUnits: ProductionUnitDefinition[]; // Hiyerarşik liste
+  allUnits: ProductionUnitDefinition[];
   lng: string;
+  formMode: FormMode;
+  parentGroupIdForNewSection: string | null; 
 };
 
 export function ProductionUnitDefinitionForm({
@@ -66,6 +67,8 @@ export function ProductionUnitDefinitionForm({
   onSuccess,
   allUnits,
   lng,
+  formMode,
+  parentGroupIdForNewSection,
 }: UnitFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [comboboxOpen, setComboboxOpen] = useState(false);
@@ -73,24 +76,31 @@ export function ProductionUnitDefinitionForm({
 
   const formSchema = createFormSchema(t);
 
-  const form = useForm<ProductionUnitDefinitionFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
+  const getDefaultValues = () => {
+    if (formMode === "newGroup") {
+      return { id: undefined, name: "", parentProductionUnitId: null };
+    }
+    if (formMode === "newSection") {
+      // Arka planda doğru ID'yi set ediyoruz ama kullanıcıya göstermiyoruz
+      return { id: undefined, name: "", parentProductionUnitId: parentGroupIdForNewSection };
+    }
+    return {
       id: initialData?.id || undefined,
       name: initialData?.name || "",
       parentProductionUnitId: initialData?.parentProductionUnitId || null,
-    },
+    };
+  };
+  
+  const form = useForm<ProductionUnitDefinitionFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: getDefaultValues(),
   });
 
   useEffect(() => {
     if (ready) {
-      form.reset({
-        id: initialData?.id || undefined,
-        name: initialData?.name || "",
-        parentProductionUnitId: initialData?.parentProductionUnitId || null,
-      });
+      form.reset(getDefaultValues());
     }
-  }, [initialData, form.reset, ready]);
+  }, [initialData, formMode, parentGroupIdForNewSection, form.reset, ready]);
 
   // Hiyerarşik Combobox Seçeneklerini Oluşturma
   const generateOptions = (
@@ -134,8 +144,8 @@ export function ProductionUnitDefinitionForm({
   };
 
   const disabledUnitIds = useMemo(
-    () => getDisabledIds(initialData),
-    [initialData]
+    () => (formMode === 'edit' ? getDisabledIds(initialData) : new Set<string>()),
+    [initialData, formMode]
   );
   
   const comboboxOptions = useMemo(
@@ -159,7 +169,6 @@ export function ProductionUnitDefinitionForm({
     };
 
     try {
-      // API yolunu güncelle
       await apiFetchAuth("/api/masterdata/production-units", {
         method: "POST",
         body: JSON.stringify(payload),
@@ -177,6 +186,9 @@ export function ProductionUnitDefinitionForm({
 
   if (!ready) return null;
 
+  // Sadece 'edit' modunda Parent seçimini göster, oluştururken gizle.
+  const showParentField = formMode === "edit";
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -185,95 +197,102 @@ export function ProductionUnitDefinitionForm({
           control={form.control}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("production.unit.field.name")}</FormLabel>
+              <FormLabel>
+                {formMode === 'newGroup' ? "Grup Adı" : "Bölüm Adı"}
+              </FormLabel>
               <FormControl>
-                <Input placeholder="Örn: Kalite veya Baby" {...field} />
+                <Input 
+                  placeholder={formMode === 'newGroup' ? "Örn: Baby" : "Örn: Kalite"} 
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         
-        <FormField
-          control={form.control}
-          name="parentProductionUnitId"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>{t("production.unit.field.parent")}</FormLabel>
-              <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={comboboxOpen}
-                      className={cn(
-                        "w-full justify-between",
-                        !field.value && "text-muted-foreground"
-                      )}
+        {/* GÜNCELLEME: Parent seçimi sadece Edit modunda gösteriliyor */}
+        {showParentField && (
+          <FormField
+            control={form.control}
+            name="parentProductionUnitId"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>{t("production.unit.field.parent")}</FormLabel>
+                <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={comboboxOpen}
+                        disabled={isLoading}
+                        className={cn(
+                          "w-full justify-between",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {comboboxOptions
+                          .find((option) => option.value === field.value)
+                          ?.label.trimStart() ||
+                          t("production.unit.placeholderParent")}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] overflow-y-auto p-0">
+                    <Command
+                      filter={(value, search) => {
+                        const option = comboboxOptions.find(
+                          (opt) => opt.value === value
+                        );
+                        return option?.label
+                          .toLowerCase()
+                          .includes(search.toLowerCase())
+                          ? 1
+                          : 0;
+                      }}
                     >
-                      {comboboxOptions
-                        .find((option) => option.value === field.value)
-                        ?.label.trimStart() ||
-                        t("production.unit.placeholderParent")}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] overflow-y-auto p-0">
-                  <Command
-                    filter={(value, search) => {
-                      const option = comboboxOptions.find(
-                        (opt) => opt.value === value
-                      );
-                      return option?.label
-                        .toLowerCase()
-                        .includes(search.toLowerCase())
-                        ? 1
-                        : 0;
-                    }}
-                  >
-                    <CommandInput
-                      placeholder={t("production.unit.placeholderParent")}
-                    />
-                    <CommandList>
-                      <CommandEmpty>{t("datatable.noResult")}</CommandEmpty>
-                      <CommandGroup>
-                        {comboboxOptions.map((option) => (
-                          <CommandItem
-                            value={option.value ?? "null"}
-                            key={option.value ?? "null"}
-                            disabled={option.disabled}
-                            onSelect={() => {
-                              form.setValue("parentProductionUnitId", option.value);
-                              setComboboxOpen(false);
-                            }}
-                            style={{
-                              paddingLeft: `${option.level * 1.5 + 0.5}rem`,
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                field.value === option.value
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              )}
-                            />
-                            {option.label.trimStart()}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Yetkinlik Switch'i kaldırıldı */}
+                      <CommandInput
+                        placeholder={t("production.unit.placeholderParent")}
+                      />
+                      <CommandList>
+                        <CommandEmpty>{t("datatable.noResult")}</CommandEmpty>
+                        <CommandGroup>
+                          {comboboxOptions.map((option) => (
+                            <CommandItem
+                              value={option.value ?? "null"}
+                              key={option.value ?? "null"}
+                              disabled={option.disabled}
+                              onSelect={() => {
+                                form.setValue("parentProductionUnitId", option.value);
+                                setComboboxOpen(false);
+                              }}
+                              style={{
+                                paddingLeft: `${option.level * 1.5 + 0.5}rem`,
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  field.value === option.value
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                              {option.label.trimStart()}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

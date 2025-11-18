@@ -6,14 +6,13 @@ import { Button } from "@/components/ui/button";
 import {
   Edit,
   Trash2,
-  Package, // Grup ikonu
-  ClipboardList, // Bölüm ikonu
+  Package,
+  ClipboardList,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 
-// Arayüz aynı kalır
 export interface FlatProductionUnitDefinition extends ProductionUnitDefinition {
   level: number;
 }
@@ -30,7 +29,6 @@ export const createProductionUnitColumns = ({
   onDelete: (unit: ProductionUnitDefinition) => void;
   t: (key: string) => string;
   unitMap: UnitMap;
-  // onToggleExpand prop'u kaldırıldı
 }): ColumnDef<FlatProductionUnitDefinition>[] => [
   {
     accessorKey: "name",
@@ -44,11 +42,8 @@ export const createProductionUnitColumns = ({
     cell: ({ row }: { row: Row<FlatProductionUnitDefinition> }) => {
       const unit = row.original;
       const level = unit.level ?? 0;
-      // DÜZELTME: Girinti için artık 1.5rem (level 1) veya 0 (level 0) kullanıyoruz
       const indentPadding = `${level * 1.5}rem`;
 
-      // Akordiyon butonu kaldırıldı.
-      // Sadece ikonu gösteriyoruz.
       const icon =
         level === 0 ? (
           <Package className="size-4 text-primary mr-2" />
@@ -62,9 +57,8 @@ export const createProductionUnitColumns = ({
             "flex items-center space-x-1",
             level > 0 ? "text-muted-foreground font-normal" : "font-semibold"
           )}
-          style={{ paddingLeft: indentPadding }} // Girinti burada uygulanıyor
+          style={{ paddingLeft: indentPadding }}
         >
-          {/* toggleButton kaldırıldı */}
           {icon}
           <span className="truncate">{unit.name}</span>
         </div>
@@ -83,13 +77,14 @@ export const createProductionUnitColumns = ({
     ),
     cell: ({ row }) => {
       const isGroup = row.original.level === 0;
+      // GÜNCELLEME: (Ana) ve (Alt) kaldırıldı
       return isGroup ? (
         <Badge variant="default">
-          {t("production.unit.type.group")}
+          Grup
         </Badge>
       ) : (
         <Badge variant="outline">
-          {t("production.unit.type.section")}
+          Bölüm
         </Badge>
       );
     },
