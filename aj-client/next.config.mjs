@@ -41,6 +41,14 @@ const nextConfig = {
         port: '8080',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'app.ajkalite.xyz',
+      },
+      {
+        protocol: 'http',
+        hostname: 'app.ajkalite.xyz',
+      },
     ],
   },
 

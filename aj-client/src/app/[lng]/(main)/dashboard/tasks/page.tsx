@@ -1,4 +1,3 @@
-// aj-client/src/app/[lng]/(main)/dashboard/tasks/page.tsx
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -6,41 +5,27 @@ import { useTranslation } from "@/lib/i18n-client";
 import { useParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Loader2 } from "lucide-react";
+import { Camera, X, Loader2, TriangleAlert } from "lucide-react"; // İkon eklendi
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription, // Eklendi
+  CardDescription,
 } from "@/components/ui/card";
 import {
   Html5Qrcode,
-  Html5QrcodeError,
-  Html5QrcodeResult,
   Html5QrcodeSupportedFormats,
 } from "html5-qrcode";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils"; // cn (classnames) eklendi
+import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Alert bileşeni eklendi
 
-// Test etmek istediğimiz formatları ve onlara ait state anahtarlarını tanımlıyoruz
-// (Liste değişmedi)
 const supportedFormats = [
   { key: "qr", label: "QR Code", format: Html5QrcodeSupportedFormats.QR_CODE },
-  { key: "aztec", label: "Aztec", format: Html5QrcodeSupportedFormats.AZTEC },
-  { key: "code39", label: "Code 39", format: Html5QrcodeSupportedFormats.CODE_39 },
-  { key: "code93", label: "Code 93", format: Html5QrcodeSupportedFormats.CODE_93 },
   { key: "code128", label: "Code 128", format: Html5QrcodeSupportedFormats.CODE_128 },
-  { key: "itf", label: "ITF (Interleaved 2 of 5)", format: Html5QrcodeSupportedFormats.ITF },
   { key: "ean13", label: "EAN-13", format: Html5QrcodeSupportedFormats.EAN_13 },
-  { key: "ean8", label: "EAN-8", format: Html5QrcodeSupportedFormats.EAN_8 },
-  { key: "pdf417", label: "PDF 417", format: Html5QrcodeSupportedFormats.PDF_417 },
-  { key: "upca", label: "UPC-A", format: Html5QrcodeSupportedFormats.UPC_A },
-  { key: "upce", label: "UPC-E", format: Html5QrcodeSupportedFormats.UPC_E },
-  { key: "datamatrix", label: "Data Matrix", format: Html5QrcodeSupportedFormats.DATA_MATRIX },
-  { key: "maxicode", label: "MaxiCode", format: Html5QrcodeSupportedFormats.MAXICODE },
-  { key: "rss14", label: "RSS 14", format: Html5QrcodeSupportedFormats.RSS_14 },
-  { key: "rssexpanded", label: "RSS Expanded", format: Html5QrcodeSupportedFormats.RSS_EXPANDED },
+  { key: "all", label: "Tüm Formatlar", format: undefined }, // Hepsi için
 ];
 
 type ActiveScanConfig = typeof supportedFormats[0];
@@ -50,23 +35,26 @@ export default function Page() {
   const { t, ready } = useTranslation(lng, "common");
 
   const [scanResults, setScanResults] = useState<Record<string, string>>({});
-  const [activeScanConfig, setActiveScanConfig] =
-    useState<ActiveScanConfig | null>(null);
+  const [activeScanConfig, setActiveScanConfig] = useState<ActiveScanConfig | null>(null);
   const [isScannerLoading, setIsScannerLoading] = useState(false);
+  const [permissionError, setPermissionError] = useState<string | null>(null); // Hata state'i
+  
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = "multi-format-qr-reader";
 
-  // Tarayıcıyı durduran merkezi fonksiyon (Değişiklik yok)
+  // Güvenli Bağlam Kontrolü
+  const isSecureContext = typeof window !== "undefined" && (window.isSecureContext || window.location.hostname === "localhost");
+
   const stopScanner = useCallback(() => {
     if (scannerRef.current) {
       setIsScannerLoading(true);
       scannerRef.current
         .stop()
         .then(() => {
-          console.log("Tarayıcı başarıyla durduruldu.");
+          console.log("Tarayıcı durduruldu.");
         })
         .catch((err) => {
-          console.error("Tarayıcı durdurulurken hata:", err);
+          console.warn("Durdurma uyarısı:", err);
         })
         .finally(() => {
           setIsScannerLoading(false);
@@ -79,76 +67,89 @@ export default function Page() {
     }
   }, []);
 
-  // Tarayıcıyı başlatan veya durduran ana mantık
   useEffect(() => {
     if (activeScanConfig && !scannerRef.current) {
+      // Önce HTTPS kontrolü yapalım
+      if (!isSecureContext) {
+        setPermissionError("Kamera sadece HTTPS veya localhost üzerinden çalışır.");
+        toast.error("Güvenli bağlantı gerekli (HTTPS).");
+        setActiveScanConfig(null);
+        return;
+      }
+
+      setPermissionError(null);
       setIsScannerLoading(true);
+
       const html5QrCode = new Html5Qrcode(scannerContainerId);
       scannerRef.current = html5QrCode;
 
-      // --- RESPONSIVE GÜNCELLEME (qrbox) ---
-      // Barkodları (geniş) ve QR kodları (kare) okuyabilmek için
-      // tarama alanını (qrbox) dinamik olarak ayarla.
-      const qrboxFunction = (
-        viewfinderWidth: number,
-        viewfinderHeight: number
-      ) => {
-        // Genişliği %80 yap, min 200px, max 400px
-        const boxWidth = Math.max(200, Math.min(400, viewfinderWidth * 0.8));
-        // Yüksekliği, genişliğin %40'ı yap (barkodlar için ideal), min 80px
-        const boxHeight = Math.max(80, boxWidth * 0.4);
-
+      const qrboxFunction = (viewfinderWidth: number, viewfinderHeight: number) => {
+        const minEdgePercentage = 0.70;
+        const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+        const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
         return {
-          width: boxWidth,
-          height: boxHeight,
+          width: qrboxSize,
+          height: Math.floor(qrboxSize / 1.5), // Barkodlar için geniş dikdörtgen
         };
       };
-      // --- GÜNCELLEME SONU ---
 
       const config = {
         fps: 10,
-        qrbox: qrboxFunction, // Dinamik fonksiyonu kullan
-        formatsToScan: [activeScanConfig.format],
-      };
-
-      const onScanSuccess = (
-        decodedText: string,
-        result: Html5QrcodeResult
-      ) => {
-        setScanResults((prev) => ({
-          ...prev,
-          [activeScanConfig.key]: decodedText,
-        }));
-        stopScanner();
-        toast.success(`${activeScanConfig.label} okundu!`);
+        qrbox: qrboxFunction,
+        aspectRatio: 1.0,
+        formatsToScan: activeScanConfig.format ? [activeScanConfig.format] : undefined,
       };
 
       html5QrCode
         .start(
-          { facingMode: "environment" },
+          { facingMode: "environment" }, // Arka kamera
           config,
-          onScanSuccess,
-          (error: Html5QrcodeError) => {}
+          (decodedText) => {
+            setScanResults((prev) => ({
+              ...prev,
+              [activeScanConfig.key]: decodedText,
+            }));
+            stopScanner();
+            toast.success(`${activeScanConfig.label} okundu: ${decodedText}`);
+            
+            // Başarılı okumada ses çal (Opsiyonel UX)
+            // const audio = new Audio('/beep.mp3'); audio.play().catch(e=>{});
+          },
+          (errorMessage) => {
+            // Okuma hatası (Kamera açık ama kod bulamadı) - Loglamaya gerek yok
+          }
         )
         .then(() => {
           setIsScannerLoading(false);
         })
         .catch((err) => {
-          toast.error("Kamera başlatılamadı.", { description: err.message });
-          stopScanner();
+          setIsScannerLoading(false);
+          let errorMsg = "Kamera başlatılamadı.";
+          
+          if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+            errorMsg = "Kamera izni reddedildi. Lütfen tarayıcı ayarlarından izin verin.";
+          } else if (err?.name === "NotFoundError") {
+            errorMsg = "Kamera cihazı bulunamadı.";
+          } else if (err?.name === "NotReadableError") {
+            errorMsg = "Kamera şu anda başka bir uygulama tarafından kullanılıyor.";
+          } else if (!isSecureContext) {
+             errorMsg = "Tarayıcı güvenlik kısıtlaması: Lütfen HTTPS kullanın.";
+          }
+
+          setPermissionError(errorMsg);
+          toast.error("Hata", { description: errorMsg });
+          // stopScanner çağırmıyoruz ki kullanıcı hatayı görsün, manuel kapatsın
         });
     }
 
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch((e) => {});
-        scannerRef.current = null;
-      }
+      // Cleanup
     };
-  }, [activeScanConfig, stopScanner]);
+  }, [activeScanConfig, stopScanner, isSecureContext]);
 
   const handleScanClick = (config: ActiveScanConfig) => {
     if (isScannerLoading || activeScanConfig) return;
+    setPermissionError(null);
     setActiveScanConfig(config);
   };
 
@@ -171,66 +172,67 @@ export default function Page() {
           {t("operation.taskManagement.title")} (Barkod Test)
         </h1>
         <p className="text-muted-foreground">
-          Farklı barkod formatlarını test edin.
+          Kamera izni gerektirir. Sadece HTTPS veya Localhost üzerinde çalışır.
         </p>
       </div>
 
-      {/* --- RESPONSIVE GÜNCELLEME (Tarayıcı Alanı) --- */}
-      {/* Bu bölüm artık mobil cihazlarda (md altı) ekranın üstüne yapışık değil,
-        normal akışta görünür. Masaüstünde (md ve üzeri) ise 
-        sağ üst köşeye yapışık (sticky) durur.
-      */}
+      {/* GÜVENLİK UYARISI */}
+      {!isSecureContext && (
+         <Alert variant="destructive">
+            <TriangleAlert className="h-4 w-4" />
+            <AlertTitle>Güvenli Bağlantı Yok</AlertTitle>
+            <AlertDescription>
+              Kamerayı kullanabilmek için sayfanın <strong>HTTPS</strong> veya <strong>localhost</strong> üzerinden açılması gerekir. Şu anki bağlantı güvenli değil.
+            </AlertDescription>
+         </Alert>
+      )}
+
+      {/* TARAYICI ALANI */}
       {activeScanConfig && (
-        <Card
-          className={cn(
-            "w-full", // Mobil: Tam genişlik
-            "md:max-w-md md:mx-auto md:sticky md:top-4", // Masaüstü: max-w-md, ortalı ve yapışkan
-            "z-10 shadow-lg border-primary border-2"
-          )}
-        >
+        <Card className={cn(
+            "w-full md:max-w-md md:mx-auto md:sticky md:top-4 z-10 shadow-lg border-primary border-2"
+          )}>
           <CardHeader className="pb-2 pt-4">
             <CardTitle className="flex justify-between items-center text-lg">
               <span className="text-primary">
-                {activeScanConfig.label} Okunuyor...
+                {activeScanConfig.label} Aranıyor...
               </span>
               <Button
                 onClick={stopScanner}
                 variant="ghost"
                 size="icon"
-                disabled={isScannerLoading && !!scannerRef.current}
               >
-                {isScannerLoading && !!scannerRef.current ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <X className="h-4 w-4" />
-                )}
+                <X className="h-4 w-4" />
               </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Kamera görüntüsü burada oluşturulur */}
-            <div
-              id={scannerContainerId}
-              style={{ width: "100%", minHeight: "150px" }}
-            />
-
-            {/* Yüklenme göstergesi (Değişiklik yok) */}
-            {isScannerLoading && !scannerRef.current && (
-              <div className="flex items-center justify-center p-4">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                <span className="ml-2 text-muted-foreground">
-                  Kamera başlatılıyor...
-                </span>
-              </div>
+            {/* Hata Mesajı Gösterimi */}
+            {permissionError ? (
+               <div className="p-4 text-center text-destructive bg-destructive/10 rounded-md">
+                 <p className="font-semibold">Erişim Hatası</p>
+                 <p className="text-sm">{permissionError}</p>
+                 <Button variant="outline" size="sm" className="mt-2" onClick={stopScanner}>Kapat</Button>
+               </div>
+            ) : (
+                <>
+                    <div
+                      id={scannerContainerId}
+                      className="overflow-hidden rounded-md bg-black"
+                      style={{ width: "100%", minHeight: "250px" }}
+                    />
+                    {isScannerLoading && (
+                      <div className="flex items-center justify-center p-2 text-sm text-muted-foreground">
+                         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Kamera açılıyor...
+                      </div>
+                    )}
+                </>
             )}
           </CardContent>
         </Card>
       )}
-      {/* --- GÜNCELLEME SONU --- */}
 
-
-      {/* --- RESPONSIVE GÜNCELLEME (Format Listesi) --- */}
-      {/* Listeyi daha iyi ayırmak için bir Card içine aldık. */}
+      {/* FORMAT LİSTESİ */}
       <Card>
         <CardHeader>
           <CardTitle>Desteklenen Formatlar</CardTitle>
@@ -239,7 +241,6 @@ export default function Page() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Grid yapısı zaten responsive (md ve lg breakpoint'leri) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {supportedFormats.map((format) => (
               <div key={format.key} className="space-y-2">
@@ -256,11 +257,7 @@ export default function Page() {
                     onClick={() => handleScanClick(format)}
                     variant="outline"
                     size="icon"
-                    disabled={
-                      isScannerLoading ||
-                      (!!activeScanConfig &&
-                        activeScanConfig.key !== format.key)
-                    }
+                    disabled={!!activeScanConfig}
                   >
                     <Camera className="h-4 w-4" />
                   </Button>
@@ -270,7 +267,6 @@ export default function Page() {
           </div>
         </CardContent>
       </Card>
-      {/* --- GÜNCELLEME SONU --- */}
     </div>
   );
 }
