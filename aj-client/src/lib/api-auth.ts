@@ -3,11 +3,8 @@ import { getAuthToken } from "./auth";
 
 // API_BASE'i dinamik olarak belirleyen mantık:
 export const API_BASE =
-  // Kod sunucuda çalışıyorsa (Server-Side) -> Direkt Backend'e (8080) git
   typeof window === 'undefined'
     ? (process.env.API_BASE_SERVER ?? "http://localhost:8080")
-    // Kod tarayıcıda çalışıyorsa (Client-Side) -> Boş bırak (Relative Path)
-    // Bu sayede tarayıcı "http://213.../api/..." veya "http://192.../api/..." olarak otomatik tamamlar.
     : "";
 
 
