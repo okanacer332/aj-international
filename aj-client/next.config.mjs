@@ -61,6 +61,19 @@ const nextConfig = {
       },
     ];
   },
+
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:3344/api/:path*', // Backend Portun
+      },
+      {
+        source: '/uploads/:path*',
+        destination: 'http://localhost:3344/uploads/:path*', // Resimler için
+      },
+    ]
+  },
 }
 
 

@@ -1,0 +1,4 @@
+
+aj-server/src/main/java/com/ajinternational/ajserver/config/SecurityConfig.java
+aj-client/next.config.mjs
+aj-server/src/main/resources/application.properties

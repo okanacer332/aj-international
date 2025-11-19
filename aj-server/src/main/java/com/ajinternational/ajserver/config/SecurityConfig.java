@@ -55,6 +55,7 @@ public class SecurityConfig {
         // "*" yerine, frontend'inizin çalıştığı adresleri açıkça belirtin.
         // Müşterinizin IP'sini veya alan adını da buraya ekleyebilirsiniz.
         configuration.setAllowedOrigins(List.of("http://localhost:3000",
+                "http://localhost:3001",
                 "http://213.74.252.238",
                 "http://213.74.252.238:7777",
                 "http://192.168.1.203",
