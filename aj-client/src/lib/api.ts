@@ -4,13 +4,12 @@
 // Sadece Next.js sunucu tarafında (Server-Side) erişilebilir olacaktır.
 
 export const API_BASE =
-  // Eğer kod sunucuda (Next.js Node.js process) çalışıyorsa:
+  // Kod sunucuda çalışıyorsa (Server-Side) -> Direkt Backend'e (8080) git
   typeof window === 'undefined'
-    // Sunucu içi çağrılar için her zaman localhost kullan (3001 -> 8080)
-    ? process.env.API_BASE_SERVER ?? "http://localhost:8080"
-    // Eğer kod tarayıcıda (Client-Side) çalışıyorsa:
-    // Tarayıcı, sunucuya dış IP üzerinden erişmelidir.
-    : process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080";
+    ? (process.env.API_BASE_SERVER ?? "http://localhost:8080")
+    // Kod tarayıcıda çalışıyorsa (Client-Side) -> Boş bırak (Relative Path)
+    // Bu sayede tarayıcı "http://213.../api/..." veya "http://192.../api/..." olarak otomatik tamamlar.
+    : "";
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
   const headers = new Headers(options.headers ?? {});
