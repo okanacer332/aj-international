@@ -1,41 +1,30 @@
 import { useEffect, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { API_BASE } from '@/lib/api-auth'; // Dinamik adresi buradan alacak
 import { useAuthStore } from '@/stores/auth-store';
 
-// Backend URL'ini buraya NET bir şekilde yazıyoruz.
-// Normalde bunu .env dosyasından almalısın (NEXT_PUBLIC_API_URL)
-// Şimdilik çalışması için backend portunu (3344) elle yazıyorum.
-const SOCKET_URL = "http://localhost:3344/ws-operation"; 
-
-interface SocketMessage {
-    type: string;
-    payload: any;
-}
-
-export function useOperationSocket(onMessageReceived: (msg: SocketMessage) => void) {
+export function useOperationSocket(onMessageReceived: (msg: any) => void) {
     const clientRef = useRef<Client | null>(null);
     const { user, isLoading } = useAuthStore();
 
     useEffect(() => {
         if (isLoading || !user?.tenantId) return;
 
-        console.log("🔌 Socket Hedef:", SOCKET_URL);
+        // API_BASE artık dinamik (Örn: http://192.168.1.203:3344)
+        // Eğer sonunda slash varsa temizle
+        const baseUrl = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+        const socketUrl = `${baseUrl}/ws-operation`;
+
+        console.log("🔌 Socket Hedef:", socketUrl);
 
         const client = new Client({
-            // Buradaki URL artık Next.js'in (3001) değil, Java'nın (3344) adresi.
-            webSocketFactory: () => new SockJS(SOCKET_URL),
-            
-            reconnectDelay: 5000, // Koparsa 5sn sonra tekrar dene
-            
-            // Debug loglarını açalım ki ne olduğunu görelim
-            debug: (str) => {
-                console.log('🔍 STOMP:', str);
-            },
+            webSocketFactory: () => new SockJS(socketUrl),
+            reconnectDelay: 5000,
             
             onConnect: () => {
                 const topic = `/topic/operation/${user.tenantId}`;
-                console.log('✅ Socket BAĞLANDI! Kanal:', topic);
+                // console.log('✅ Socket BAĞLANDI! Kanal:', topic);
                 
                 client.subscribe(topic, (message) => {
                     if (message.body) {
@@ -49,9 +38,8 @@ export function useOperationSocket(onMessageReceived: (msg: SocketMessage) => vo
                 });
             },
             
-            onStompError: (frame) => {
-                console.error('❌ Broker hatası:', frame.headers['message']);
-            }
+            // Hata loglarını sadece geliştirme ortamında açabiliriz
+            // debug: (str) => console.log(str),
         });
 
         client.activate();
@@ -62,7 +50,7 @@ export function useOperationSocket(onMessageReceived: (msg: SocketMessage) => vo
                 client.deactivate();
             }
         };
-    }, [user?.tenantId, isLoading, onMessageReceived]);
+    }, [user?.tenantId, isLoading, onMessageReceived]); // API_BASE dependency'e gerek yok, import ediliyor
 
     return clientRef.current;
 }
