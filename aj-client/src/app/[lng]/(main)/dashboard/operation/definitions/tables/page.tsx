@@ -11,11 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Plus, Loader2 } from "lucide-react";
 import { OperationTable } from "@/types/operation";
-import { useTranslation } from "react-i18next"; // DÜZELTİLDİ (Eski import silindi)
-import { useParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
 
 export default function TableDefinitionsPage() {
-  const params = useParams();
   const { t } = useTranslation("common");
   const [tables, setTables] = useState<OperationTable[]>([]);
   const [loading, setLoading] = useState(false);
@@ -25,8 +24,12 @@ export default function TableDefinitionsPage() {
   });
 
   const fetchTables = async () => {
-    const res = await apiFetchAuth("/api/operation/tables");
-    setTables(await res.json());
+    try {
+      const res = await apiFetchAuth("/api/operation/tables");
+      setTables(await res.json());
+    } catch (e) {
+      console.error("Tablo yüklenemedi");
+    }
   };
 
   useEffect(() => { fetchTables(); }, []);
@@ -60,7 +63,7 @@ export default function TableDefinitionsPage() {
         <CardHeader><CardTitle>{t('operation.menu.tableDefinitions')}</CardTitle></CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input placeholder="Masa No (Örn: Masa-1)" {...register("tableNo", { required: true })} />
+            <Input placeholder={t('operation.fieldPanel.searchPlaceholder')} {...register("tableNo", { required: true })} />
             
             <Controller
                 name="unitType"
@@ -69,12 +72,12 @@ export default function TableDefinitionsPage() {
                 render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value || ""}>
                         <SelectTrigger>
-                            <SelectValue placeholder="Birim" />
+                            <SelectValue placeholder={t('operation.dialogs.bulkAssign.selectAll')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="PRE_SELECTION">Ön Seçim</SelectItem>
-                            <SelectItem value="SORTING">Ayrıştırma</SelectItem>
-                            <SelectItem value="PRESS">Press</SelectItem>
+                            <SelectItem value="PRE_SELECTION">{t('operation.units.PRE_SELECTION')}</SelectItem>
+                            <SelectItem value="SORTING">{t('operation.units.SORTING')}</SelectItem>
+                            <SelectItem value="PRESS">{t('operation.units.PRESS')}</SelectItem>
                         </SelectContent>
                     </Select>
                 )}
@@ -99,7 +102,12 @@ export default function TableDefinitionsPage() {
                     {tables.map(table => (
                         <TableRow key={table.id}>
                             <TableCell className="font-bold">{table.tableNo}</TableCell>
-                            <TableCell>{table.unitType}</TableCell>
+                            {/* DÜZELTİLDİ: ENUM'DAN GELEN DEĞERİ ÇEVİRİYORUZ */}
+                            <TableCell>
+                                <Badge variant="outline" className="bg-muted/50">
+                                    {t(`operation.units.${table.unitType}`)}
+                                </Badge>
+                            </TableCell>
                             <TableCell className="text-right">
                                 <Button size="icon" variant="ghost" onClick={() => handleDelete(table.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                             </TableCell>

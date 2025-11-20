@@ -884,5 +884,25 @@
   "operation.common.confirm": "Confirm",
   "operation.common.minute": "min",
   "operation.common.hour": "Hour",
-  "operation.common.kg": "KG"
+  "operation.common.kg": "KG",
+  "operation.units.PRE_SELECTION": "Pre-Selection",
+"operation.units.SORTING": "Sorting",
+"operation.units.PRESS": "Press",
+
+"permissions.PAGE_FIELD_PANEL": "Field Monitor Panel",
+"permissions.PAGE_OPERATION_DAILY": "Daily Operation Actions",
+"permissions.PAGE_OPERATION_DEFINITIONS": "Operation Definitions",
+"permissions.PAGE_OPERATION_SETTINGS": "Operation Settings","operation.dialogs.ticket.currentStock": "Current Stock",
+  "operation.dialogs.ticket.newTotal": "New Total Pool",
+  "operation.daily.rolloverOnly": "Rollover Only",
+  "operation.dialogs.smart.addStock": "Add New Stock",
+"operation.dialogs.smart.addCrew": "Reinforce Crew",
+"operation.dialogs.smart.transfer": "Transfer to Table",
+"operation.dialogs.smart.addCrewDesc": "Add personnel to process current stock.",
+"operation.dialogs.smart.addStockDesc": "Add ticket on top of current stock.",
+"operation.dialogs.smart.transferDesc": "Empty table and move stock.",
+"operation.dialogs.smart.startCrew": "Start Crew",
+"operation.dialogs.smart.startCrewDesc": "Table is empty. Start new crew.",
+"operation.common.back": "Go Back",
+"operation.daily.rolloverLabel": "(Rollover)"
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"; // DialogClose eklendi
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,7 +12,7 @@ import { WorkerAvailability } from "@/types/operation";
 import { toast } from "sonner";
 import { Battery, Users, Search, Loader2, X } from "lucide-react";
 import { getInitials } from "@/lib/utils";
-import { useTranslation } from "react-i18next"; // DÜZELTİLDİ
+import { useTranslation } from "react-i18next";
 
 interface Props {
     tableId: string;
@@ -20,7 +20,7 @@ interface Props {
 }
 
 export function BulkWorkerAssignmentDialog({ tableId, onSuccess }: Props) {
-    const { t } = useTranslation("common"); // DÜZELTİLDİ
+    const { t } = useTranslation("common");
     const [open, setOpen] = useState(false);
     const [workers, setWorkers] = useState<WorkerAvailability[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -33,9 +33,7 @@ export function BulkWorkerAssignmentDialog({ tableId, onSuccess }: Props) {
         try {
             const res = await apiFetchAuth("/api/operation/available-workers");
             setWorkers(await res.json());
-        } catch (e) {
-            console.error(e);
-        }
+        } catch (e) { console.error(e); }
     }, []);
 
     useEffect(() => {
@@ -91,17 +89,31 @@ export function BulkWorkerAssignmentDialog({ tableId, onSuccess }: Props) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground w-full md:w-auto">
+                <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground w-full md:w-auto shadow-sm">
                     <Users className="mr-2 h-4 w-4"/> {t('operation.daily.actions.bulkStart')}
                 </Button>
             </DialogTrigger>
+            
             <DialogContent className="w-[95vw] max-w-2xl h-[90vh] sm:h-auto sm:max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden rounded-xl">
-                <DialogHeader className="p-4 border-b bg-background z-10 shrink-0">
-                    <DialogTitle className="flex items-center justify-between">
+                
+                {/* HEADER: Kapatma Butonu Eklendi (absolute right-4) */}
+                <DialogHeader className="p-4 border-b bg-background z-10 shrink-0 relative">
+                    <DialogTitle className="flex items-center justify-between pr-8">
                         <span>{t('operation.dialogs.bulkAssign.title')}</span>
-                        <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-1 rounded-full">{selectedWorkerIds.length} {t('operation.dialogs.ticket.selectedCount')}</span>
+                        <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-1 rounded-full border">
+                            {selectedWorkerIds.length} {t('operation.dialogs.ticket.selectedCount')}
+                        </span>
                     </DialogTitle>
-                    <div className="relative mt-3">
+                    
+                    {/* MOBİL KAPATMA BUTONU */}
+                    <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                        <div className="bg-muted hover:bg-destructive hover:text-white p-1.5 rounded-full transition-colors">
+                            <X className="h-5 w-5" />
+                        </div>
+                        <span className="sr-only">Close</span>
+                    </DialogClose>
+
+                    <div className="relative mt-4">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input placeholder={t('operation.dialogs.bulkAssign.searchPlaceholder')} className="pl-9 pr-9 bg-muted/30" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}/>
                         {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground p-1"><X className="h-3 w-3"/></button>}
@@ -117,11 +129,11 @@ export function BulkWorkerAssignmentDialog({ tableId, onSuccess }: Props) {
                             const isSelected = selectedWorkerIds.includes(w.workerId);
                             const isDisabled = w.status === 'FULL' || w.status === 'BUSY';
                             return (
-                                <div key={w.workerId} onClick={() => !isDisabled && toggleWorker(w.workerId)} className={`relative flex items-center p-3 rounded-lg border transition-all cursor-pointer select-none ${isDisabled ? 'opacity-50 bg-muted border-transparent cursor-not-allowed' : isSelected ? 'bg-primary/5 border-primary ring-1 ring-primary/20' : 'bg-card border-border hover:border-primary/50 hover:shadow-sm'}`}>
-                                    <Checkbox checked={isSelected} disabled={isDisabled} className="mr-4" />
+                                <div key={w.workerId} onClick={() => !isDisabled && toggleWorker(w.workerId)} className={`relative flex items-center p-3 rounded-lg border transition-all cursor-pointer select-none ${isDisabled ? 'opacity-50 bg-muted border-transparent cursor-not-allowed' : isSelected ? 'bg-primary/5 border-primary ring-1 ring-primary/20 shadow-sm' : 'bg-card border-border hover:border-primary/50 hover:shadow-sm'}`}>
+                                    <Checkbox checked={isSelected} disabled={isDisabled} className="mr-4 h-5 w-5" />
                                     <Avatar className="h-10 w-10 mr-3 border bg-background"><AvatarImage src={w.avatarUrl ? `${API_BASE}${w.avatarUrl}` : undefined} /><AvatarFallback>{getInitials(w.fullName)}</AvatarFallback></Avatar>
                                     <div className="flex-1 min-w-0"><div className="font-semibold text-sm truncate">{w.fullName}</div><div className="text-xs text-muted-foreground font-mono">{w.onxCode}</div></div>
-                                    <div className="ml-2 shrink-0">{w.status === 'AVAILABLE' ? <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px] px-1.5 py-0.5 h-auto"><Battery className="w-3 h-3 mr-1 inline-block"/> {w.remainingMinutes} {t('operation.common.minute')}</Badge> : <Badge variant="secondary" className="text-[10px] h-auto">Busy</Badge>}</div>
+                                    <div className="ml-2 shrink-0">{w.status === 'AVAILABLE' ? <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px] px-2 py-0.5 h-auto"><Battery className="w-3 h-3 mr-1 inline-block"/> {w.remainingMinutes} {t('operation.common.minute')}</Badge> : <Badge variant="secondary" className="text-[10px] h-auto">Busy</Badge>}</div>
                                 </div>
                             );
                         })}
@@ -141,10 +153,17 @@ export function BulkWorkerAssignmentDialog({ tableId, onSuccess }: Props) {
                                 <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded">= {(parseFloat(durationHours || "0") * 60).toFixed(0)} {t('operation.common.minute')}</span>
                             </div>
                         </div>
-                        <Button className="w-full h-12 text-base font-semibold shadow-md" onClick={handleAssign} disabled={loading || selectedWorkerIds.length === 0}>
-                            {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Users className="mr-2 h-5 w-5"/>}
-                            {t('operation.dialogs.bulkAssign.btnAssign')}
-                        </Button>
+                        
+                        <div className="flex gap-3">
+                            {/* İPTAL BUTONU DA EKLENDİ */}
+                            <DialogClose asChild>
+                                <Button variant="outline" className="h-12 w-1/3">İptal</Button>
+                            </DialogClose>
+                            <Button className="w-2/3 h-12 text-base font-semibold shadow-md" onClick={handleAssign} disabled={loading || selectedWorkerIds.length === 0}>
+                                {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Users className="mr-2 h-5 w-5"/>}
+                                {t('operation.dialogs.bulkAssign.btnAssign')}
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </DialogContent>

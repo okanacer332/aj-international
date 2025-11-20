@@ -884,6 +884,27 @@
   "operation.common.confirm": "Confirmar",
   "operation.common.minute": "min",
   "operation.common.hour": "Hora",
-  "operation.common.kg": "KG"
+  "operation.common.kg": "KG",
+  "operation.units.PRE_SELECTION": "Preselección",
+"operation.units.SORTING": "Clasificación",
+"operation.units.PRESS": "Prensa",
+
+"permissions.PAGE_FIELD_PANEL": "Panel de Monitor de Campo",
+"permissions.PAGE_OPERATION_DAILY": "Acciones de Operación Diaria",
+"permissions.PAGE_OPERATION_DEFINITIONS": "Definiciones de Operación",
+"permissions.PAGE_OPERATION_SETTINGS": "Configuración de Operación",
+"operation.dialogs.ticket.currentStock": "Stock Actual en Mesa",
+  "operation.dialogs.ticket.newTotal": "Nuevo Total del Fondo",
+  "operation.daily.rolloverOnly": "Solo Traspaso",
+  "operation.dialogs.smart.addStock": "Añadir Nuevo Stock",
+"operation.dialogs.smart.addCrew": "Reforzar Equipo",
+"operation.dialogs.smart.transfer": "Transferir a Mesa",
+"operation.dialogs.smart.addCrewDesc": "Añadir personal para procesar stock actual.",
+"operation.dialogs.smart.addStockDesc": "Añadir ticket sobre el stock actual.",
+"operation.dialogs.smart.transferDesc": "Vaciar mesa y mover stock.",
+"operation.dialogs.smart.startCrew": "Iniciar Equipo",
+"operation.dialogs.smart.startCrewDesc": "La mesa está vacía. Iniciar nuevo equipo.",
+"operation.common.back": "Volver",
+"operation.daily.rolloverLabel": "(Traspaso)"
  
 }

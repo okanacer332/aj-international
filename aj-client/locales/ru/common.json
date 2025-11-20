@@ -884,6 +884,27 @@
   "operation.common.confirm": "Подтвердить",
   "operation.common.minute": "мин",
   "operation.common.hour": "час",
-  "operation.common.kg": "КГ"
+  "operation.common.kg": "КГ",
+  "operation.units.PRE_SELECTION": "Предварительный отбор",
+"operation.units.SORTING": "Сортировка",
+"operation.units.PRESS": "Пресс",
+
+"permissions.PAGE_FIELD_PANEL": "Панель мониторинга поля",
+"permissions.PAGE_OPERATION_DAILY": "Действия по ежедневным операциям",
+"permissions.PAGE_OPERATION_DEFINITIONS": "Определения операций",
+"permissions.PAGE_OPERATION_SETTINGS": "Настройки операций",
+"operation.dialogs.ticket.currentStock": "Текущий запас на столе",
+  "operation.dialogs.ticket.newTotal": "Новый общий пул",
+  "operation.daily.rolloverOnly": "Только перенос",
+  "operation.dialogs.smart.addStock": "Добавить новый запас",
+"operation.dialogs.smart.addCrew": "Усилить бригаду",
+"operation.dialogs.smart.transfer": "Перенести на стол",
+"operation.dialogs.smart.addCrewDesc": "Добавить персонал для обработки текущего запаса.",
+"operation.dialogs.smart.addStockDesc": "Добавить талон к текущему запасу.",
+"operation.dialogs.smart.transferDesc": "Очистить стол и переместить запас.",
+"operation.dialogs.smart.startCrew": "Создать бригаду / Начать",
+"operation.dialogs.smart.startCrewDesc": "Стол пуст. Начать работу новой бригады.",
+"operation.common.back": "Назад",
+"operation.daily.rolloverLabel": "(Перенос)"
  
 }

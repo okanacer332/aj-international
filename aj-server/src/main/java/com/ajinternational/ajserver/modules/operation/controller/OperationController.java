@@ -9,7 +9,6 @@ import com.ajinternational.ajserver.modules.operation.model.OperationTicket;
 import com.ajinternational.ajserver.modules.operation.service.OperationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +19,13 @@ import java.util.List;
 public class OperationController {
 
     private final OperationService service;
+
+    // --- SAHA PANELİ YETKİSİ (Sisteme tanıtmak için dummy endpoint) ---
+    @GetMapping("/field-panel/ping")
+    @HasPermission("PAGE_FIELD_PANEL:READ")
+    public ResponseEntity<String> checkFieldPanelAccess() {
+        return ResponseEntity.ok("OK");
+    }
 
     // --- CONFIG ---
     @GetMapping("/config")
@@ -85,11 +91,18 @@ public class OperationController {
         return ResponseEntity.ok(service.getTableActiveSessions(tableId));
     }
 
-    // --- TICKETS & CLOSING ---
+    // --- TICKETS, TRANSFER & CLOSING ---
     @PostMapping("/ticket")
     @HasPermission("PAGE_OPERATION_DAILY:WRITE")
     public ResponseEntity<OperationTicket> addTicket(@RequestBody TicketEntryRequest request) {
         return ResponseEntity.ok(service.addTicket(request));
+    }
+
+    @PostMapping("/transfer")
+    @HasPermission("PAGE_OPERATION_DAILY:WRITE")
+    public ResponseEntity<Void> transferStock(@RequestBody StockTransferRequest request) {
+        service.transferStock(request);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/tables/{tableId}/close")
@@ -98,18 +111,10 @@ public class OperationController {
         return ResponseEntity.ok(service.closeTableAndRollover(tableId, actualRemainingKg));
     }
 
-    // YENİ: Toplu Kapatma
     @PostMapping("/close-all-empty")
     @HasPermission("PAGE_OPERATION_DAILY:WRITE")
     public ResponseEntity<Void> closeAllEmptyTables() {
         service.closeAllRemainingTablesWithZero();
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/transfer")
-    @HasPermission("PAGE_OPERATION_DAILY:WRITE")
-    public ResponseEntity<Void> transferStock(@RequestBody StockTransferRequest request) {
-        service.transferStock(request);
         return ResponseEntity.ok().build();
     }
 }

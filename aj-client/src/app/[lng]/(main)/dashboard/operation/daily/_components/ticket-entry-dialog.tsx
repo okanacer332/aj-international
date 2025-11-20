@@ -12,18 +12,19 @@ import { Badge } from "@/components/ui/badge";
 import { apiFetchAuth, API_BASE } from "@/lib/api-auth";
 import { WorkerAvailability } from "@/types/operation";
 import { toast } from "sonner";
-import { Ticket, Loader2, Search, Clock } from "lucide-react";
+import { Ticket, Loader2, Search, Clock, ArrowRight, Database } from "lucide-react";
 import { getInitials } from "@/lib/utils";
-import { useTranslation } from "react-i18next"; // DÜZELTİLDİ
+import { useTranslation } from "react-i18next";
 
 interface Props {
     tableId: string;
     tableName: string;
+    currentStock: number; // YENİ: Masadaki mevcut mal
     onSuccess: () => void;
 }
 
-export function TicketEntryDialog({ tableId, tableName, onSuccess }: Props) {
-    const { t } = useTranslation("common"); // DÜZELTİLDİ
+export function TicketEntryDialog({ tableId, tableName, currentStock, onSuccess }: Props) {
+    const { t } = useTranslation("common");
     const [open, setOpen] = useState(false);
     const [amount, setAmount] = useState("");
     const [durationHours, setDurationHours] = useState<string>("9");
@@ -65,7 +66,6 @@ export function TicketEntryDialog({ tableId, tableName, onSuccess }: Props) {
 
     const handleSave = async () => {
         if (!amount) return;
-        
         const minutes = parseFloat(durationHours) * 60;
         setLoading(true);
         try {
@@ -88,6 +88,10 @@ export function TicketEntryDialog({ tableId, tableName, onSuccess }: Props) {
         }
     };
 
+    // Hesaplama
+    const newAmount = parseFloat(amount) || 0;
+    const totalAfterEntry = currentStock + newAmount;
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -101,14 +105,46 @@ export function TicketEntryDialog({ tableId, tableName, onSuccess }: Props) {
                 </DialogHeader>
                 
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    
+                    {/* YENİ: STOK DURUM BİLGİSİ */}
+                    {currentStock > 0 && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex flex-col gap-2">
+                            <div className="flex items-center gap-2 text-amber-800 font-medium text-sm">
+                                <Database className="w-4 h-4" />
+                                {t('operation.dialogs.ticket.currentStock')}
+                            </div>
+                            <div className="flex items-center justify-between text-lg">
+                                <span className="font-bold text-amber-900">{currentStock} {t('operation.common.kg')}</span>
+                                <ArrowRight className="w-5 h-5 text-amber-400" />
+                                <span className="font-black text-green-700">
+                                    {totalAfterEntry > currentStock ? totalAfterEntry : '...'} {t('operation.common.kg')}
+                                </span>
+                            </div>
+                            {newAmount > 0 && (
+                                <div className="text-xs text-amber-700/80 text-right border-t border-amber-200/50 pt-1 mt-1">
+                                    {t('operation.dialogs.ticket.newTotal')}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Fiş Miktarı */}
                     <div className="space-y-3">
                         <Label className="text-base">{t('operation.dialogs.ticket.amountLabel')}</Label>
                         <div className="relative">
                             <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"/>
-                            <Input type="number" placeholder="0.00" className="text-xl font-bold h-12 pl-10" value={amount} onChange={e => setAmount(e.target.value)} autoFocus />
+                            <Input 
+                                type="number" 
+                                placeholder="0.00" 
+                                className="text-xl font-bold h-12 pl-10" 
+                                value={amount}
+                                onChange={e => setAmount(e.target.value)}
+                                autoFocus
+                            />
                         </div>
                     </div>
 
+                    {/* Personel Atama */}
                     <div className="border rounded-xl p-4 bg-card shadow-sm">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center space-x-3">

@@ -884,6 +884,26 @@
   "operation.common.confirm": "تأكيد",
   "operation.common.minute": "دقيقة",
   "operation.common.hour": "ساعة",
-  "operation.common.kg": "كجم"
+  "operation.common.kg": "كجم",
+  "operation.units.PRE_SELECTION": "الاختيار المسبق",
+"operation.units.SORTING": "الفرز",
+"operation.units.PRESS": "الضغط",
+
+"permissions.PAGE_FIELD_PANEL": "لوحة مراقبة الميدان",
+"permissions.PAGE_OPERATION_DAILY": "إجراءات التشغيل اليومي",
+"permissions.PAGE_OPERATION_DEFINITIONS": "تعاريف التشغيل",
+"permissions.PAGE_OPERATION_SETTINGS": "إعدادات التشغيل",
+"operation.dialogs.ticket.currentStock": "المخزون الحالي على الطاولة",
+  "operation.dialogs.ticket.newTotal": "المجموع الجديد",
+  "operation.daily.rolloverOnly": "ترحيل فقط",
+"operation.dialogs.smart.addCrew": "تعزيز الفريق",
+"operation.dialogs.smart.transfer": "نقل إلى طاولة",
+"operation.dialogs.smart.addCrewDesc": "إضافة موظفين لمعالجة المخزون الحالي.",
+"operation.dialogs.smart.addStockDesc": "إضافة تذكرة فوق المخزون الحالي.",
+"operation.dialogs.smart.transferDesc": "إفراغ الطاولة ونقل المخزون.",
+"operation.dialogs.smart.addStock": "إضافة مخزون جديد",
+"operation.dialogs.smart.startCrew": "بدء الفريق",
+"operation.common.back": "رجوع",
+"operation.daily.rolloverLabel": "(مرحل)"
  
 }

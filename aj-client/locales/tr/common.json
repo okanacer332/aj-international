@@ -898,5 +898,26 @@
   "operation.common.confirm": "Onayla",
   "operation.common.minute": "dk",
   "operation.common.hour": "Saat",
-  "operation.common.kg": "KG"
+  "operation.common.kg": "KG",
+  "operation.units.PRE_SELECTION": "Ön Seçim",
+"operation.units.SORTING": "Ayrıştırma",
+"operation.units.PRESS": "Press",
+
+"permissions.PAGE_FIELD_PANEL": "Saha İzleme Paneli",
+"permissions.PAGE_OPERATION_DAILY": "Günlük Operasyon İşlemleri",
+"permissions.PAGE_OPERATION_DEFINITIONS": "Operasyon Tanımları",
+"permissions.PAGE_OPERATION_SETTINGS": "Operasyon Ayarları",
+"operation.dialogs.ticket.currentStock": "Masadaki Mevcut Stok",
+  "operation.dialogs.ticket.newTotal": "Yeni Toplam Havuz",
+  "operation.daily.rolloverOnly": "Sadece Devir",
+  "operation.dialogs.smart.addStock": "Yeni Mal Ekle",
+"operation.dialogs.smart.addCrew": "Ekip Takviyesi Yap",
+"operation.dialogs.smart.transfer": "Başka Masaya Devret",
+"operation.dialogs.smart.addCrewDesc": "Mevcut stoğu işlemek için yeni personel ekle.",
+"operation.dialogs.smart.addStockDesc": "Mevcut stoğun üzerine yeni fiş ekle.",
+"operation.dialogs.smart.transferDesc": "Masayı boşalt ve stoğu taşı.",
+"operation.dialogs.smart.startCrew": "Ekip Kur / İş Başı",
+"operation.dialogs.smart.startCrewDesc": "Masada kimse yok. Yeni ekip kur.",
+"operation.common.back": "Geri Dön",
+"operation.daily.rolloverLabel": "(Devir)"
 }
