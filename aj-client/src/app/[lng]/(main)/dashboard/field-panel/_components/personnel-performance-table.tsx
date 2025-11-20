@@ -10,7 +10,7 @@ import { getInitials } from "@/lib/utils";
 import { LiveDuration } from "../../operation/daily/_components/live-duration";
 import { format } from "date-fns";
 import { Users } from "lucide-react";
-import { useTranslation } from "react-i18next"; // Düzeltildi
+import { useTranslation } from "react-i18next";
 
 interface Props {
     activeSessions: Record<string, TableSession[]>;
@@ -18,7 +18,7 @@ interface Props {
 }
 
 export function PersonnelPerformanceTable({ activeSessions, tables }: Props) {
-    const { t } = useTranslation("common"); // Parametre sadeleştirildi
+    const { t } = useTranslation("common");
 
     const data = Object.entries(activeSessions).flatMap(([tableId, sessions]) => {
         const table = tables.find(t => t.id === tableId);
@@ -32,8 +32,10 @@ export function PersonnelPerformanceTable({ activeSessions, tables }: Props) {
     const sortedData = data.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
 
     return (
-        <Card className="flex-1 border shadow-sm">
-            <CardHeader className="pb-3 border-b bg-muted/10">
+        // DÜZELTME 1: min-h-[400px] eklendi. Kart asla 400px'den küçük olmayacak.
+        <Card className="flex flex-col h-full min-h-[400px] border shadow-sm overflow-hidden">
+            
+            <CardHeader className="pb-3 border-b bg-muted/10 shrink-0">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
                         <Users className="w-5 h-5 text-primary"/>
@@ -42,9 +44,11 @@ export function PersonnelPerformanceTable({ activeSessions, tables }: Props) {
                     <Badge variant="outline">{sortedData.length} {t('operation.fieldPanel.activeStaff')}</Badge>
                 </div>
             </CardHeader>
-            <CardContent className="p-0">
+
+            {/* DÜZELTME 2: absolute yapı kaldırıldı. flex-1 ve overflow-auto yeterli. */}
+            <div className="flex-1 overflow-auto p-0">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-card z-10 shadow-sm">
                         <TableRow className="bg-muted/5 hover:bg-muted/5">
                             <TableHead>Personel</TableHead>
                             <TableHead>Masa</TableHead>
@@ -56,7 +60,7 @@ export function PersonnelPerformanceTable({ activeSessions, tables }: Props) {
                     <TableBody>
                         {sortedData.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
                                     {t('operation.fieldPanel.noActiveWorker')}
                                 </TableCell>
                             </TableRow>
@@ -89,7 +93,7 @@ export function PersonnelPerformanceTable({ activeSessions, tables }: Props) {
                         )}
                     </TableBody>
                 </Table>
-            </CardContent>
+            </div>
         </Card>
     );
 }
