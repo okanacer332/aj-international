@@ -1,0 +1,109 @@
+package com.ajinternational.ajserver.modules.operation.controller;
+
+import com.ajinternational.ajserver.config.security.HasPermission;
+import com.ajinternational.ajserver.modules.operation.dto.*;
+import com.ajinternational.ajserver.modules.operation.model.ActiveSession;
+import com.ajinternational.ajserver.modules.operation.model.OperationConfig;
+import com.ajinternational.ajserver.modules.operation.model.OperationTable;
+import com.ajinternational.ajserver.modules.operation.model.OperationTicket;
+import com.ajinternational.ajserver.modules.operation.service.OperationService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/operation")
+@RequiredArgsConstructor
+public class OperationController {
+
+    private final OperationService service;
+
+    // --- KONFİGÜRASYON YETKİLERİ (Vardiya Ayarları Sayfası) ---
+
+    @GetMapping("/config")
+    @HasPermission("PAGE_OPERATION_SETTINGS:READ") // Rol ekranında görünecek yetki
+    @PreAuthorize("hasAuthority('PAGE_OPERATION_SETTINGS:READ')")
+    public ResponseEntity<OperationConfig> getConfig() {
+        return ResponseEntity.ok(service.getConfig());
+    }
+
+    @PostMapping("/config")
+    @HasPermission("PAGE_OPERATION_SETTINGS:WRITE")
+    @PreAuthorize("hasAuthority('PAGE_OPERATION_SETTINGS:WRITE')")
+    public ResponseEntity<OperationConfig> updateConfig(@RequestBody OperationConfig config) {
+        return ResponseEntity.ok(service.updateConfig(config));
+    }
+
+    // --- MASA TANIMLARI YETKİLERİ (Masa Tanımları Sayfası) ---
+
+    @GetMapping("/tables")
+    @HasPermission("PAGE_OPERATION_DEFINITIONS:READ")
+    @PreAuthorize("hasAuthority('PAGE_OPERATION_DEFINITIONS:READ')")
+    public ResponseEntity<List<OperationTable>> getTables() {
+        return ResponseEntity.ok(service.getTables());
+    }
+
+    @PostMapping("/tables")
+    @HasPermission("PAGE_OPERATION_DEFINITIONS:WRITE")
+    @PreAuthorize("hasAuthority('PAGE_OPERATION_DEFINITIONS:WRITE')")
+    public ResponseEntity<OperationTable> saveTable(@RequestBody OperationTable table) {
+        return ResponseEntity.ok(service.saveTable(table));
+    }
+
+    @DeleteMapping("/tables/{id}")
+    @HasPermission("PAGE_OPERATION_DEFINITIONS:WRITE")
+    @PreAuthorize("hasAuthority('PAGE_OPERATION_DEFINITIONS:WRITE')")
+    public ResponseEntity<Void> deleteTable(@PathVariable String id) {
+        service.deleteTable(id);
+        return ResponseEntity.ok().build();
+    }
+
+    // --- GÜNLÜK OPERASYON YETKİLERİ (Canlı Takip Sayfası) ---
+
+    @GetMapping("/available-workers")
+    @HasPermission("PAGE_OPERATION_DAILY:READ")
+    @PreAuthorize("hasAuthority('PAGE_OPERATION_DAILY:READ')")
+    public ResponseEntity<List<WorkerAvailabilityDto>> getAvailableWorkers() {
+        return ResponseEntity.ok(service.getAvailableWorkers());
+    }
+
+    @PostMapping("/assign") // Artık liste alıyor
+    public ResponseEntity<List<ActiveSession>> assignWorkers(@RequestBody AssignWorkerRequest request) {
+        return ResponseEntity.ok(service.assignWorkers(request));
+    }
+
+    @PostMapping("/release")
+    @HasPermission("PAGE_OPERATION_DAILY:WRITE")
+    @PreAuthorize("hasAuthority('PAGE_OPERATION_DAILY:WRITE')")
+    public ResponseEntity<ActiveSession> releaseWorker(@RequestBody ReleaseWorkerRequest request) {
+        return ResponseEntity.ok(service.releaseWorker(request));
+    }
+
+    @GetMapping("/tables/{tableId}/sessions")
+    @HasPermission("PAGE_OPERATION_DAILY:READ")
+    @PreAuthorize("hasAuthority('PAGE_OPERATION_DAILY:READ')")
+    public ResponseEntity<List<TableSessionDto>> getTableSessions(@PathVariable String tableId) {
+        return ResponseEntity.ok(service.getTableActiveSessions(tableId));
+    }
+
+    @PostMapping("/ticket") // Yeni fiş girişi
+    public ResponseEntity<OperationTicket> addTicket(@RequestBody TicketEntryRequest request) {
+        return ResponseEntity.ok(service.addTicket(request));
+    }
+
+    @GetMapping("/tables/{tableId}/stats") // Masa doluluk durumu
+    public ResponseEntity<TableStatsDto> getTableStats(@PathVariable String tableId) {
+        return ResponseEntity.ok(service.getTableStats(tableId));
+    }
+
+    @PostMapping("/tables/{tableId}/close")
+    public ResponseEntity<OperationTicket> closeTable(
+            @PathVariable String tableId,
+            @RequestBody Double actualRemainingKg
+    ) {
+        return ResponseEntity.ok(service.closeTableAndRollover(tableId, actualRemainingKg));
+    }
+}

@@ -1,12 +1,9 @@
-// aj-client/src/navigation/sidebar/sidebar-items.ts
 import {
   LayoutDashboard,
   ClipboardList,
   Users,
   Settings,
   FileText,
-  Calendar,
-  Clock,
   UserCog,
   ShieldCheck,
   BookText,
@@ -23,10 +20,13 @@ import {
   Package,
   Banknote,
   Coins,
+  Activity, // Yeni ikon
+  TableProperties, // Yeni ikon
+  SlidersHorizontal,
+  MonitorPlay,
   type LucideIcon,
 } from "lucide-react";
 
-// ... (Arayüzler aynı kalır) ...
 export interface NavSubItem {
   title: string;
   url: string;
@@ -46,7 +46,6 @@ export interface NavGroup {
   label?: string;
   items: NavMainItem[];
 }
-// ... (Arayüzler biter) ...
 
 export const sidebarItems: NavGroup[] = [
   {
@@ -58,20 +57,44 @@ export const sidebarItems: NavGroup[] = [
         url: "/dashboard/default",
         icon: LayoutDashboard,
       },
+      {
+        title: "Ön Seçim Saha Paneli",
+        url: "/dashboard/field-panel",
+        icon: MonitorPlay,
+      },
     ],
   },
   {
     id: 2,
     label: "sidebar.modules.label",
     items: [
+      // --- GÜNCELLENEN KISIM: OPERASYON MODÜLÜ ---
       {
         title: "sidebar.modules.operation",
         url: "#",
         icon: Briefcase,
         subItems: [
-          { title: "sidebar.modules.taskManagement", url: "/dashboard/tasks", icon: ClipboardList, permission: "PAGE_TASKS:READ" },
+          { 
+            title: "Günlük Operasyon", 
+            url: "/dashboard/operation/daily", 
+            icon: Activity, 
+            permission: "PAGE_OPERATION_DAILY:READ" 
+          },
+          { 
+            title: "Masa Tanımları", 
+            url: "/dashboard/operation/definitions/tables", 
+            icon: TableProperties, 
+            permission: "PAGE_OPERATION_DEFINITIONS:READ" 
+          },
+          { 
+            title: "Vardiya Ayarları", 
+            url: "/dashboard/operation/definitions/general", 
+            icon: SlidersHorizontal, 
+            permission: "PAGE_OPERATION_SETTINGS:READ" 
+          },
         ],
       },
+      // --- BİTİŞ ---
       {
         title: "sidebar.modules.inventory",
         url: "#",
@@ -99,7 +122,6 @@ export const sidebarItems: NavGroup[] = [
         url: "#",
         icon: Factory,
         subItems: [
-          // YENİ EKLENDİ:
           { title: "sidebar.modules.production.products", url: "/dashboard/production/products", icon: Package, permission: "PAGE_MASTER_PRODUCT:READ" },
           { title: "sidebar.modules.productionDefinitions", url: "/dashboard/production/definitions", icon: Building, permission: "PAGE_PRODUCTION_UNITS:READ" },
         ],
@@ -109,7 +131,6 @@ export const sidebarItems: NavGroup[] = [
         url: "#",
         icon: BookText,
         subItems: [
-          // { title: "sidebar.modules.productDefinitions", url: "/dashboard/masterdata/products", icon: BookText, permission: "PAGE_MASTER_PRODUCT:READ" }, // TAŞINDI
           { title: "sidebar.modules.skillDefinitions", url: "/dashboard/masterdata/skills", icon: BarChart3, permission: "PAGE_SKILLS:READ" },
           { title: "sidebar.modules.serviceDefinitions", url: "/dashboard/masterdata/services", icon: Bus, permission: "PAGE_SERVICES:READ" },
           { title: "sidebar.modules.measureDefinitions", url: "/dashboard/masterdata/measures", icon: Ruler, permission: "PAGE_MEASURES:READ" },

@@ -33,13 +33,20 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // CORS preflight (ön uçuş) isteklerine kimlik doğrulaması olmadan izin ver.
+                        // 1. CORS preflight (ön uçuş) isteklerine kimlik doğrulaması olmadan izin ver.
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // GİRİŞ ve KAYIT yollarına herkese açık izin ver.
+
+                        // 2. GİRİŞ ve KAYIT yollarına herkese açık izin ver.
                         .requestMatchers("/api/auth/**").permitAll()
-                        // Yüklenen dosyalara (avatarlar) GET isteğiyle gelen herkese izin ver.
+
+                        // 3. Yüklenen dosyalara (avatarlar) GET isteğiyle gelen herkese izin ver.
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
-                        // Geriye kalan tüm istekler için kimlik doğrulaması iste.
+
+                        // 4. *** WEBSOCKET İZNİ (YENİ) ***
+                        // WebSocket Handshake işlemi için bu yolun açık olması şarttır.
+                        .requestMatchers("/ws-operation/**").permitAll()
+
+                        // 5. Geriye kalan tüm istekler için kimlik doğrulaması iste.
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -51,21 +58,22 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // *** ANA DEĞİŞİKLİK BURADA ***
-        // "*" yerine, frontend'inizin çalıştığı adresleri açıkça belirtin.
-        // Müşterinizin IP'sini veya alan adını da buraya ekleyebilirsiniz.
-        configuration.setAllowedOrigins(List.of("http://localhost:3000",
+        // Frontend'in çalıştığı adresler ve production domainleri
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:3000",
                 "http://localhost:3001",
                 "http://213.74.252.238",
                 "http://213.74.252.238:7777",
                 "http://192.168.1.203",
-                "http://localhost:3001",
                 "https://app.ajkalite.xyz",
-                "http://app.ajkalite.xyz" ));
+                "http://app.ajkalite.xyz"
+        ));
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        // WebSocket için headerların geçişine izin ver
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true); // Artık bu satır sorun yaratmayacak.
+        // Cookie ve Auth headerlar için true olmalı
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

@@ -23,6 +23,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^3.10.0",
+    "@stomp/stompjs": "^7.2.1",
     "@tanstack/react-query": "^5.85.6",
     "@tanstack/react-table": "^8.21.3",
     "accept-language": "^3.0.20",
@@ -49,6 +50,7 @@
     "react-resizable-panels": "^3.0.5",
     "recharts": "^2.15.4",
     "simple-icons": "^15.13.0",
+    "sockjs-client": "^1.6.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2",
@@ -62,6 +64,7 @@
     "@types/node": "^22.18.0",
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",
+    "@types/sockjs-client": "^1.5.4",
     "@typescript-eslint/parser": "^8.26.0",
     "eslint": "^9.34.0",
     "eslint-config-next": "^15.5.2",
@@ -84,5 +87,3 @@
     "typescript-eslint": "^8.41.0"
   }
 }
-
-
