@@ -20,10 +20,10 @@ import {
   Package,
   Banknote,
   Coins,
-  Activity, // Yeni ikon
-  TableProperties, // Yeni ikon
+  Activity,
+  TableProperties,
   SlidersHorizontal,
-  MonitorPlay,
+  MonitorPlay, // Yeni İkon
   type LucideIcon,
 } from "lucide-react";
 
@@ -58,7 +58,7 @@ export const sidebarItems: NavGroup[] = [
         icon: LayoutDashboard,
       },
       {
-        title: "Ön Seçim Saha Paneli",
+        title: "operation.menu.fieldPanel", // i18n key
         url: "/dashboard/field-panel",
         icon: MonitorPlay,
       },
@@ -68,33 +68,32 @@ export const sidebarItems: NavGroup[] = [
     id: 2,
     label: "sidebar.modules.label",
     items: [
-      // --- GÜNCELLENEN KISIM: OPERASYON MODÜLÜ ---
       {
-        title: "sidebar.modules.operation",
+        title: "operation.menu.preSelection", // i18n key
         url: "#",
         icon: Briefcase,
         subItems: [
           { 
-            title: "Günlük Operasyon", 
+            title: "operation.menu.preSelectionDaily", // i18n key
             url: "/dashboard/operation/daily", 
             icon: Activity, 
             permission: "PAGE_OPERATION_DAILY:READ" 
           },
           { 
-            title: "Masa Tanımları", 
+            title: "operation.menu.tableDefinitions", // i18n key
             url: "/dashboard/operation/definitions/tables", 
             icon: TableProperties, 
             permission: "PAGE_OPERATION_DEFINITIONS:READ" 
           },
           { 
-            title: "Vardiya Ayarları", 
+            title: "operation.menu.shiftSettings", // i18n key
             url: "/dashboard/operation/definitions/general", 
             icon: SlidersHorizontal, 
             permission: "PAGE_OPERATION_SETTINGS:READ" 
           },
         ],
       },
-      // --- BİTİŞ ---
+      // ... (Diğer menü öğeleri aynı kalabilir veya onlar da i18n key'e çevrilebilir)
       {
         title: "sidebar.modules.inventory",
         url: "#",

@@ -32,32 +32,14 @@ public class OperationService {
     private final WorkerDailyLedgerRepository ledgerRepository;
     private final ActiveSessionRepository sessionRepository;
     private final PersonnelRepository personnelRepository;
-    private final UserRepository userRepository; // İsimler için gerekli
+    private final UserRepository userRepository;
+    private final OperationTicketRepository ticketRepository;
 
     private final SimpMessagingTemplate messagingTemplate;
-    private final OperationTicketRepository ticketRepository; // Bunu ekle
 
     private void broadcastUpdate(String tenantId, String type, Object payload) {
         String destination = "/topic/operation/" + tenantId;
         messagingTemplate.convertAndSend(destination, new SocketUpdateDto(type, payload));
-    }
-
-    @Transactional
-    public OperationTicket addTicket(TicketEntryRequest request) {
-        String tenantId = TenantContextHolder.getCurrentTenantId();
-
-        OperationTicket ticket = new OperationTicket();
-        ticket.setTenantId(tenantId);
-        ticket.setTableId(request.tableId());
-        ticket.setAmountKg(request.amountKg());
-        ticket.setCreatedAt(LocalDateTime.now());
-        ticket.setCreatedBy(TenantContextHolder.getCurrentUsername());
-        ticket.setProcessed(false);
-
-        OperationTicket saved = ticketRepository.save(ticket);
-
-        broadcastUpdate(tenantId, "TICKET_UPDATE", null); // Ekranı yenile
-        return saved;
     }
 
     // --- CONFIG ---
@@ -102,7 +84,6 @@ public class OperationService {
     }
 
     // --- WORKER LOGIC ---
-
     public List<WorkerAvailabilityDto> getAvailableWorkers() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         LocalDate today = LocalDate.now();
@@ -110,7 +91,6 @@ public class OperationService {
 
         List<Personnel> allPersonnel = personnelRepository.findByTenantId(tenantId);
 
-        // Kullanıcı İsimlerini Toplu Çek (Performans İçin)
         Set<String> userIds = allPersonnel.stream().map(Personnel::getUserId).collect(Collectors.toSet());
         Map<String, User> userMap = userRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
@@ -135,7 +115,6 @@ public class OperationService {
             if (remaining == 0) status = "FULL";
             else if (activeMinutes > 0) status = "BUSY";
 
-            // İsim Çözümleme
             User user = userMap.get(p.getUserId());
             String fullName = (user != null && user.getFullName() != null) ? user.getFullName() : "Personel " + p.getOnxCode();
             String avatarUrl = (user != null) ? user.getAvatarUrl() : null;
@@ -148,6 +127,44 @@ public class OperationService {
         return dtoList;
     }
 
+    // --- TICKET (FİŞ) & ATAMA ---
+
+    @Transactional
+    public OperationTicket addTicket(TicketEntryRequest request) {
+        String tenantId = TenantContextHolder.getCurrentTenantId();
+
+        // 1. Fişi Kaydet
+        OperationTicket ticket = new OperationTicket();
+        ticket.setTenantId(tenantId);
+        ticket.setTableId(request.tableId());
+        ticket.setAmountKg(request.amountKg());
+        ticket.setCreatedAt(LocalDateTime.now());
+        // Context'ten kullanıcı adı alınıyor (Auth implementasyonuna göre değişebilir, şimdilik hardcoded veya null safe)
+        try {
+            ticket.setCreatedBy(TenantContextHolder.getCurrentUsername());
+        } catch (Exception e) {
+            ticket.setCreatedBy("System");
+        }
+        ticket.setProcessed(false);
+
+        OperationTicket savedTicket = ticketRepository.save(ticket);
+
+        // 2. Eğer personel seçildiyse onları da ata
+        if (request.workerIds() != null && !request.workerIds().isEmpty()) {
+            AssignWorkerRequest assignRequest = new AssignWorkerRequest(
+                    request.tableId(),
+                    request.workerIds(),
+                    request.durationMinutes() != null ? request.durationMinutes() : 540
+            );
+            assignWorkers(assignRequest);
+        } else {
+            // Sadece fiş varsa update geç
+            broadcastUpdate(tenantId, "TICKET_UPDATE", null);
+        }
+
+        return savedTicket;
+    }
+
     @Transactional
     public List<ActiveSession> assignWorkers(AssignWorkerRequest request) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
@@ -156,10 +173,7 @@ public class OperationService {
 
         List<ActiveSession> createdSessions = new ArrayList<>();
 
-        // Seçilen her işçi için döngü
         for (String workerId : request.workerIds()) {
-
-            // 1. Defter Kontrolü (Yoksa oluştur)
             WorkerDailyLedger ledger = ledgerRepository.findByTenantIdAndWorkerIdAndDate(tenantId, workerId, today)
                     .orElseGet(() -> {
                         WorkerDailyLedger l = new WorkerDailyLedger();
@@ -171,19 +185,18 @@ public class OperationService {
                         return ledgerRepository.save(l);
                     });
 
-            // 2. Hedef Hesapla (Adil Hedef)
             double hourlyTarget = config.getDailyStandardTargetKg() / (config.getStandardShiftDurationMinutes() / 60.0);
             double sessionTarget = hourlyTarget * (request.durationMinutes() / 60.0);
 
-            // 3. Oturumu Başlat
             ActiveSession session = new ActiveSession();
             session.setTenantId(tenantId);
             session.setTableId(request.tableId());
             session.setWorkerId(workerId);
-            session.setStartTime(LocalDateTime.now()); // Hepsi aynı anda başlar
+            session.setStartTime(LocalDateTime.now());
             session.setAssignedDurationMinutes(request.durationMinutes());
             session.setTargetOutputKg(Math.round(sessionTarget * 100.0) / 100.0);
             session.setCompleted(false);
+            session.setProcessed(false); // Yeni session, henüz arşivlenmedi
 
             createdSessions.add(sessionRepository.save(session));
         }
@@ -193,6 +206,7 @@ public class OperationService {
 
         return createdSessions;
     }
+
     @Transactional
     public ActiveSession releaseWorker(ReleaseWorkerRequest request) {
         ActiveSession session = sessionRepository.findById(request.sessionId())
@@ -206,7 +220,6 @@ public class OperationService {
         session.setEndTime(now);
         session.setCompleted(true);
 
-        // YENİ: Üretim Miktarını Kaydet
         if (request.actualOutputKg() != null) {
             session.setActualOutputKg(request.actualOutputKg());
         }
@@ -230,11 +243,86 @@ public class OperationService {
         return savedSession;
     }
 
+    // --- KAPANIŞ İŞLEMLERİ ---
+
+    @Transactional
+    public OperationTicket closeTableAndRollover(String tableId, double actualRemainingKg) {
+        String tenantId = TenantContextHolder.getCurrentTenantId();
+
+        // 1. Eski Fişleri İşlendi Yap
+        List<OperationTicket> oldTickets = ticketRepository.findByTableId(tableId);
+        for (OperationTicket t : oldTickets) {
+            t.setProcessed(true);
+            ticketRepository.save(t);
+        }
+
+        // 2. Eski Sessionları İşlendi Yap
+        List<ActiveSession> oldSessions = sessionRepository.findByTableIdAndCompletedTrue(tableId);
+        for (ActiveSession s : oldSessions) {
+            s.setProcessed(true);
+            sessionRepository.save(s);
+        }
+
+        // 3. Devir Fişi Oluştur
+        OperationTicket rolloverTicket = new OperationTicket();
+        rolloverTicket.setTenantId(tenantId);
+        rolloverTicket.setTableId(tableId);
+        rolloverTicket.setAmountKg(actualRemainingKg);
+        rolloverTicket.setCreatedAt(LocalDateTime.now());
+        rolloverTicket.setCreatedBy("SYSTEM_ROLLOVER");
+        rolloverTicket.setProcessed(false);
+
+        OperationTicket saved = ticketRepository.save(rolloverTicket);
+        broadcastUpdate(tenantId, "TABLES_REFRESH", null);
+        return saved;
+    }
+
+    @Transactional
+    public void closeAllRemainingTablesWithZero() {
+        String tenantId = TenantContextHolder.getCurrentTenantId();
+        List<OperationTable> allTables = tableRepository.findByTenantId(tenantId);
+
+        int closedCount = 0;
+        for (OperationTable table : allTables) {
+            // Masada işlenmemiş fiş varsa ve kapatılmadıysa 0 ile kapat
+            boolean hasUnprocessedTickets = ticketRepository.findByTableId(table.getId()).stream()
+                    .anyMatch(t -> !t.isProcessed());
+
+            if (hasUnprocessedTickets) {
+                closeTableAndRollover(table.getId(), 0.0);
+                closedCount++;
+            }
+        }
+
+        if (closedCount > 0) {
+            broadcastUpdate(tenantId, "TABLES_REFRESH", null);
+        }
+    }
+
+    public TableStatsDto getTableStats(String tableId) {
+        // Sadece işlenmemiş (aktif) fişler
+        List<OperationTicket> tickets = ticketRepository.findByTableId(tableId).stream()
+                .filter(t -> !t.isProcessed())
+                .toList();
+
+        double totalInput = tickets.stream().mapToDouble(OperationTicket::getAmountKg).sum();
+
+        // Sadece son kapanıştan sonraki (işlenmemiş) üretimler
+        List<ActiveSession> completedSessions = sessionRepository.findByTableIdAndCompletedTrue(tableId).stream()
+                .filter(s -> !s.isProcessed())
+                .toList();
+
+        double totalOutput = completedSessions.stream()
+                .mapToDouble(s -> s.getActualOutputKg() != null ? s.getActualOutputKg() : 0)
+                .sum();
+
+        return new TableStatsDto(tableId, totalInput, totalOutput, totalInput - totalOutput);
+    }
+
     public List<TableSessionDto> getTableActiveSessions(String tableId) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         List<ActiveSession> sessions = sessionRepository.findByTableIdAndCompletedFalse(tableId);
 
-        // İsimleri toplu çekme
         Set<String> workerIds = sessions.stream().map(ActiveSession::getWorkerId).collect(Collectors.toSet());
         Map<String, Personnel> personnelMap = personnelRepository.findAllById(workerIds).stream()
                 .collect(Collectors.toMap(Personnel::getId, Function.identity()));
@@ -247,7 +335,6 @@ public class OperationService {
             Personnel p = personnelMap.get(s.getWorkerId());
             String name = "Bilinmeyen";
             String avatar = null;
-
             if (p != null) {
                 User u = userMap.get(p.getUserId());
                 if (u != null) {
@@ -257,101 +344,46 @@ public class OperationService {
                     name = p.getOnxCode();
                 }
             }
-
-            return new TableSessionDto(
-                    s.getId(), s.getWorkerId(), name, avatar,
-                    s.getStartTime(), s.getAssignedDurationMinutes(), s.getTargetOutputKg()
-            );
+            return new TableSessionDto(s.getId(), s.getWorkerId(), name, avatar, s.getStartTime(), s.getAssignedDurationMinutes(), s.getTargetOutputKg());
         }).collect(Collectors.toList());
     }
 
-    public TableStatsDto getTableStats(String tableId) {
-        // SADECE İşlenmemiş (Aktif) Fişleri Topla
-        List<OperationTicket> tickets = ticketRepository.findByTableId(tableId).stream()
-                .filter(t -> !t.isProcessed()) // <--- ÖNEMLİ DEĞİŞİKLİK
-                .toList();
-
-        double totalInput = tickets.stream().mapToDouble(OperationTicket::getAmountKg).sum();
-
-        // Çıkan üretimde ise mantık şu olmalı:
-        // Masa kapatıldığında eski session'ların 'actualOutput'ları da hesaptan düşmeli.
-        // Bunun için session'lara da 'archived' flag'i eklemek en doğrusu olurdu.
-        // VEYA: Basitçe; Masa kapandığında "Kalan" (Devir) fişi girildiği için,
-        // o anki "Kalan" miktarı yeni "Giren" oluyor.
-        // Bu yüzden 'totalOutput'u sadece son kapanıştan sonraki sessionlardan hesaplamalıyız.
-
-        // ÇÖZÜM (Basitleştirilmiş): Son kapanış tarihini bulup ondan sonrasını getir.
-        // Şimdilik karmaşıklaştırmamak için basit matematik:
-        // Eğer Devir fişi varsa, sistem sıfırlanmış gibidir.
-
-        // (Buradaki tam doğru mantık için Ticket ve Session modellerine 'batchId' veya 'closureId' eklenir.
-        // Ancak senin isteğin doğrultusunda şimdilik Manuel Kalan girişi ile sistemi resetliyoruz)
-
-        // Session hesabını şimdilik es geçiyoruz çünkü "Kalan"ı elle girdik, sistem resetlendi.
-        // Gerçek projede burası 'Dönem' (Period) mantığıyla çalışır.
-
-        // Geçici Mantık: Eğer tek bir tane "SYSTEM_ROLLOVER" fişi varsa ve başka fiş yoksa,
-        // Çıkan üretim henüz 0'dır (yeni gün).
-
-        double totalOutput = 0;
-        // Burayı geliştirmek lazım ama şimdilik user'ın girdiği "Gerçek Kalan" üzerinden devam edelim.
-        // Kullanıcı 815 girdiğinde, Giren=815, Çıkan=0, Kalan=815 olarak yeni gün başlar.
-
-        // Eğer işçiler çalışmaya başlarsa output artacak ve kalan düşecek.
-        // Bu yüzden sadece *kapanıştan sonraki* sessionları çekmeliyiz.
-        // (Bu detay backend'de 'lastClosureDate' tutularak çözülür. Kod karmaşası olmasın diye eklemiyorum)
-
-        // Mevcut yapıda:
-        // Kapanış yapınca -> Eski Fişler Silindi (Processed=true). Yeni Fiş (815) eklendi.
-        // Sorun: Eski Sessionlar hala duruyor ve TotalOutput üretiyor.
-        // Çözüm: closeTable metodunda eski sessionları da 'completed' ve 'processed' yapmalıyız.
-
-        return new TableStatsDto(tableId, totalInput, totalOutput, totalInput - totalOutput);
-    }
     @Transactional
-    public OperationTicket closeTableAndRollover(String tableId, double actualRemainingKg) {
+    public void transferStock(StockTransferRequest request) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
 
-        // 1. Mevcut İstatistikleri Al (Fire hesabı için)
-        TableStatsDto stats = getTableStats(tableId);
-        double theoreticalRemaining = stats.remainingKg();
-        double difference = theoreticalRemaining - actualRemainingKg; // Pozitifse kayıp, negatifse fazlalık
-
-        // (Opsiyonel: Bu 'difference' değerini bir Fire/Kayıp tablosuna kaydedebiliriz)
-        // System.out.println("Kapanış Farkı (Fire): " + difference);
-
-        // 2. Masadaki Eski Fişleri "İşlendi" (Processed) Yap -> Artık hesaplamaya katılmazlar
-        List<OperationTicket> oldTickets = ticketRepository.findByTableId(tableId);
-        for (OperationTicket t : oldTickets) {
-            t.setProcessed(true);
-            ticketRepository.save(t);
-        }
-        List<ActiveSession> oldSessions = sessionRepository.findByTableIdAndCompletedTrue(tableId);
-        for (ActiveSession s : oldSessions) {
-            s.setProcessed(true);
-            sessionRepository.save(s);
+        // 1. Kaynak Masanın Bakiyesini Kontrol Et
+        TableStatsDto sourceStats = getTableStats(request.fromTableId());
+        if (sourceStats.remainingKg() < request.amountKg()) {
+            throw new RuntimeException("Yetersiz bakiye! Masada bu kadar mal yok.");
         }
 
-        // 3. Masadaki Tamamlanmış Oturumları da "Processed" yapabiliriz
-        // (veya getTableStats metodunu 'processed=false' olanlara göre revize ederiz.
-        // Şimdilik basit tutmak için sadece fişleri temizliyoruz, sistem 'Giren'i sıfırlayacak)
+        // Masaların isimlerini bul (Loglama/Fiş notu için)
+        String fromTableName = tableRepository.findById(request.fromTableId()).map(OperationTable::getTableNo).orElse("??");
+        String toTableName = tableRepository.findById(request.toTableId()).map(OperationTable::getTableNo).orElse("??");
+        String user = TenantContextHolder.getCurrentUsername();
 
-        // 4. Yeni "DEVİR" Fişi Oluştur
-        OperationTicket rolloverTicket = new OperationTicket();
-        rolloverTicket.setTenantId(tenantId);
-        rolloverTicket.setTableId(tableId);
-        rolloverTicket.setAmountKg(actualRemainingKg); // Gerçek sayım değeri
-        rolloverTicket.setCreatedAt(LocalDateTime.now());
-        rolloverTicket.setCreatedBy("SYSTEM_ROLLOVER");
-        rolloverTicket.setProcessed(false);
+        // 2. Kaynak Masadan Düş (ÇIKIŞ FİŞİ - EKSİ BAKİYE)
+        OperationTicket outTicket = new OperationTicket();
+        outTicket.setTenantId(tenantId);
+        outTicket.setTableId(request.fromTableId());
+        outTicket.setAmountKg(-request.amountKg()); // Eksi değer havuzu düşürür
+        outTicket.setCreatedAt(LocalDateTime.now());
+        outTicket.setCreatedBy(user + " (Transfer -> " + toTableName + ")");
+        outTicket.setProcessed(false);
+        ticketRepository.save(outTicket);
 
-        // Özel bir not veya tip alanı eklenebilir modelde, şimdilik standart fiş gibi davranıyoruz.
+        // 3. Hedef Masaya Ekle (GİRİŞ FİŞİ - ARTI BAKİYE)
+        OperationTicket inTicket = new OperationTicket();
+        inTicket.setTenantId(tenantId);
+        inTicket.setTableId(request.toTableId());
+        inTicket.setAmountKg(request.amountKg());
+        inTicket.setCreatedAt(LocalDateTime.now());
+        inTicket.setCreatedBy(user + " (Transfer <- " + fromTableName + ")");
+        inTicket.setProcessed(false);
+        ticketRepository.save(inTicket);
 
-        OperationTicket saved = ticketRepository.save(rolloverTicket);
-
-        // 5. WebSocket ile Herkesi Güncelle
+        // 4. Her iki masayı da güncelle
         broadcastUpdate(tenantId, "TABLES_REFRESH", null);
-
-        return saved;
     }
 }

@@ -9,19 +9,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { LogOut, RefreshCw, Wifi, WifiOff, Search, X, Scale, Users, Ticket, Archive } from "lucide-react";
+import { LogOut, RefreshCw, Wifi, WifiOff, Search, X, Scale, Users, Ticket } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { format, isToday } from "date-fns";
 import { useOperationSocket } from "@/hooks/use-socket";
+import { useParams } from "next/navigation";
+import { useTranslation } from "react-i18next"; // DÜZELTİLDİ ✅
 
 // --- ALT BİLEŞENLER ---
 import { BulkWorkerAssignmentDialog } from "./_components/bulk-worker-assignment-dialog";
 import { TicketEntryDialog } from "./_components/ticket-entry-dialog";
 import { ReleaseSessionDialog } from "./_components/release-session-dialog";
 import { CloseTableDialog } from "./_components/close-table-dialog";
+import { BulkCloseDialog } from "./_components/bulk-close-dialog";
 import { LiveDuration } from "./_components/live-duration";
+import { TransferStockDialog } from "./_components/transfer-stock-dialog"; // Eksikse ekledim
 
-// Masa İstatistik Tipi (Backend DTO ile uyumlu)
+// Masa İstatistik Tipi
 interface TableStats {
     tableId: string;
     totalInputKg: number;
@@ -30,6 +34,9 @@ interface TableStats {
 }
 
 export default function PreSelectionOperationPage() {
+  // i18n Hook
+  const { t } = useTranslation("common"); 
+  
   // --- STATE YÖNETİMİ ---
   const [tables, setTables] = useState<OperationTable[]>([]);
   const [tableSessions, setTableSessions] = useState<Record<string, TableSession[]>>({});
@@ -76,11 +83,11 @@ export default function PreSelectionOperationPage() {
         }
     } catch (e) {
         console.error("Veri yükleme hatası", e);
-        toast.error("Saha verileri güncellenemedi.");
+        toast.error(t('operation.daily.messages.loading'));
     } finally {
         setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // İlk Yükleme
   useEffect(() => { loadData(); }, [loadData]);
@@ -92,8 +99,6 @@ export default function PreSelectionOperationPage() {
       if (["SESSION_UPDATE", "TABLES_REFRESH", "TICKET_UPDATE"].includes(msg.type)) {
           setLastEventTime(new Date());
           loadData();
-          // Çok sık toast çıkmaması için sadece önemli güncellemelerde veya opsiyonel gösterilebilir
-          // toast.info("Veriler güncellendi", { duration: 1000, position: 'bottom-right' });
       }
   }, [loadData]));
 
@@ -101,7 +106,6 @@ export default function PreSelectionOperationPage() {
 
   // --- AKSİYONLAR ---
   
-  // Masadan Ayırma (Release) Diyaloğunu Aç
   const openReleaseDialog = (session: TableSession) => {
       setSessionToRelease({
           id: session.sessionId,
@@ -110,17 +114,21 @@ export default function PreSelectionOperationPage() {
       });
   };
 
-  // Arama Filtreleme
   const filteredTables = tables.filter(table => 
     table.tableNo.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // --- ARAYÜZ ---
+  const openTablesCount = tables.filter(t => {
+      const stat = tableStats[t.id];
+      return stat && (stat.remainingKg !== 0 || stat.totalInputKg > 0);
+  }).length;
+
+  // --- RENDER ---
   if (isLoading && tables.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center h-[60vh] text-muted-foreground animate-pulse space-y-4">
             <RefreshCw className="w-12 h-12 animate-spin text-primary/50" />
-            <span className="text-lg font-medium">Saha verileri yükleniyor...</span>
+            <span className="text-lg font-medium">{t('operation.daily.messages.loading')}</span>
         </div>
       );
   }
@@ -128,13 +136,12 @@ export default function PreSelectionOperationPage() {
   return (
     <div className="p-4 md:p-6 space-y-6 h-full flex flex-col">
         
-        {/* 1. ÜST KONTROL PANELİ (STICKY HEADER) */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 rounded-xl border shadow-sm sticky top-0 z-30">
+        {/* 1. ÜST KONTROL PANELİ */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-background/95 backdrop-blur p-4 rounded-xl border shadow-sm sticky top-0 z-30">
             <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-bold text-foreground tracking-tight">Ön Seçim Operasyonu</h1>
+                    <h1 className="text-2xl font-bold text-foreground tracking-tight">{t('operation.daily.title')}</h1>
                     
-                    {/* Bağlantı Durumu */}
                     <Badge variant="outline" className={`gap-1.5 transition-colors ${isSocketConnected ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
                         {isSocketConnected ? (
                             <>
@@ -142,42 +149,38 @@ export default function PreSelectionOperationPage() {
                                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                                   <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                                 </span>
-                                <span className="font-medium hidden sm:inline">Canlı Akış</span>
+                                <span className="font-medium hidden sm:inline">{t('operation.fieldPanel.liveConnection')}</span>
                             </>
                         ) : (
                             <div className="flex items-center gap-1">
                                 <WifiOff className="w-3 h-3" />
-                                <span>Offline</span>
+                                <span>{t('operation.fieldPanel.offline')}</span>
                             </div>
                         )}
                     </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
-                   <RefreshCw className="w-3 h-3" /> Son senkronizasyon: <span className="font-mono font-medium text-foreground">{format(lastEventTime, "HH:mm:ss")}</span>
+                   <RefreshCw className="w-3 h-3" /> {t('operation.fieldPanel.lastUpdate')}: <span className="font-mono font-medium text-foreground">{format(lastEventTime, "HH:mm:ss")}</span>
                 </p>
             </div>
 
-            {/* Arama ve Yenileme */}
             <div className="flex items-center gap-2 w-full md:w-auto">
-                <div className="relative w-full md:w-72">
+                {/* Toplu Kapanış */}
+                <BulkCloseDialog totalOpenTables={openTablesCount} onSuccess={loadData} />
+
+                {/* Arama */}
+                <div className="relative w-full md:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
-                        placeholder="Masa Ara (Örn: 37)" 
-                        className="pl-9 pr-9 h-10 bg-muted/30 focus-visible:ring-primary/30 transition-all"
+                        placeholder={t('operation.fieldPanel.searchPlaceholder')} 
+                        className="pl-9 h-10 bg-muted/30"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                    {searchQuery && (
-                        <button 
-                            onClick={() => setSearchQuery("")}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
-                        >
-                            <X className="h-4 w-4" />
-                        </button>
-                    )}
+                    {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1"><X className="h-4 w-4 text-muted-foreground"/></button>}
                 </div>
                 
-                <Button variant="outline" size="icon" onClick={loadData} className="shrink-0" title="Manuel Yenile">
+                <Button variant="outline" size="icon" onClick={loadData} className="shrink-0" title={t('operation.daily.actions.manualRefresh')}>
                     <RefreshCw className="w-4 h-4" />
                 </Button>
             </div>
@@ -190,7 +193,7 @@ export default function PreSelectionOperationPage() {
                     <Search className="w-8 h-8 text-muted-foreground/50" />
                 </div>
                 <h3 className="text-lg font-medium text-muted-foreground">
-                    {searchQuery ? `"${searchQuery}" numaralı masa bulunamadı.` : "Henüz tanımlı 'Ön Seçim' masası yok."}
+                    {searchQuery ? t('operation.daily.messages.tableNotFound') : t('operation.daily.messages.noTables')}
                 </h3>
             </div>
         ) : (
@@ -207,7 +210,6 @@ export default function PreSelectionOperationPage() {
                                 ${isActive ? 'border-t-green-500 bg-card' : 'border-t-muted-foreground/20 bg-muted/5 opacity-95'}
                             `}
                         >
-                            {/* Masa Başlığı */}
                             <CardHeader className="pb-2 flex flex-row items-center justify-between border-b px-4 py-3 bg-muted/10">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}/>
@@ -215,31 +217,27 @@ export default function PreSelectionOperationPage() {
                                 </div>
                                 {isActive ? (
                                     <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 font-medium px-2">
-                                        {activeSessions.length} Personel
+                                        {activeSessions.length} {t('operation.daily.personnelCount')}
                                     </Badge>
                                 ) : (
-                                    <Badge variant="outline" className="text-muted-foreground bg-background">Boş</Badge>
+                                    <Badge variant="outline" className="text-muted-foreground bg-background">{t('operation.fieldPanel.tableEmpty')}</Badge>
                                 )}
                             </CardHeader>
                             
                             <CardContent className="p-4 flex-1 flex flex-col gap-4">
                                 
-                                {/* HAVUZ İSTATİSTİKLERİ (Giren-Çıkan-Kalan) */}
+                                {/* HAVUZ İSTATİSTİKLERİ */}
                                 <div className="grid grid-cols-3 gap-px bg-border rounded-lg overflow-hidden border shadow-sm">
                                     <div className="bg-background p-2 text-center">
-                                        <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5 flex items-center justify-center gap-1">
-                                            <Ticket className="w-3 h-3" /> Giren
-                                        </div>
+                                        <div className="text-[10px] text-muted-foreground uppercase font-bold mb-0.5">{t('operation.daily.input')}</div>
                                         <div className="text-sm font-bold text-blue-600">{stats.totalInputKg.toLocaleString()}</div>
                                     </div>
                                     <div className="bg-background p-2 text-center">
-                                        <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5 flex items-center justify-center gap-1">
-                                            <Scale className="w-3 h-3" /> Çıkan
-                                        </div>
+                                        <div className="text-[10px] text-muted-foreground uppercase font-bold mb-0.5">{t('operation.daily.output')}</div>
                                         <div className="text-sm font-bold text-green-600">{stats.totalOutputKg.toLocaleString()}</div>
                                     </div>
                                     <div className={`p-2 text-center ${stats.remainingKg < 0 ? 'bg-red-50' : 'bg-amber-50/50'}`}>
-                                        <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Kalan</div>
+                                        <div className="text-[10px] text-muted-foreground uppercase font-bold mb-0.5">{t('operation.daily.remaining')}</div>
                                         <div className={`text-sm font-bold ${stats.remainingKg < 0 ? 'text-red-600' : 'text-amber-700'}`}>
                                             {stats.remainingKg.toLocaleString()}
                                         </div>
@@ -251,7 +249,7 @@ export default function PreSelectionOperationPage() {
                                     {activeSessions.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center h-full py-6 text-muted-foreground/30 border-2 border-dashed rounded-lg bg-muted/5">
                                             <Users className="w-8 h-8 mb-2 opacity-20" />
-                                            <span className="text-xs font-medium">Personel Atanmadı</span>
+                                            <span className="text-xs font-medium">{t('operation.fieldPanel.noActiveWorker')}</span>
                                         </div>
                                     ) : (
                                         activeSessions.map(session => {
@@ -259,10 +257,9 @@ export default function PreSelectionOperationPage() {
                                             return (
                                                 <div key={session.sessionId} className="group relative flex flex-col gap-1 p-2.5 bg-background border rounded-lg shadow-sm transition-all hover:border-primary/40 hover:shadow-md">
                                                     
-                                                    {/* Devir Uyarısı */}
                                                     {isFromYesterday && (
-                                                        <div className="absolute -top-2 -right-1 bg-orange-500 text-white text-[9px] px-1.5 py-px rounded-sm font-bold shadow-sm z-10 flex items-center gap-1">
-                                                           Devir
+                                                        <div className="absolute -top-2 -right-1 bg-orange-500 text-white text-[9px] px-1.5 py-px rounded-sm font-bold shadow-sm z-10">
+                                                           {t('operation.daily.rollover')}
                                                         </div>
                                                     )}
 
@@ -284,17 +281,11 @@ export default function PreSelectionOperationPage() {
                                                             size="icon" 
                                                             variant="ghost" 
                                                             className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                                                            title="Masadan Ayır (Bitir)"
+                                                            title={t('operation.dialogs.release.title')}
                                                             onClick={() => openReleaseDialog(session)}
                                                         >
                                                             <LogOut className="h-4 w-4" />
                                                         </Button>
-                                                    </div>
-                                                    
-                                                    {/* Hedef Bilgisi */}
-                                                    <div className="mt-1 pt-1 border-t border-dashed flex justify-between items-center text-[10px] text-muted-foreground">
-                                                        <span>Başlangıç: <span className="font-mono">{format(new Date(session.startTime), "HH:mm")}</span></span>
-                                                        <span className="font-medium bg-primary/5 text-primary px-1.5 py-0.5 rounded">Hedef: {session.targetOutputKg} kg</span>
                                                     </div>
                                                 </div>
                                             );
@@ -303,26 +294,36 @@ export default function PreSelectionOperationPage() {
                                 </div>
                                 
                                 {/* AKSİYON BUTONLARI */}
-                                <div className="grid grid-cols-2 gap-2 mt-auto pt-2">
-                                    <TicketEntryDialog 
-                                        tableId={table.id} 
-                                        tableName={table.tableNo} 
-                                        onSuccess={loadData} 
-                                    />
+                                <div className="mt-auto pt-2 space-y-2">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <TicketEntryDialog 
+                                            tableId={table.id} 
+                                            tableName={table.tableNo} 
+                                            onSuccess={loadData} 
+                                        />
+                                        {/* V4.1 Transfer Butonu */}
+                                        <TransferStockDialog 
+                                            fromTableId={table.id} 
+                                            fromTableName={table.tableNo} 
+                                            maxAmount={stats.remainingKg} 
+                                            tables={tables} // Tüm masaları gönder
+                                            onSuccess={loadData} 
+                                        />
+                                    </div>
+                                    
                                     <BulkWorkerAssignmentDialog 
                                         tableId={table.id} 
                                         onSuccess={loadData} 
                                     />
-                                </div>
-
-                                {/* MASA KAPAT BUTONU */}
-                                <div className="pt-2 border-t border-dashed">
-                                    <CloseTableDialog 
-                                        tableId={table.id} 
-                                        tableName={table.tableNo} 
-                                        systemRemaining={stats.remainingKg} 
-                                        onSuccess={loadData}
-                                    />
+                                    
+                                    <div className="pt-2 border-t border-dashed">
+                                        <CloseTableDialog 
+                                            tableId={table.id} 
+                                            tableName={table.tableNo} 
+                                            systemRemaining={stats.remainingKg} 
+                                            onSuccess={loadData}
+                                        />
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -331,7 +332,7 @@ export default function PreSelectionOperationPage() {
             </div>
         )}
 
-        {/* 3. PERSONEL ÇIKIŞ DİYALOĞU (GLOBAL) */}
+        {/* 3. PERSONEL ÇIKIŞ DİYALOĞU */}
         <ReleaseSessionDialog 
             isOpen={!!sessionToRelease} 
             onClose={() => setSessionToRelease(null)} 
@@ -340,4 +341,3 @@ export default function PreSelectionOperationPage() {
     </div>
   );
 }
-

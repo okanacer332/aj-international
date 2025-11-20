@@ -1,6 +1,7 @@
 "use client";
+
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { apiFetchAuth } from "@/lib/api-auth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,12 +9,20 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Loader2 } from "lucide-react";
 import { OperationTable } from "@/types/operation";
+import { useTranslation } from "@/app/i18n/client";
+import { useParams } from "next/navigation";
 
 export default function TableDefinitionsPage() {
+  const params = useParams();
+  const { t } = useTranslation(params.lng as string, "common");
   const [tables, setTables] = useState<OperationTable[]>([]);
-  const { register, handleSubmit, setValue, reset } = useForm<OperationTable>();
+  const [loading, setLoading] = useState(false);
+  
+  const { register, handleSubmit, reset, control } = useForm<OperationTable>({
+      defaultValues: { tableNo: "", unitType: undefined }
+  });
 
   const fetchTables = async () => {
     const res = await apiFetchAuth("/api/operation/tables");
@@ -23,16 +32,24 @@ export default function TableDefinitionsPage() {
   useEffect(() => { fetchTables(); }, []);
 
   const onSubmit = async (data: OperationTable) => {
+    setLoading(true);
     try {
-      await apiFetchAuth("/api/operation/tables", { method: "POST", body: JSON.stringify(data) });
-      toast.success("Masa kaydedildi");
-      reset();
+      await apiFetchAuth("/api/operation/tables", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      toast.success(t('operation.common.confirm'));
+      reset({ tableNo: "", unitType: undefined });
       fetchTables();
-    } catch (e) { toast.error("Hata oluştu"); }
+    } catch (e) {
+      toast.error("Error");
+    } finally {
+        setLoading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
-    if(!confirm("Silmek istiyor musunuz?")) return;
+    if(!confirm(t('operation.common.confirm') + "?")) return;
     await apiFetchAuth(`/api/operation/tables/${id}`, { method: "DELETE" });
     fetchTables();
   };
@@ -40,32 +57,52 @@ export default function TableDefinitionsPage() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
       <Card>
-        <CardHeader><CardTitle>Yeni Masa Ekle</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t('operation.menu.tableDefinitions')}</CardTitle></CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input placeholder="Masa No" {...register("tableNo", { required: true })} />
-            <Select onValueChange={(v) => setValue("unitType", v as any)}>
-                <SelectTrigger><SelectValue placeholder="Birim Seç" /></SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="PRE_SELECTION">Ön Seçim</SelectItem>
-                    <SelectItem value="SORTING">Ayrıştırma</SelectItem>
-                    <SelectItem value="PRESS">Press</SelectItem>
-                </SelectContent>
-            </Select>
-            <Button type="submit" className="w-full"><Plus className="mr-2 h-4 w-4"/> Kaydet</Button>
+            <Input placeholder="Masa No (Örn: Masa-1)" {...register("tableNo", { required: true })} />
+            
+            <Controller
+                name="unitType"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Birim" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="PRE_SELECTION">Ön Seçim</SelectItem>
+                            <SelectItem value="SORTING">Ayrıştırma</SelectItem>
+                            <SelectItem value="PRESS">Press</SelectItem>
+                        </SelectContent>
+                    </Select>
+                )}
+            />
+
+            <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Plus className="mr-2 h-4 w-4"/>}
+                {t('operation.common.confirm')}
+            </Button>
           </form>
         </CardContent>
       </Card>
+
       <Card className="md:col-span-2">
-        <CardHeader><CardTitle>Tanımlı Masalar</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t('operation.fieldPanel.totalTables')}</CardTitle></CardHeader>
         <CardContent>
             <Table>
-                <TableHeader><TableRow><TableHead>Masa No</TableHead><TableHead>Birim</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                <TableHeader>
+                    <TableRow><TableHead>No</TableHead><TableHead>Tip</TableHead><TableHead></TableHead></TableRow>
+                </TableHeader>
                 <TableBody>
-                    {tables.map(t => (
-                        <TableRow key={t.id}>
-                            <TableCell>{t.tableNo}</TableCell><TableCell>{t.unitType}</TableCell>
-                            <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={() => handleDelete(t.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button></TableCell>
+                    {tables.map(table => (
+                        <TableRow key={table.id}>
+                            <TableCell className="font-bold">{table.tableNo}</TableCell>
+                            <TableCell>{table.unitType}</TableCell>
+                            <TableCell className="text-right">
+                                <Button size="icon" variant="ghost" onClick={() => handleDelete(table.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
