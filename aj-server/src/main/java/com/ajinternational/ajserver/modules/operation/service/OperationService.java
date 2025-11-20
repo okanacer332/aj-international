@@ -37,9 +37,24 @@ public class OperationService {
 
     private final SimpMessagingTemplate messagingTemplate;
 
+    // --- SOCKET BİLDİRİMLERİ ---
+
     private void broadcastUpdate(String tenantId, String type, Object payload) {
         String destination = "/topic/operation/" + tenantId;
         messagingTemplate.convertAndSend(destination, new SocketUpdateDto(type, payload));
+    }
+
+    // Ticker ve Gamification için özel event bildirimi
+    private void broadcastEvent(String tenantId, String type, Map<String, String> params) {
+        // Ticker için genel event
+        messagingTemplate.convertAndSend("/topic/operation/" + tenantId,
+                new SocketUpdateDto("DASHBOARD_EVENT", new DashboardEventDto(type, params)));
+
+        // İş bitişi ise Gamification (Patlama efekti) için ek event
+        if ("WORK_FINISHED".equals(type)) {
+            messagingTemplate.convertAndSend("/topic/operation/" + tenantId,
+                    new SocketUpdateDto("WORK_FINISHED", params));
+        }
     }
 
     // --- CONFIG ---
@@ -128,18 +143,15 @@ public class OperationService {
     }
 
     // --- TICKET (FİŞ) & ATAMA ---
-
     @Transactional
     public OperationTicket addTicket(TicketEntryRequest request) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
 
-        // 1. Fişi Kaydet
         OperationTicket ticket = new OperationTicket();
         ticket.setTenantId(tenantId);
         ticket.setTableId(request.tableId());
         ticket.setAmountKg(request.amountKg());
         ticket.setCreatedAt(LocalDateTime.now());
-        // Context'ten kullanıcı adı alınıyor (Auth implementasyonuna göre değişebilir, şimdilik hardcoded veya null safe)
         try {
             ticket.setCreatedBy(TenantContextHolder.getCurrentUsername());
         } catch (Exception e) {
@@ -149,7 +161,14 @@ public class OperationService {
 
         OperationTicket savedTicket = ticketRepository.save(ticket);
 
-        // 2. Eğer personel seçildiyse onları da ata
+        // Ticker Event
+        String tableName = tableRepository.findById(request.tableId()).map(OperationTable::getTableNo).orElse("??");
+        broadcastEvent(tenantId, "TICKET_ADDED", Map.of(
+                "table", tableName,
+                "amount", String.valueOf(request.amountKg())
+        ));
+
+        // Eğer personel seçildiyse ata
         if (request.workerIds() != null && !request.workerIds().isEmpty()) {
             AssignWorkerRequest assignRequest = new AssignWorkerRequest(
                     request.tableId(),
@@ -158,7 +177,6 @@ public class OperationService {
             );
             assignWorkers(assignRequest);
         } else {
-            // Sadece fiş varsa update geç
             broadcastUpdate(tenantId, "TICKET_UPDATE", null);
         }
 
@@ -196,10 +214,17 @@ public class OperationService {
             session.setAssignedDurationMinutes(request.durationMinutes());
             session.setTargetOutputKg(Math.round(sessionTarget * 100.0) / 100.0);
             session.setCompleted(false);
-            session.setProcessed(false); // Yeni session, henüz arşivlenmedi
+            session.setProcessed(false);
 
             createdSessions.add(sessionRepository.save(session));
         }
+
+        // Ticker Event
+        String tableName = tableRepository.findById(request.tableId()).map(OperationTable::getTableNo).orElse("??");
+        broadcastEvent(tenantId, "WORKER_ASSIGNED", Map.of(
+                "table", tableName,
+                "count", String.valueOf(request.workerIds().size())
+        ));
 
         broadcastUpdate(tenantId, "SESSION_UPDATE", null);
         broadcastUpdate(tenantId, "WORKER_UPDATE", null);
@@ -237,10 +262,68 @@ public class OperationService {
 
         ActiveSession savedSession = sessionRepository.save(session);
 
+        // Ticker & Gamification Event
+        Personnel p = personnelRepository.findById(session.getWorkerId()).orElse(null);
+        String workerName = "Personel";
+        if (p != null) {
+            User u = userRepository.findById(p.getUserId()).orElse(null);
+            workerName = (u != null) ? u.getFullName() : p.getOnxCode();
+        }
+        String tableName = tableRepository.findById(session.getTableId()).map(OperationTable::getTableNo).orElse("??");
+
+        broadcastEvent(session.getTenantId(), "WORK_FINISHED", Map.of(
+                "table", tableName,
+                "worker", workerName,
+                "amount", String.valueOf(request.actualOutputKg() != null ? request.actualOutputKg() : 0)
+        ));
+
         broadcastUpdate(session.getTenantId(), "SESSION_UPDATE", null);
         broadcastUpdate(session.getTenantId(), "WORKER_UPDATE", null);
 
         return savedSession;
+    }
+
+    // --- TRANSFER ---
+    @Transactional
+    public void transferStock(StockTransferRequest request) {
+        String tenantId = TenantContextHolder.getCurrentTenantId();
+
+        TableStatsDto sourceStats = getTableStats(request.fromTableId());
+        if (sourceStats.remainingKg() < request.amountKg()) {
+            throw new RuntimeException("Yetersiz bakiye!");
+        }
+
+        String fromTableName = tableRepository.findById(request.fromTableId()).map(OperationTable::getTableNo).orElse("??");
+        String toTableName = tableRepository.findById(request.toTableId()).map(OperationTable::getTableNo).orElse("??");
+        String user = "";
+        try { user = TenantContextHolder.getCurrentUsername(); } catch (Exception e) {}
+
+        // Kaynak (Çıkış)
+        OperationTicket outTicket = new OperationTicket();
+        outTicket.setTenantId(tenantId);
+        outTicket.setTableId(request.fromTableId());
+        outTicket.setAmountKg(-request.amountKg());
+        outTicket.setCreatedAt(LocalDateTime.now());
+        outTicket.setCreatedBy(user + " (Transfer -> " + toTableName + ")");
+        outTicket.setProcessed(false);
+        ticketRepository.save(outTicket);
+
+        // Hedef (Giriş)
+        OperationTicket inTicket = new OperationTicket();
+        inTicket.setTenantId(tenantId);
+        inTicket.setTableId(request.toTableId());
+        inTicket.setAmountKg(request.amountKg());
+        inTicket.setCreatedAt(LocalDateTime.now());
+        inTicket.setCreatedBy(user + " (Transfer <- " + fromTableName + ")");
+        inTicket.setProcessed(false);
+        ticketRepository.save(inTicket);
+
+        broadcastEvent(tenantId, "TRANSFER", Map.of(
+                "from", fromTableName,
+                "to", toTableName,
+                "amount", String.valueOf(request.amountKg())
+        ));
+        broadcastUpdate(tenantId, "TABLES_REFRESH", null);
     }
 
     // --- KAPANIŞ İŞLEMLERİ ---
@@ -249,60 +332,67 @@ public class OperationService {
     public OperationTicket closeTableAndRollover(String tableId, double actualRemainingKg) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         LocalDateTime now = LocalDateTime.now();
-        LocalDate today = now.toLocalDate();
 
-        // 1. Masadaki AKTİF (Çıkış yapmamış) Çalışanları Bul ve Otomatik Çıkar
+        // 1. Aktif Oturumları Otomatik Kapat (Paydos)
         List<ActiveSession> activeSessions = sessionRepository.findByTableIdAndCompletedFalse(tableId);
-
         for (ActiveSession session : activeSessions) {
-            // Bitiş zamanını ayarla
             session.setEndTime(now);
             session.setCompleted(true);
-            // Otomatik kapanışta bireysel üretim 0 kabul edilir (veya null)
-            // Çünkü üretim "Kalan Mal" üzerinden hesaplandı.
-            session.setActualOutputKg(0.0);
+            session.setActualOutputKg(0.0); // Otomatik kapanışta üretim girilmez
+            session.setProcessed(true); // Arşivle
 
-            // Süreyi Hesapla ve Deftere İşle
+            // Süreyi işle
             long duration = ChronoUnit.MINUTES.between(session.getStartTime(), now);
             if (duration < 1) duration = 1;
 
-            // Defteri Bul ve Güncelle
             WorkerDailyLedger ledger = ledgerRepository
                     .findByTenantIdAndWorkerIdAndDate(tenantId, session.getWorkerId(), session.getStartTime().toLocalDate())
                     .orElse(null);
-
             if (ledger != null) {
                 ledger.setUsedMinutes(ledger.getUsedMinutes() + (int) duration);
                 ledgerRepository.save(ledger);
             }
-
             sessionRepository.save(session);
         }
 
-        // 2. Eski Fişleri İşlendi (Arşiv) Yap
+        // 2. Eski Fişleri Arşivle
         List<OperationTicket> oldTickets = ticketRepository.findByTableId(tableId);
         for (OperationTicket t : oldTickets) {
             t.setProcessed(true);
             ticketRepository.save(t);
         }
 
-        // 3. Devir Fişi Oluştur
+        // 3. Eski (Bitmiş) Sessionları Arşivle
+        List<ActiveSession> oldSessions = sessionRepository.findByTableIdAndCompletedTrue(tableId);
+        for (ActiveSession s : oldSessions) {
+            s.setProcessed(true);
+            sessionRepository.save(s);
+        }
+
+        // 4. Devir Fişi
         OperationTicket rolloverTicket = new OperationTicket();
         rolloverTicket.setTenantId(tenantId);
         rolloverTicket.setTableId(tableId);
         rolloverTicket.setAmountKg(actualRemainingKg);
         rolloverTicket.setCreatedAt(now);
-        rolloverTicket.setCreatedBy("SYSTEM_ROLLOVER"); // Sistem devri
+        rolloverTicket.setCreatedBy("SYSTEM_ROLLOVER");
         rolloverTicket.setProcessed(false);
 
         OperationTicket saved = ticketRepository.save(rolloverTicket);
 
-        // Herkesi uyar
+        String tableName = tableRepository.findById(tableId).map(OperationTable::getTableNo).orElse("??");
+
+        broadcastEvent(tenantId, "TABLE_CLOSED", Map.of(
+                "table", tableName,
+                "amount", String.valueOf(actualRemainingKg)
+        ));
+
         broadcastUpdate(tenantId, "TABLES_REFRESH", null);
-        broadcastUpdate(tenantId, "SESSION_UPDATE", null); // İşçiler de değiştiği için
+        broadcastUpdate(tenantId, "SESSION_UPDATE", null);
 
         return saved;
     }
+
     @Transactional
     public void closeAllRemainingTablesWithZero() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
@@ -310,7 +400,6 @@ public class OperationService {
 
         int closedCount = 0;
         for (OperationTable table : allTables) {
-            // Masada işlenmemiş fiş varsa ve kapatılmadıysa 0 ile kapat
             boolean hasUnprocessedTickets = ticketRepository.findByTableId(table.getId()).stream()
                     .anyMatch(t -> !t.isProcessed());
 
@@ -326,14 +415,12 @@ public class OperationService {
     }
 
     public TableStatsDto getTableStats(String tableId) {
-        // Sadece işlenmemiş (aktif) fişler
         List<OperationTicket> tickets = ticketRepository.findByTableId(tableId).stream()
                 .filter(t -> !t.isProcessed())
                 .toList();
 
         double totalInput = tickets.stream().mapToDouble(OperationTicket::getAmountKg).sum();
 
-        // Sadece son kapanıştan sonraki (işlenmemiş) üretimler
         List<ActiveSession> completedSessions = sessionRepository.findByTableIdAndCompletedTrue(tableId).stream()
                 .filter(s -> !s.isProcessed())
                 .toList();
@@ -374,42 +461,152 @@ public class OperationService {
         }).collect(Collectors.toList());
     }
 
-    @Transactional
-    public void transferStock(StockTransferRequest request) {
+    // --- V5.0 DASHBOARD ANALİTİĞİ ---
+    public FieldDashboardDto getFieldDashboardStats() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime oneHourAgo = now.minusHours(1);
 
-        // 1. Kaynak Masanın Bakiyesini Kontrol Et
-        TableStatsDto sourceStats = getTableStats(request.fromTableId());
-        if (sourceStats.remainingKg() < request.amountKg()) {
-            throw new RuntimeException("Yetersiz bakiye! Masada bu kadar mal yok.");
+        List<OperationTable> tables = tableRepository.findByTenantId(tenantId);
+        int activeTables = 0;
+        int activeWorkers = 0;
+        double totalRemaining = 0;
+
+        for (OperationTable t : tables) {
+            TableStatsDto stats = getTableStats(t.getId());
+            totalRemaining += stats.remainingKg();
+
+            List<ActiveSession> sessions = sessionRepository.findByTableIdAndCompletedFalse(t.getId());
+            if (!sessions.isEmpty()) {
+                activeTables++;
+                activeWorkers += sessions.size();
+            }
         }
 
-        // Masaların isimlerini bul (Loglama/Fiş notu için)
-        String fromTableName = tableRepository.findById(request.fromTableId()).map(OperationTable::getTableNo).orElse("??");
-        String toTableName = tableRepository.findById(request.toTableId()).map(OperationTable::getTableNo).orElse("??");
-        String user = TenantContextHolder.getCurrentUsername();
+        // 1. Günlük Toplam Üretim
+        List<ActiveSession> todayFinished = sessionRepository.findAll().stream()
+                .filter(s -> s.getTenantId().equals(tenantId) && s.isCompleted() && s.getEndTime().isAfter(startOfDay))
+                .toList();
 
-        // 2. Kaynak Masadan Düş (ÇIKIŞ FİŞİ - EKSİ BAKİYE)
-        OperationTicket outTicket = new OperationTicket();
-        outTicket.setTenantId(tenantId);
-        outTicket.setTableId(request.fromTableId());
-        outTicket.setAmountKg(-request.amountKg()); // Eksi değer havuzu düşürür
-        outTicket.setCreatedAt(LocalDateTime.now());
-        outTicket.setCreatedBy(user + " (Transfer -> " + toTableName + ")");
-        outTicket.setProcessed(false);
-        ticketRepository.save(outTicket);
+        double dailyTotalOutput = todayFinished.stream()
+                .mapToDouble(s -> s.getActualOutputKg() != null ? s.getActualOutputKg() : 0)
+                .sum();
 
-        // 3. Hedef Masaya Ekle (GİRİŞ FİŞİ - ARTI BAKİYE)
-        OperationTicket inTicket = new OperationTicket();
-        inTicket.setTenantId(tenantId);
-        inTicket.setTableId(request.toTableId());
-        inTicket.setAmountKg(request.amountKg());
-        inTicket.setCreatedAt(LocalDateTime.now());
-        inTicket.setCreatedBy(user + " (Transfer <- " + fromTableName + ")");
-        inTicket.setProcessed(false);
-        ticketRepository.save(inTicket);
+        // 2. Anlık Hız (Son 1 saatte biten işler)
+        List<ActiveSession> recentFinished = sessionRepository.findAll().stream()
+                .filter(s -> s.getTenantId().equals(tenantId) && s.isCompleted() && s.getEndTime().isAfter(oneHourAgo))
+                .toList();
 
-        // 4. Her iki masayı da güncelle
+        double hourlySpeed = recentFinished.stream()
+                .mapToDouble(s -> s.getActualOutputKg() != null ? s.getActualOutputKg() : 0)
+                .sum();
+
+        // 3. Tahmin
+        LocalDateTime estimatedFinish = null;
+        if (hourlySpeed > 0 && totalRemaining > 0) {
+            double hoursLeft = totalRemaining / hourlySpeed;
+            if (hoursLeft < 24) {
+                estimatedFinish = now.plusMinutes((long) (hoursLeft * 60));
+            }
+        }
+
+        return new FieldDashboardDto(
+                activeTables,
+                activeWorkers,
+                Math.round(dailyTotalOutput * 100.0) / 100.0, // Günlük Toplamı Buraya Basıyoruz
+                todayFinished.size(),
+                new ArrayList<>()
+        );
+    }
+
+    // --- DEMO VERİSİ (TEST İÇİN) ---
+    @Transactional
+    public void generateDemoData() {
+        String tenantId = TenantContextHolder.getCurrentTenantId();
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. Masalar
+        if (tableRepository.findByTenantId(tenantId).isEmpty()) {
+            for (int i = 1; i <= 12; i++) {
+                OperationTable t = new OperationTable();
+                t.setTenantId(tenantId);
+                t.setTableNo("Masa-" + i);
+                t.setUnitType(OperationTableUnit.PRE_SELECTION);
+                t.setActive(true);
+                tableRepository.save(t);
+            }
+        }
+        List<OperationTable> tables = tableRepository.findByTenantId(tenantId);
+        List<Personnel> personnelList = personnelRepository.findByTenantId(tenantId);
+
+        if (personnelList.isEmpty()) return;
+
+        java.util.Random random = new java.util.Random();
+
+        for (OperationTable table : tables) {
+            // A. Geçmiş (Bitmiş) İşler Oluştur (Hız ve Günlük Toplam için)
+            int finishedCount = random.nextInt(3);
+            for (int f = 0; f < finishedCount; f++) {
+                Personnel p = personnelList.get(random.nextInt(personnelList.size()));
+                ActiveSession finishedSession = new ActiveSession();
+                finishedSession.setTenantId(tenantId);
+                finishedSession.setTableId(table.getId());
+                finishedSession.setWorkerId(p.getId());
+
+                finishedSession.setStartTime(now.minusMinutes(120 + random.nextInt(60)));
+                finishedSession.setEndTime(now.minusMinutes(5 + random.nextInt(50)));
+                finishedSession.setAssignedDurationMinutes(540);
+
+                double output = 100 + (random.nextDouble() * 300);
+                finishedSession.setActualOutputKg(Math.round(output * 100.0) / 100.0);
+                finishedSession.setTargetOutputKg(300.0);
+
+                finishedSession.setCompleted(true);
+                finishedSession.setProcessed(false);
+                sessionRepository.save(finishedSession);
+            }
+
+            // B. Aktif İşler (Şimdiki Durum)
+            if (random.nextDouble() > 0.3) {
+                double stock = 500 + (random.nextDouble() * 2500);
+                stock = Math.round(stock * 100.0) / 100.0;
+
+                OperationTicket ticket = new OperationTicket();
+                ticket.setTenantId(tenantId);
+                ticket.setTableId(table.getId());
+                ticket.setAmountKg(stock);
+                ticket.setCreatedAt(now.minusMinutes(random.nextInt(300)));
+                ticket.setCreatedBy("DemoGenerator");
+                ticket.setProcessed(false);
+                ticketRepository.save(ticket);
+
+                broadcastEvent(tenantId, "TICKET_ADDED", Map.of("table", table.getTableNo(), "amount", String.valueOf(stock)));
+
+                int workerCount = 1 + random.nextInt(6);
+                for (int w = 0; w < workerCount; w++) {
+                    Personnel p = personnelList.get(random.nextInt(personnelList.size()));
+
+                    ActiveSession session = new ActiveSession();
+                    session.setTenantId(tenantId);
+                    session.setTableId(table.getId());
+                    session.setWorkerId(p.getId());
+                    int minutesAgo = 10 + random.nextInt(480);
+                    session.setStartTime(now.minusMinutes(minutesAgo));
+                    session.setAssignedDurationMinutes(540);
+                    session.setTargetOutputKg(stock / workerCount);
+                    session.setCompleted(false);
+                    session.setProcessed(false);
+
+                    try {
+                        sessionRepository.save(session);
+                    } catch (Exception e) {}
+                }
+            }
+        }
+
         broadcastUpdate(tenantId, "TABLES_REFRESH", null);
+        broadcastUpdate(tenantId, "SESSION_UPDATE", null);
     }
 }

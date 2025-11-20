@@ -197,3 +197,71 @@
 .disable-transitions * {
   transition: none !important;
 }
+
+@layer utilities {
+  .animate-marquee {
+    animation: marquee 25s linear infinite;
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  display: inline-flex;
+  white-space: nowrap;
+  /* Animasyon adı, süresi, hızı, sonsuz döngü */
+  animation: marqueeScroll 30s linear infinite;
+  /* Donanım hızlandırma için */
+  will-change: transform; 
+}
+
+/* Mouse üzerine gelince dursa iyi olur, okunabilirlik için */
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes scrollText {
+  0% {
+    transform: translateX(100%); /* Ekranın sağından başla */
+  }
+  100% {
+    transform: translateX(-100%); /* Ekranın soluna git */
+  }
+}
+
+.ticker-wrap {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+}
+
+.ticker-move {
+  display: inline-block;
+  white-space: nowrap;
+  /* 40 saniye süresince, doğrusal hızda, sonsuz döngü */
+  animation: scrollText 40s linear infinite; 
+  /* Donanım hızlandırmasını açar, takılmayı önler */
+  will-change: transform; 
+}
+
+/* Mouse üzerine gelince dursun (Okumak için) */
+.ticker-move:hover {
+  animation-play-state: paused;
+}

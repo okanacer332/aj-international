@@ -20,14 +20,12 @@ public class OperationController {
 
     private final OperationService service;
 
-    // --- SAHA PANELİ YETKİSİ (Sisteme tanıtmak için dummy endpoint) ---
     @GetMapping("/field-panel/ping")
     @HasPermission("PAGE_FIELD_PANEL:READ")
     public ResponseEntity<String> checkFieldPanelAccess() {
         return ResponseEntity.ok("OK");
     }
 
-    // --- CONFIG ---
     @GetMapping("/config")
     @HasPermission("PAGE_OPERATION_SETTINGS:READ")
     public ResponseEntity<OperationConfig> getConfig() {
@@ -40,7 +38,6 @@ public class OperationController {
         return ResponseEntity.ok(service.updateConfig(config));
     }
 
-    // --- TABLES ---
     @GetMapping("/tables")
     @HasPermission("PAGE_OPERATION_DEFINITIONS:READ")
     public ResponseEntity<List<OperationTable>> getTables() {
@@ -66,7 +63,6 @@ public class OperationController {
         return ResponseEntity.ok(service.getTableStats(tableId));
     }
 
-    // --- WORKERS & SESSIONS ---
     @GetMapping("/available-workers")
     @HasPermission("PAGE_OPERATION_DAILY:READ")
     public ResponseEntity<List<WorkerAvailabilityDto>> getAvailableWorkers() {
@@ -91,7 +87,6 @@ public class OperationController {
         return ResponseEntity.ok(service.getTableActiveSessions(tableId));
     }
 
-    // --- TICKETS, TRANSFER & CLOSING ---
     @PostMapping("/ticket")
     @HasPermission("PAGE_OPERATION_DAILY:WRITE")
     public ResponseEntity<OperationTicket> addTicket(@RequestBody TicketEntryRequest request) {
@@ -115,6 +110,20 @@ public class OperationController {
     @HasPermission("PAGE_OPERATION_DAILY:WRITE")
     public ResponseEntity<Void> closeAllEmptyTables() {
         service.closeAllRemainingTablesWithZero();
+        return ResponseEntity.ok().build();
+    }
+
+    // V5.0 Endpointler
+    @GetMapping("/dashboard/stats")
+    @HasPermission("PAGE_FIELD_PANEL:READ")
+    public ResponseEntity<FieldDashboardDto> getDashboardStats() {
+        return ResponseEntity.ok(service.getFieldDashboardStats());
+    }
+
+    @PostMapping("/demo-seed")
+    @HasPermission("PAGE_OPERATION_DAILY:WRITE")
+    public ResponseEntity<Void> generateDemoData() {
+        service.generateDemoData();
         return ResponseEntity.ok().build();
     }
 }
