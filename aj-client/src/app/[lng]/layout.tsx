@@ -26,8 +26,16 @@ const localeConfig: { [key: string]: { dir: 'ltr' | 'rtl' } } = {
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: APP_CONFIG.meta.title,
-  description: APP_CONFIG.meta.description,
+  title: {
+    default: "ACR Tech | Yönetim Paneli",
+    template: "%s | ACR Tech"
+  },
+  description: "ACR Tech tarafından geliştirilmiş yeni nesil operasyon yönetim sistemi.",
+  icons: {
+    icon: "/favicon.ico", // Kendi ikonunu koyacağız
+    apple: "/apple-touch-icon.png",
+  },
+  authors: [{ name: "ACR Tech", url: "https://acrtech.com" }], // Varsa site adresin
 };
 
 export async function generateStaticParams() {
