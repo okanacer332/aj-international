@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTranslation } from "@/app/i18n/client";
+import { useTranslation } from "react-i18next"; // DÜZELTİLDİ (Eski import silindi)
 import { useParams } from "next/navigation";
 
 export default function OperationConfigPage() {
   const params = useParams();
-  const { t } = useTranslation(params.lng as string, "common");
+  const { t } = useTranslation("common");
   const [config, setConfig] = useState({ standardShiftDurationMinutes: 540, dailyStandardTargetKg: 900 });
 
   useEffect(() => {

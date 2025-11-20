@@ -11,12 +11,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Plus, Loader2 } from "lucide-react";
 import { OperationTable } from "@/types/operation";
-import { useTranslation } from "@/app/i18n/client";
+import { useTranslation } from "react-i18next"; // DÜZELTİLDİ (Eski import silindi)
 import { useParams } from "next/navigation";
 
 export default function TableDefinitionsPage() {
   const params = useParams();
-  const { t } = useTranslation(params.lng as string, "common");
+  const { t } = useTranslation("common");
   const [tables, setTables] = useState<OperationTable[]>([]);
   const [loading, setLoading] = useState(false);
   
