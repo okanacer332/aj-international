@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiFetchAuth } from "@/lib/api-auth";
 import { toast } from "sonner";
-import { Loader2, Archive, AlertTriangle, Calculator } from "lucide-react";
-import { useTranslation } from "react-i18next"; // DÜZELTİLDİ
+import { Loader2, Archive, AlertTriangle, Calculator, Power } from "lucide-react";
+import { useTranslation } from "react-i18next"; 
 
 interface Props {
     tableId: string;
@@ -18,7 +18,7 @@ interface Props {
 }
 
 export function CloseTableDialog({ tableId, tableName, systemRemaining, onSuccess }: Props) {
-    const { t } = useTranslation("common"); // DÜZELTİLDİ
+    const { t } = useTranslation("common");
     const [open, setOpen] = useState(false);
     const [actualRemaining, setActualRemaining] = useState<string>("");
     const [loading, setLoading] = useState(false);
@@ -28,7 +28,7 @@ export function CloseTableDialog({ tableId, tableName, systemRemaining, onSucces
         const actualVal = parseFloat(actualRemaining);
         const diff = actualVal - systemRemaining;
 
-        if (!confirm(`${t('operation.dialogs.closeTable.warning')}\n\n${t('operation.dialogs.closeTable.systemVal')}: ${systemRemaining}\n${t('operation.dialogs.closeTable.physicalLabel')}: ${actualVal}`)) {
+        if (!confirm(`${t('operation.dialogs.closeTable.warning')}\n\n${t('operation.dialogs.closeTable.systemVal')}: ${systemRemaining}\n${t('operation.dialogs.closeTable.physicalLabel')}: ${actualVal}\n${t('operation.dialogs.closeTable.diffVal')}: ${diff.toFixed(2)}`)) {
             return;
         }
 
@@ -51,14 +51,20 @@ export function CloseTableDialog({ tableId, tableName, systemRemaining, onSucces
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="destructive" size="sm" className="w-full mt-2">
-                    <Archive className="mr-2 h-4 w-4"/> {t('operation.daily.actions.closeTable')}
+                {/* YENİ TASARIM: SADECE İKON BUTON */}
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded-full"
+                    title={t('operation.daily.actions.closeTable')} // Tooltip: Masa Kapat
+                >
+                    <Power className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <Archive className="w-5 h-5 text-destructive" />
+                    <DialogTitle className="flex items-center gap-2 text-destructive">
+                        <Archive className="w-5 h-5" />
                         {tableName} - {t('operation.dialogs.closeTable.title')}
                     </DialogTitle>
                 </DialogHeader>

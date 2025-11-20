@@ -248,19 +248,42 @@ public class OperationService {
     @Transactional
     public OperationTicket closeTableAndRollover(String tableId, double actualRemainingKg) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDate today = now.toLocalDate();
 
-        // 1. Eski Fişleri İşlendi Yap
+        // 1. Masadaki AKTİF (Çıkış yapmamış) Çalışanları Bul ve Otomatik Çıkar
+        List<ActiveSession> activeSessions = sessionRepository.findByTableIdAndCompletedFalse(tableId);
+
+        for (ActiveSession session : activeSessions) {
+            // Bitiş zamanını ayarla
+            session.setEndTime(now);
+            session.setCompleted(true);
+            // Otomatik kapanışta bireysel üretim 0 kabul edilir (veya null)
+            // Çünkü üretim "Kalan Mal" üzerinden hesaplandı.
+            session.setActualOutputKg(0.0);
+
+            // Süreyi Hesapla ve Deftere İşle
+            long duration = ChronoUnit.MINUTES.between(session.getStartTime(), now);
+            if (duration < 1) duration = 1;
+
+            // Defteri Bul ve Güncelle
+            WorkerDailyLedger ledger = ledgerRepository
+                    .findByTenantIdAndWorkerIdAndDate(tenantId, session.getWorkerId(), session.getStartTime().toLocalDate())
+                    .orElse(null);
+
+            if (ledger != null) {
+                ledger.setUsedMinutes(ledger.getUsedMinutes() + (int) duration);
+                ledgerRepository.save(ledger);
+            }
+
+            sessionRepository.save(session);
+        }
+
+        // 2. Eski Fişleri İşlendi (Arşiv) Yap
         List<OperationTicket> oldTickets = ticketRepository.findByTableId(tableId);
         for (OperationTicket t : oldTickets) {
             t.setProcessed(true);
             ticketRepository.save(t);
-        }
-
-        // 2. Eski Sessionları İşlendi Yap
-        List<ActiveSession> oldSessions = sessionRepository.findByTableIdAndCompletedTrue(tableId);
-        for (ActiveSession s : oldSessions) {
-            s.setProcessed(true);
-            sessionRepository.save(s);
         }
 
         // 3. Devir Fişi Oluştur
@@ -268,15 +291,18 @@ public class OperationService {
         rolloverTicket.setTenantId(tenantId);
         rolloverTicket.setTableId(tableId);
         rolloverTicket.setAmountKg(actualRemainingKg);
-        rolloverTicket.setCreatedAt(LocalDateTime.now());
-        rolloverTicket.setCreatedBy("SYSTEM_ROLLOVER");
+        rolloverTicket.setCreatedAt(now);
+        rolloverTicket.setCreatedBy("SYSTEM_ROLLOVER"); // Sistem devri
         rolloverTicket.setProcessed(false);
 
         OperationTicket saved = ticketRepository.save(rolloverTicket);
+
+        // Herkesi uyar
         broadcastUpdate(tenantId, "TABLES_REFRESH", null);
+        broadcastUpdate(tenantId, "SESSION_UPDATE", null); // İşçiler de değiştiği için
+
         return saved;
     }
-
     @Transactional
     public void closeAllRemainingTablesWithZero() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
