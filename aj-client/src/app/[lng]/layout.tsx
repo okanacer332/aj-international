@@ -38,6 +38,14 @@ export const metadata: Metadata = {
   authors: [{ name: "ACR Tech", url: "https://acrtech.com" }], // Varsa site adresin
 };
 
+export const viewport = {
+  themeColor: '#1A1919', // Üst çubuğun rengi (logo ile uyumlu)
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false, // Kullanıcının zoom yapmasını engeller (App hissi verir)
+}
+
 export async function generateStaticParams() {
   return supportedLngs.map((lng) => ({ lng }));
 }

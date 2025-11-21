@@ -6,9 +6,10 @@ import { fallbackLng, supportedLngs } from './lib/i18n';
 acceptLanguage.languages(supportedLngs);
 
 export const config = {
-  // Middleware'in hangi yollarda çalışacağını belirtir.
-  // API, Next.js'in statik dosyaları ve imajları hariç tüm yollarda çalışmasını sağlıyoruz.
-  matcher: ['/((?!api|_next/static|_next/image|assets|favicon.ico|sw.js).*)'],
+  // Değişiklik burada: manifest.webmanifest ve icon.svg hariç tutulmalı
+  matcher: [
+    '/((?!api|_next/static|_next/image|assets|favicon.ico|sw.js|manifest.webmanifest|icon.svg).*)'
+  ],
 };
 
 const cookieName = 'i18next';
@@ -78,3 +79,4 @@ export function middleware(req: NextRequest) {
 
   return response;
 }
+
