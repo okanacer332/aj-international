@@ -8,8 +8,8 @@ acceptLanguage.languages(supportedLngs);
 export const config = {
   // Değişiklik burada: manifest.webmanifest ve icon.svg hariç tutulmalı
   matcher: [
-    '/((?!api|_next/static|_next/image|assets|favicon.ico|sw.js|manifest.webmanifest|icon.svg).*)'
-  ],
+  '/((?!api|_next/static|_next/image|assets|favicon.ico|sw.js|manifest.webmanifest|icon.svg).*)'
+],
 };
 
 const cookieName = 'i18next';
