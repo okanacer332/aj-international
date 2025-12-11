@@ -1,4 +1,3 @@
-// @ts-nocheck
 // src/app/[lng]/(main)/dashboard/layout.tsx
 import { ReactNode } from "react";
 import { cookies } from "next/headers";
@@ -25,17 +24,17 @@ import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { SidebarInitializer } from "./_components/sidebar-initializer";
 
+// DÜZELTME 1: params tipi Promise olarak güncellendi
 type LayoutParams = {
-  params: { lng: string }; // Promise tipi burada gerekli değil, async fonksiyonda çözülecek
+  params: Promise<{ lng: string }>; 
   children: ReactNode;
 };
 
-export default async function Layout({ children, params }: Readonly<LayoutParams>) {
+export default async function Layout({ children, params }: LayoutParams) {
   noStore();
 
-  // GÜNCELLEME: 'params' promise'ını 'await' ile çözüyoruz
-  const resolvedParams = await params;
-  const lng = resolvedParams.lng;
+  // DÜZELTME 2: params promise'ı await ile çözüldü
+  const { lng } = await params;
 
   const cookieStore = await cookies();
 

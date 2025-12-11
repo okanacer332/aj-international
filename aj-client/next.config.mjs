@@ -1,92 +1,30 @@
-import withPWAInit from "@ducanh2912/next-pwa";
-
-const withPWA = withPWAInit({
-  dest: "public",
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
-  reloadOnOnline: true,
-  disable: false, // false = localhost dahil her yerde PWA aktif olsun
-  workboxOptions: {
-    disableDevLogs: true,
-  },
-});
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Sunucu işlemcisi eski olduğu için optimizasyonu kapatıyoruz (Her yerde geçerli)
+  images: {
+    unoptimized: true,
+  },
+  // Build hatasını önlemek için (Her yerde geçerli)
   eslint: {
     ignoreDuringBuilds: true,
   },
-  
-  compiler: {
-    removeConsole: process.env.NODE_ENV === "production",
-  },
-  
-  // KRİTİK DEĞİŞİKLİK: BUILD SIRASINDA TIP KONTROLÜNÜ KAPAT
-  typescript: {
-    ignoreBuildErrors: true, 
-  },
-  
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '8080',
-        // DOĞRU YOL: Backend'den gelen "/uploads/" ile başlayan tüm yollara izin ver.
-        pathname: '/uploads/**',
-      },
-      // KRİTİK DEĞİŞİKLİK BURADA: Canlı ortam IP adresi eklendi
-      {
-        protocol: 'http',
-        hostname: '213.74.252.238',
-        port: '8080',
-        pathname: '/uploads/**',
-      },
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '3344', // Hata mesajındaki port
-        pathname: '/uploads/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '192.168.1.203',
-        port: '8080',
-        pathname: '/uploads/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'app.ajkalite.xyz',
-      },
-      {
-        protocol: 'http',
-        hostname: 'app.ajkalite.xyz',
-      },
-    ],
-  },
+  // Standalone çıktı (Sunucuya transferi kolaylaştırır)
+  output: "standalone",
 
-  async redirects() {
-    return [
-      {
-        source: "/dashboard",
-        destination: "/dashboard/default",
-        permanent: false,
-      },
-    ];
-  },
-
+  // API Yönlendirmesi (DİNAMİK)
   async rewrites() {
+    // Ortam değişkeninden okuyoruz, yoksa varsayılan olarak locale (3344) düşüyoruz.
+    const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3344';
+    
+    console.log(`🚀 Proxy Hedefi: ${backendUrl}`); // Build/Start sırasında terminalde görmek için
+
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3344/api/:path*', // Backend Portun
+        destination: `${backendUrl}/api/:path*`, 
       },
-      {
-        source: '/uploads/:path*',
-        destination: 'http://localhost:3344/uploads/:path*', // Resimler için
-      },
-    ]
+    ];
   },
-}
+};
 
-export default withPWA(nextConfig);
+export default nextConfig;

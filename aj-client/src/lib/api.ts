@@ -5,7 +5,7 @@
 
 export const API_BASE =
   typeof window === 'undefined'
-    ? (process.env.API_BASE_SERVER ?? "http://localhost:8080")
+    ? (process.env.API_BASE_SERVER ?? "http://localhost:3344")
     : "";
 
 export async function apiFetch(path: string, options: RequestInit = {}) {

@@ -1,11 +1,11 @@
-// aj-client/src/app/[lng]/(main)/dashboard/inventory/definitions/materials/columns.tsx
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { MaterialDefinition } from "./material-definition-form"; // Formdan tipi al
+import { MaterialDefinition } from "./material-definition-form";
+import { Badge } from "@/components/ui/badge"; // Badge eklendi, opsiyonel
 
 export const createMaterialDefinitionColumns = ({
   onEdit,
@@ -25,6 +25,7 @@ export const createMaterialDefinitionColumns = ({
         t={t}
       />
     ),
+    enableHiding: false, // İsim sütunu genelde gizlenmez
   },
   {
     accessorKey: "code",
@@ -35,6 +36,7 @@ export const createMaterialDefinitionColumns = ({
         t={t}
       />
     ),
+    enableHiding: true, // Kullanıcı isterse kodu gizleyebilir
   },
   {
     accessorKey: "description",
@@ -46,11 +48,29 @@ export const createMaterialDefinitionColumns = ({
       />
     ),
     cell: ({ row }) => (
-      <span className="text-muted-foreground truncate">
+      <span className="text-muted-foreground truncate max-w-[200px] block" title={row.original.description}>
         {row.original.description || "---"}
       </span>
     ),
+    enableHiding: true,
   },
+  // ÖRNEK: Eğer 'category' gibi bir alanın varsa ve bunu filtrelemek istiyorsan:
+  /*
+  {
+    accessorKey: "category",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t("masterdata.material.column.category")} t={t} />
+    ),
+    cell: ({ row }) => {
+       const category = row.getValue("category") as string;
+       return category ? <Badge variant="outline">{category}</Badge> : null;
+    },
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id));
+    },
+    enableHiding: true,
+  },
+  */
   {
     id: "actions",
     header: () => (
@@ -65,6 +85,7 @@ export const createMaterialDefinitionColumns = ({
           onClick={() => onEdit(row.original)}
         >
           <Edit className="size-4" />
+          <span className="sr-only">{t("common.edit")}</span>
         </Button>
         <Button
           variant="ghost"
@@ -73,6 +94,7 @@ export const createMaterialDefinitionColumns = ({
           onClick={() => onDelete(row.original)}
         >
           <Trash2 className="size-4 text-destructive" />
+          <span className="sr-only">{t("common.delete")}</span>
         </Button>
       </div>
     ),

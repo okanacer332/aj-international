@@ -25,14 +25,18 @@ type UseDataTableInstanceProps<TData, TValue> = {
   // Sunucu taraflı sayfalama
   manualPagination?: boolean;
   pageCount?: number;
-  pagination?: PaginationState;
+  pagination?: PaginationState; // Dışarıdan gelen sayfalama state'i
+  controlledPagination?: PaginationState; // (Alternatif isimlendirme desteği için)
   onPaginationChange?: OnChangeFn<PaginationState>;
   
   // Global Filtre (Arama)
   onGlobalFilterChange?: OnChangeFn<string>;
   
   // Kolon Filtreleme (Durum vb.)
-  onColumnFiltersChange?: OnChangeFn<ColumnFiltersState>; // <-- BU SATIR EKLENDİ
+  onColumnFiltersChange?: OnChangeFn<ColumnFiltersState>;
+
+  // YENİ EKLENDİ: Kolon Görünürlüğü (Visibility)
+  onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
   
   // Dışarıdan state'i almak için
   state?: Partial<TableState>;
@@ -44,59 +48,75 @@ export function useDataTableInstance<TData, TValue>({
   getRowId,
   manualPagination = false,
   pageCount,
+  pagination: propPagination, // İsim çakışmasını önlemek için alias
   controlledPagination,
   onPaginationChange,
   onGlobalFilterChange,
-  onColumnFiltersChange, // <-- PROP ALINDI
+  onColumnFiltersChange,
+  onColumnVisibilityChange, // <-- ARTIK PROP OLARAK ALINIYOR
   state: controlledState = {},
 }: UseDataTableInstanceProps<TData, TValue>) {
   
-  // Kendi iç state'leri (sayfa tarafından yönetilmeyenler)
+  // -- LOCAL STATES (Fallback) --
+  // Eğer dışarıdan yönetilmiyorsa bu yerel state'ler kullanılır.
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [sorting, setSorting] = React.useState<SortingState>([]); // <-- Sıralama state'i burada
-
-  // Sayfalama state'i
-  const [internalPagination, setInternalPagination] =
-    React.useState<PaginationState>({
+  const [internalColumnVisibility, setInternalColumnVisibility] = React.useState<VisibilityState>({});
+  const [internalSorting, setInternalSorting] = React.useState<SortingState>([]);
+  const [internalPagination, setInternalPagination] = React.useState<PaginationState>({
       pageIndex: 0,
       pageSize: 10,
-    });
+  });
 
-  const pagination = controlledPagination ?? internalPagination;
+  // -- STATE RESOLUTION (External vs Internal) --
+  
+  // Pagination: Dışarıdan geldiyse onu kullan, yoksa içeridekini
+  const pagination = controlledPagination ?? propPagination ?? internalPagination;
   const setPagination = onPaginationChange ?? setInternalPagination;
+
+  // Visibility: Dışarıdan geldiyse onu kullan (controlledState içinden bakıyoruz), yoksa içeridekini
+  const columnVisibility = controlledState.columnVisibility ?? internalColumnVisibility;
+  const setColumnVisibility = onColumnVisibilityChange ?? setInternalColumnVisibility;
+
+  // Sorting: Dışarıdan geldiyse onu kullan, yoksa içeridekini
+  const sorting = controlledState.sorting ?? internalSorting;
+  // Eğer dışarıdan sorting handler gelirse onu da buraya ekleyebilirsin, şimdilik internal set
+  const setSorting = (updater: any) => {
+      // Eğer dışarıdan bir onSortingChange prop'u eklersek burası güncellenmeli.
+      // Şimdilik sadece internal çalışıyor gibi görünüyor ama state dışarıdan beslenebiliyor.
+      setInternalSorting(updater);
+  };
 
   const table = useReactTable({
     data,
     columns,
 
-    // GÜNCELLEME: Dışarıdan gelen state ({ globalFilter, columnFilters })
-    // ile içeride yönetilen state'leri ({ sorting, ... }) birleştiriyoruz.
     state: {
+      // Merge order important: Internal defaults < Controlled State
       sorting,
       columnVisibility,
       rowSelection,
       pagination,
-      ...controlledState, // { globalFilter, columnFilters } buraya gelecek
+      ...controlledState, // Dışarıdan gelen her şey (globalFilter, columnFilters vb.)
     },
 
     manualPagination,
     pageCount,
+    
+    // Handlers
     onPaginationChange: setPagination,
-
     globalFilterFn: filterFns.includesString,
     onGlobalFilterChange: onGlobalFilterChange,
+    onColumnFiltersChange: onColumnFiltersChange,
     
-    // GÜNCELLEME: Filtre değişikliği fonksiyonunu bağlıyoruz
-    onColumnFiltersChange: onColumnFiltersChange, // <-- BU SATIR EKLENDİ
+    onSortingChange: setSorting,
 
-    onSortingChange: setSorting, // <-- Sıralama fonksiyonunu bağlıyoruz
+    // Visibility Handler (DÜZELTİLDİ)
+    onColumnVisibilityChange: setColumnVisibility, // Artık dışarıdan geleni kullanabiliyor
 
     enableRowSelection: true,
     getRowId: getRowId ?? ((row) => (row as any).id.toString()),
     onRowSelectionChange: setRowSelection,
-    onColumnVisibilityChange: setColumnVisibility,
+    
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),

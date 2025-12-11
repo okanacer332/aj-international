@@ -1,37 +1,48 @@
-"use client";
+"use client"
 
-import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
-import { Table } from "@tanstack/react-table";
-import { Settings2 } from "lucide-react";
+import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu"
+import { Settings2 } from "lucide-react"
+import { Table } from "@tanstack/react-table"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu"
 
 interface DataTableViewOptionsProps<TData> {
-  table: Table<TData>;
+  table: Table<TData>
 }
 
-export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps<TData>) {
+export function DataTableViewOptions<TData>({
+  table,
+}: DataTableViewOptionsProps<TData>) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="ml-auto hidden h-8 lg:flex">
-          <Settings2 />
-          View
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto h-8 flex" // 'hidden' sınıfı kaldırıldı
+        >
+          <Settings2 className="mr-2 h-4 w-4" />
+          {/* Mobilde "Görünüm" yazısını gizle, sadece ikon kalsın (isteğe bağlı) */}
+          <span className="hidden sm:inline">Görünüm</span> 
+          <span className="sm:hidden">Sütunlar</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[150px]">
-        <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+        <DropdownMenuLabel>Sütunları Aç/Kapat</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {table
           .getAllColumns()
-          .filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())
+          .filter(
+            (column) =>
+              typeof column.accessorFn !== "undefined" && column.getCanHide()
+          )
           .map((column) => {
             return (
               <DropdownMenuCheckboxItem
@@ -40,11 +51,18 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
+                {/* Kolon ID'si yerine header'ı basmak daha şık olabilir ama ID garanti çözüm */}
                 {column.id}
               </DropdownMenuCheckboxItem>
-            );
+            )
           })}
+        {/* Eğer hiç gizlenebilir sütun yoksa kullanıcıya bilgi ver */}
+        {table.getAllColumns().filter((col) => col.getCanHide()).length === 0 && (
+           <div className="p-2 text-xs text-muted-foreground text-center">
+             Gizlenebilir sütun yok.
+           </div>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }
