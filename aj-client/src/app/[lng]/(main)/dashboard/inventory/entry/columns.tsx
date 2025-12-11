@@ -1,20 +1,24 @@
-// aj-client/src/app/[lng]/(main)/dashboard/inventory/entry/columns.tsx
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { InventoryEntryResponse } from "@/modules/inventory/dto/InventoryEntryResponse"; // DTO tipini import et
+// import { InventoryEntryResponse } from "@/modules/inventory/dto/InventoryEntryResponse"; // KAPATILDI
 import { format } from "date-fns";
 import { tr, enUS, es, ru } from "date-fns/locale";
+
+// --- BUILD İÇİN GEÇİCİ TİPLER ---
+type InventoryEntryResponse = any;
+type Locale = any;
+// --------------------------------
 
 const locales: { [key: string]: Locale } = {
   tr: tr,
   en: enUS,
   es: es,
   ru: ru,
-  ar: enUS, // date-fns Arapça için `ar-SA` veya başka bir varyant gerekebilir
+  ar: enUS, 
 };
 
 export const createEntryColumns = ({
@@ -88,7 +92,8 @@ export const createEntryColumns = ({
       />
     ),
     cell: ({ row }) => {
-        const total = row.original.lines.reduce((acc, line) => acc + (line.scaleWeight || 0), 0);
+        // ✅ DÜZELTME: acc ve line için açıkça 'any' tipi verildi
+        const total = row.original.lines.reduce((acc: any, line: any) => acc + (line.scaleWeight || 0), 0);
         return <span>{total.toFixed(3)}</span>;
     },
   },

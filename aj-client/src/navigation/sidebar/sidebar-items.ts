@@ -32,6 +32,7 @@ export interface NavSubItem {
   url: string;
   icon?: LucideIcon;
   comingSoon?: boolean;
+  permission?: string;
   // permission?: string; // Kullanıcı isteği üzerine kaldırıldı/kullanılmıyor
 }
 export interface NavMainItem {

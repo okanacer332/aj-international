@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
-// i18n için gerekli importları ekliyoruz
+// i18n için gerekli importlar
 import { supportedLngs } from "@/lib/i18n";
 
 import { Toaster } from "@/components/ui/sonner";
@@ -32,40 +32,40 @@ export const metadata: Metadata = {
   },
   description: "ACR Tech tarafından geliştirilmiş yeni nesil operasyon yönetim sistemi.",
   icons: {
-    icon: "/favicon.ico", // Kendi ikonunu koyacağız
+    icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
-  authors: [{ name: "ACR Tech", url: "https://acrtech.com" }], // Varsa site adresin
+  authors: [{ name: "ACR Tech", url: "https://acrtech.com" }],
 };
 
 export const viewport = {
-  themeColor: '#1A1919', // Üst çubuğun rengi (logo ile uyumlu)
+  themeColor: '#1A1919',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  userScalable: false, // Kullanıcının zoom yapmasını engeller (App hissi verir)
+  userScalable: false,
 }
 
 export async function generateStaticParams() {
   return supportedLngs.map((lng) => ({ lng }));
 }
 
-// --- DOĞRU GÜNCELLEME (TEK FONKSİYON) ---
-export default async function RootLayout({
-  children,
-  params
-}: Readonly<{
+// ✅ DÜZELTME: params tipini Promise olarak güncelledik
+type RootLayoutProps = Readonly<{
   children: ReactNode;
-  params: { lng: string }; // Tip async fonksiyonda Next.js tarafından çözülür
-}>) {
+  params: Promise<{ lng: string }>; 
+}>;
 
-  // Hata buradaydı: 'params.lng'ye doğrudan erişmek yerine 'params' objesini beklemeliyiz.
-  const resolvedParams = await params;
-  const lng = resolvedParams.lng;
+export default async function RootLayout({ children, params }: RootLayoutProps) {
+  
+  // ✅ DÜZELTME: params'ı await ile çözümlüyoruz
+  const { lng } = await params;
 
+  // Sunucu tarafında kullanıcı tercihlerini çekiyoruz
   const themeMode = await getPreference<ThemeMode>("theme_mode", THEME_MODE_VALUES, "light");
   const themePreset = await getPreference<ThemePreset>("theme_preset", THEME_PRESET_VALUES, "default");
 
+  // Dilin yönünü (LTR/RTL) belirliyoruz
   const direction = localeConfig[lng]?.dir || 'ltr';
 
   return (

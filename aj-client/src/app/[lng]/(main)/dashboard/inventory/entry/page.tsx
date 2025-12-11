@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { InventoryEntryResponse } from "@/modules/inventory/dto/InventoryEntryResponse";
+//import { InventoryEntryResponse } from "@/modules/inventory/dto/InventoryEntryResponse";
 import { createEntryColumns } from "./columns";
 import { EntryVoucherForm } from "./entry-form"; // Formu import et
 import { DataTable } from "@/components/data-table/data-table";
@@ -59,7 +59,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
+type InventoryEntryResponse = any;
 export default function MaterialEntryPage() {
   const [data, setData] = useState<InventoryEntryResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);

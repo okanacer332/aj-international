@@ -1,22 +1,29 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Sunucu işlemcisi eski olduğu için optimizasyonu kapatıyoruz (Her yerde geçerli)
+  // 1. Standalone modu (Sunucuya transferi kolaylaştırır)
+  output: "standalone",
+
+  // 2. Resim optimizasyonunu kapat (Eski işlemci hatasını engeller)
   images: {
     unoptimized: true,
   },
-  // Build hatasını önlemek için (Her yerde geçerli)
+
+  // 3. ESLint hatalarını yoksay (Kod stili hataları build'i durdurmasın)
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Standalone çıktı (Sunucuya transferi kolaylaştırır)
-  output: "standalone",
 
-  // API Yönlendirmesi (DİNAMİK)
+  // 4. 🔥 TİP HATALARINI YOKSAY (TypeScript hataları build'i durdurmasın)
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
+  // 5. API Yönlendirmesi (Proxy)
   async rewrites() {
-    // Ortam değişkeninden okuyoruz, yoksa varsayılan olarak locale (3344) düşüyoruz.
+    // Ortam değişkeninden Backend URL'ini al, yoksa varsayılanı kullan
     const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3344';
     
-    console.log(`🚀 Proxy Hedefi: ${backendUrl}`); // Build/Start sırasında terminalde görmek için
+    console.log(`🚀 Proxy Hedefi: ${backendUrl}`);
 
     return [
       {

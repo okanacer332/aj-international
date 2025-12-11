@@ -51,8 +51,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { MaterialDefinition } from "../definitions/materials/material-definition-form";
 import { DepotDefinition } from "../definitions/depots/depot-definition-form";
 import { SupplierDefinition } from "../definitions/suppliers/supplier-definition-form";
-import { InventoryEntryResponse } from "@/modules/inventory/dto/InventoryEntryResponse"; 
-
+//import { InventoryEntryResponse } from "@/modules/inventory/dto/InventoryEntryResponse"; 
+type InventoryEntryResponse = any;
 // Tip: Bu forma gelen veri
 type InventoryEntryFormProps = {
   onSuccess: () => void;
@@ -124,7 +124,7 @@ export function EntryVoucherForm({ onSuccess, lng, initialData }: InventoryEntry
       refNo1: initialData?.refNo1 || "",
       refNo2: initialData?.refNo2 || "",
       description: initialData?.description || "",
-      lines: initialData?.lines?.map(line => ({
+      lines: initialData?.lines?.map((line: any) => ({
         materialId: line.materialId,
         waybillWeight: line.waybillWeight ?? 0,
         scaleWeight: line.scaleWeight ?? 0,

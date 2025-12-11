@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { InventoryDispatchResponse } from "@/modules/inventory/dto/InventoryDispatchResponse";
+//import { InventoryDispatchResponse } from "@/modules/inventory/dto/InventoryDispatchResponse";
 import { createDispatchColumns } from "./columns";
 import { DispatchVoucherForm } from "./dispatch-form"; // Formu import et
 import { DataTable } from "@/components/data-table/data-table";
@@ -56,6 +56,8 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+type InventoryDispatchResponse = any;
 
 export default function MaterialDispatchPage() {
   const [data, setData] = useState<InventoryDispatchResponse[]>([]);

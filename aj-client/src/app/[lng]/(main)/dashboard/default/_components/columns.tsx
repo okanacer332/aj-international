@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-import { DataTableColumnHeader } from "../../../../../components/data-table/data-table-column-header";
+import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 
 import { sectionSchema } from "./schema";
 import { TableCellViewer } from "./table-cell-viewer";
@@ -48,7 +48,7 @@ export const dashboardColumns: ColumnDef<z.infer<typeof sectionSchema>>[] = [
   },
   {
     accessorKey: "header",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Header" />,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Header" t={(key) => key}/>,
     cell: ({ row }) => {
       return <TableCellViewer item={row.original} />;
     },
@@ -56,7 +56,7 @@ export const dashboardColumns: ColumnDef<z.infer<typeof sectionSchema>>[] = [
   },
   {
     accessorKey: "type",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Section Type" />,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Section Type" t={(key) => key}/>,
     cell: ({ row }) => (
       <div className="w-32">
         <Badge variant="outline" className="text-muted-foreground px-1.5">
@@ -68,7 +68,7 @@ export const dashboardColumns: ColumnDef<z.infer<typeof sectionSchema>>[] = [
   },
   {
     accessorKey: "status",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" t={(key) => key}/>,
     cell: ({ row }) => (
       <Badge variant="outline" className="text-muted-foreground px-1.5">
         {row.original.status === "Done" ? (
@@ -83,7 +83,7 @@ export const dashboardColumns: ColumnDef<z.infer<typeof sectionSchema>>[] = [
   },
   {
     accessorKey: "target",
-    header: ({ column }) => <DataTableColumnHeader className="w-full text-right" column={column} title="Target" />,
+    header: ({ column }) => <DataTableColumnHeader className="w-full text-right" column={column} title="Target" t={(key) => key}/>,
     cell: ({ row }) => (
       <form
         onSubmit={(e) => {
@@ -109,7 +109,7 @@ export const dashboardColumns: ColumnDef<z.infer<typeof sectionSchema>>[] = [
   },
   {
     accessorKey: "limit",
-    header: ({ column }) => <DataTableColumnHeader className="w-full text-right" column={column} title="Limit" />,
+    header: ({ column }) => <DataTableColumnHeader className="w-full text-right" column={column} title="Limit" t={(key) => key}/>,
     cell: ({ row }) => (
       <form
         onSubmit={(e) => {
@@ -135,7 +135,7 @@ export const dashboardColumns: ColumnDef<z.infer<typeof sectionSchema>>[] = [
   },
   {
     accessorKey: "reviewer",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Reviewer" />,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Reviewer" t={(key) => key}/>,
     cell: ({ row }) => {
       const isAssigned = row.original.reviewer !== "Assign reviewer";
 

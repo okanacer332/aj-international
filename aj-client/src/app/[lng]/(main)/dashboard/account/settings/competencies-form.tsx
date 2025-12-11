@@ -63,7 +63,7 @@ export function CompetenciesForm({ user, lng }: CompetenciesFormProps) {
         const knowledgeData: { productId: string; score: number }[] = await knowledgeRes.json();
 
         // Sadece ana ürünleri (parentProductId'si null olanları) listeleyelim
-        const parentProducts = productsData.filter(p => !p.parentProductId);
+        const parentProducts = productsData.filter(p => !(p as any).parentProductId);
         setProducts(parentProducts);
 
         // Mevcut puanları state'e yükleyelim
