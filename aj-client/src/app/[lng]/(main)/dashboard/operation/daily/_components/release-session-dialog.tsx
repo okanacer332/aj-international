@@ -24,9 +24,11 @@ interface Props {
         processedKg: number;
         activeWorkerCount: number;
     };
+    // EKLENDİ: İşlem başarılı olduğunda tetiklenecek fonksiyon
+    onSuccess?: () => void;
 }
 
-export function ReleaseSessionDialog({ isOpen, onClose, session, tableData }: Props) {
+export function ReleaseSessionDialog({ isOpen, onClose, session, tableData, onSuccess }: Props) {
     const { t } = useTranslation("common");
     const [remainingInput, setRemainingInput] = useState<string>("");
     const [loading, setLoading] = useState(false);
@@ -77,6 +79,10 @@ export function ReleaseSessionDialog({ isOpen, onClose, session, tableData }: Pr
                 })
             });
             toast.success(t('operation.common.confirm'));
+            
+            // EKLENDİ: Başarılı işlem sonrası listeyi yenile
+            if (onSuccess) onSuccess();
+
             onClose();
             setRemainingInput(""); 
         } catch (e) {

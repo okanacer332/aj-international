@@ -28,13 +28,11 @@ interface TableStats {
     totalInputKg: number;
     totalOutputKg: number;
     remainingKg: number;
-    // Eğer backend stat endpoint'i totalPool dönmüyorsa 
-    // bunu client tarafında hesaplamak için totalInput yeterli olabilir
-    // ama backend OperationTable nesnesinde totalPoolKg var, onu kullanmak daha sağlıklı.
 }
 
 // ReleaseDialog için state tipi
 interface ReleaseState {
+    tableId: string; // <--- EKLENDİ: Hangi masadan silineceğini bilmek için
     session: { id: string; workerName: string; targetOutputKg: number };
     tableData: {
         totalPoolKg: number;
@@ -57,7 +55,6 @@ export default function PreSelectionOperationPage() {
   
   const [searchQuery, setSearchQuery] = useState("");
   
-  // DEĞİŞİKLİK 1: Diyalog için daha kapsamlı bir state
   const [releaseState, setReleaseState] = useState<ReleaseState | null>(null);
 
   // --- VERİLERİ ÇEKME ---
@@ -86,21 +83,19 @@ export default function PreSelectionOperationPage() {
         }
     } catch (e) {
         console.error("Veri yükleme hatası", e);
-        toast.error(t('operation.daily.messages.loading'));
     } finally {
         setIsLoading(false);
     }
-  }, [t]);
+  }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
 
   // --- WEBSOCKET ---
   useOperationSocket(useCallback((msg) => {
       setIsSocketConnected(true);
-      // Backend'den gelen WORK_FINISHED, SESSION_UPDATE vb. eventleri dinliyoruz
       if (["SESSION_UPDATE", "TABLES_REFRESH", "TICKET_UPDATE", "WORK_FINISHED"].includes(msg.type)) {
           setLastEventTime(new Date());
-          loadData(); // Sayfayı yenile
+          loadData();
       }
   }, [loadData]));
 
@@ -108,16 +103,12 @@ export default function PreSelectionOperationPage() {
 
   // --- AKSİYONLAR ---
   
-  // DEĞİŞİKLİK 2: Diyalog açarken masa verilerini de alıyoruz
   const openReleaseDialog = (session: TableSession, tableId: string) => {
-      // Masayı tables listesinden bul (Çünkü totalPoolKg orada)
       const tableInfo = tables.find(t => t.id === tableId);
       const activeCount = tableSessions[tableId]?.length || 0;
-
-      // Eğer tableInfo içinde processedKg yoksa (eski tip olabilir), stats'tan okumayı dene
-      // Ancak en doğrusu OperationTable nesnesinin güncel olmasıdır.
       
       setReleaseState({
+          tableId: tableId, // <--- ID'yi buraya kaydediyoruz
           session: {
               id: session.sessionId,
               workerName: session.workerName,
@@ -129,6 +120,27 @@ export default function PreSelectionOperationPage() {
               activeWorkerCount: activeCount
           }
       });
+  };
+
+  // --- YENİ EKLENEN: OPTIMISTIC UPDATE ---
+  // API başarılı dediği an, sunucudan listenin gelmesini beklemeden
+  // biz elimizle o kişiyi ekrandan siliyoruz.
+  const handleOptimisticRelease = () => {
+      if (!releaseState) return;
+
+      const { tableId, session } = releaseState;
+
+      // 1. ANINDA GÜNCELLEME (Optimistic Update)
+      setTableSessions(prev => {
+          const currentSessions = prev[tableId] || [];
+          return {
+              ...prev,
+              [tableId]: currentSessions.filter(s => s.sessionId !== session.id)
+          };
+      });
+
+      // 2. Arka planda gerçek veriyi yine de çek (İstatistikler vs. için)
+      loadData();
   };
 
   const filteredTables = tables.filter(table => 
@@ -152,7 +164,7 @@ export default function PreSelectionOperationPage() {
   return (
     <div className="p-4 md:p-6 space-y-6 h-full flex flex-col">
         
-        {/* 1. ÜST PANEL (Aynı) */}
+        {/* 1. ÜST PANEL */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-background/95 backdrop-blur p-4 rounded-xl border shadow-sm sticky top-0 z-30">
             <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-3">
@@ -197,14 +209,10 @@ export default function PreSelectionOperationPage() {
                 const activeSessions = tableSessions[table.id] || [];
                 const stats = tableStats[table.id] || { totalInputKg: 0, totalOutputKg: 0, remainingKg: 0 };
                 const isActive = activeSessions.length > 0;
-
-                // Backend'den gelen güncel havuz verisi (Smart Manager için de lazım)
-                // table.totalPoolKg backend tarafından doldurulmuş olmalı.
                 
                 return (
                     <Card key={table.id} className={`relative overflow-hidden transition-all duration-300 border-t-[5px] flex flex-col shadow-sm hover:shadow-md ${isActive ? 'border-t-green-500 bg-card' : 'border-t-muted-foreground/20 bg-muted/5 opacity-95'}`}>
                         
-                        {/* KART BAŞLIĞI */}
                         <CardHeader className="pb-2 flex flex-row items-center justify-between border-b px-4 py-3 bg-muted/10">
                             <div className="flex items-center gap-3">
                                 <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}/>
@@ -277,7 +285,6 @@ export default function PreSelectionOperationPage() {
                                                             <div className="mt-0.5"><LiveDuration startTime={session.startTime} /></div>
                                                         </div>
                                                     </div>
-                                                    {/* ÇIKIŞ BUTONU: openReleaseDialog'a table.id'yi de gönderiyoruz */}
                                                     <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" onClick={() => openReleaseDialog(session, table.id)}>
                                                         <LogOut className="h-4 w-4" />
                                                     </Button>
@@ -288,14 +295,13 @@ export default function PreSelectionOperationPage() {
                                 )}
                             </div>
                             
-                            {/* YÖNETİCİ PANELİ (V4.8: TEK YÖNETİCİ) */}
                             <div className="mt-auto pt-2 space-y-2 border-t">
                                 <SmartTableManager 
                                     tableId={table.id} 
                                     tableName={table.tableNo} 
                                     currentStock={stats.remainingKg} 
                                     activeWorkerCount={activeSessions.length}
-                                    allTables={tables} // Tüm tablo verilerini (pool bilgisi dahil) gönderiyoruz
+                                    allTables={tables} 
                                     onSuccess={loadData} 
                                 />
                             </div>
@@ -306,13 +312,14 @@ export default function PreSelectionOperationPage() {
             })}
         </div>
 
-        {/* REALEASE DIALOG: State'ten gelen verileri alıyoruz */}
+        {/* DIALOG: onSuccess olarak handleOptimisticRelease veriyoruz */}
         {releaseState && (
             <ReleaseSessionDialog 
                 isOpen={true} 
                 onClose={() => setReleaseState(null)} 
                 session={releaseState.session}
                 tableData={releaseState.tableData}
+                onSuccess={handleOptimisticRelease} // <--- DÜZELTME BURADA
             />
         )}
     </div>
