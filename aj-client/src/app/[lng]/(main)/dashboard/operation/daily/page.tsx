@@ -32,7 +32,7 @@ interface TableStats {
 
 // ReleaseDialog için state tipi
 interface ReleaseState {
-    tableId: string; // <--- EKLENDİ: Hangi masadan silineceğini bilmek için
+    tableId: string;
     session: { id: string; workerName: string; targetOutputKg: number };
     tableData: {
         totalPoolKg: number;
@@ -108,7 +108,7 @@ export default function PreSelectionOperationPage() {
       const activeCount = tableSessions[tableId]?.length || 0;
       
       setReleaseState({
-          tableId: tableId, // <--- ID'yi buraya kaydediyoruz
+          tableId: tableId,
           session: {
               id: session.sessionId,
               workerName: session.workerName,
@@ -122,15 +122,11 @@ export default function PreSelectionOperationPage() {
       });
   };
 
-  // --- YENİ EKLENEN: OPTIMISTIC UPDATE ---
-  // API başarılı dediği an, sunucudan listenin gelmesini beklemeden
-  // biz elimizle o kişiyi ekrandan siliyoruz.
   const handleOptimisticRelease = () => {
       if (!releaseState) return;
 
       const { tableId, session } = releaseState;
 
-      // 1. ANINDA GÜNCELLEME (Optimistic Update)
       setTableSessions(prev => {
           const currentSessions = prev[tableId] || [];
           return {
@@ -139,7 +135,6 @@ export default function PreSelectionOperationPage() {
           };
       });
 
-      // 2. Arka planda gerçek veriyi yine de çek (İstatistikler vs. için)
       loadData();
   };
 
@@ -147,10 +142,14 @@ export default function PreSelectionOperationPage() {
     table.tableNo.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const openTablesCount = tables.filter(t => {
+  // --- DÜZELTME BURADA: Sadece sayı değil, açık masaların listesini oluşturuyoruz ---
+  const openTablesList = tables.filter(t => {
       const stat = tableStats[t.id];
-      return stat && (stat.remainingKg !== 0 || stat.totalInputKg > 0);
-  }).length;
+      const hasActiveSessions = tableSessions[t.id]?.length > 0;
+      
+      // Masa açık mı? (İçinde işçi var VEYA bakiye var VEYA giriş yapılmış)
+      return hasActiveSessions || (stat && (stat.remainingKg !== 0 || stat.totalInputKg > 0));
+  });
 
   if (isLoading && tables.length === 0) {
       return (
@@ -186,7 +185,12 @@ export default function PreSelectionOperationPage() {
             </div>
 
             <div className="flex items-center gap-2 w-full md:w-auto">
-                <BulkCloseDialog totalOpenTables={openTablesCount} onSuccess={loadData} />
+                {/* DÜZELTME: totalOpenTables yerine openTables prop'unu kullanıyoruz */}
+                <BulkCloseDialog 
+                    openTables={openTablesList} 
+                    onSuccess={loadData} 
+                />
+                
                 <div className="relative w-full md:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
@@ -296,20 +300,15 @@ export default function PreSelectionOperationPage() {
                             </div>
                             
                             <div className="mt-auto pt-2 space-y-2 border-t">
-    <SmartTableManager 
-        tableId={table.id} 
-        tableName={table.tableNo} 
-        currentStock={stats.remainingKg} 
-        
-        // DEĞİŞİKLİK BURADA:
-        // Eski: activeWorkerCount={activeSessions.length}
-        // Yeni:
-        activeSessions={activeSessions} // Tüm listeyi gönderiyoruz
-        
-        allTables={tables} 
-        onSuccess={loadData} 
-    />
-</div>
+                                <SmartTableManager 
+                                    tableId={table.id} 
+                                    tableName={table.tableNo} 
+                                    currentStock={stats.remainingKg} 
+                                    activeSessions={activeSessions}
+                                    allTables={tables} 
+                                    onSuccess={loadData} 
+                                />
+                            </div>
 
                         </CardContent>
                     </Card>
@@ -317,14 +316,13 @@ export default function PreSelectionOperationPage() {
             })}
         </div>
 
-        {/* DIALOG: onSuccess olarak handleOptimisticRelease veriyoruz */}
         {releaseState && (
             <ReleaseSessionDialog 
                 isOpen={true} 
                 onClose={() => setReleaseState(null)} 
                 session={releaseState.session}
                 tableData={releaseState.tableData}
-                onSuccess={handleOptimisticRelease} // <--- DÜZELTME BURADA
+                onSuccess={handleOptimisticRelease} 
             />
         )}
     </div>

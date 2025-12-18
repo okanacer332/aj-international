@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -161,7 +162,7 @@ public class OperationService {
         ticket.setTableId(request.tableId());
         ticket.setAmountKg(request.amountKg());
 
-        // --- TARİH AYARLAMASI (YENİ) ---
+        // --- TARİH AYARLAMASI ---
         if (request.customDate() != null && !request.customDate().isBlank()) {
             try {
                 // Frontend ISO string gönderir (örn: 2023-10-27T10:00:00.000Z)
@@ -175,7 +176,7 @@ public class OperationService {
         } else {
             ticket.setCreatedAt(LocalDateTime.now());
         }
-        // -------------------------------
+        // ------------------------
 
         try {
             ticket.setCreatedBy(TenantContextHolder.getCurrentUsername());
@@ -207,6 +208,7 @@ public class OperationService {
 
         return savedTicket;
     }
+
     @Transactional
     public List<ActiveSession> assignWorkers(AssignWorkerRequest request) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
@@ -258,10 +260,7 @@ public class OperationService {
     }
 
     /**
-     * MİMAR NOTU: Burası kritik.
-     * Artık sadece işçiyi çıkarmıyoruz.
-     * "Masada Kalan Mal" (remainingOnTableKg) parametresine göre
-     * ara hakediş (interim calculation) yapıyoruz.
+     * İşçiyi çıkarır ve hakediş dağıtır (Interim Ledger - Ara Hakediş)
      */
     @Transactional
     public ActiveSession releaseWorker(String sessionId, Double remainingOnTableKg) {
@@ -279,24 +278,16 @@ public class OperationService {
         String tenantId = sessionToClose.getTenantId();
 
         // 2. Havuz Hesaplaması (Dinamik Paylaşım)
-        // Eğer remainingOnTableKg NULL gelirse (hata olmasın diye), o anki teorik kalanı varsayalım.
-        // Ancak frontend mutlaka kalan miktarı girmeli.
         double currentPool = table.getTotalPoolKg() != null ? table.getTotalPoolKg() : 0.0;
         double previouslyProcessed = table.getProcessedKg() != null ? table.getProcessedKg() : 0.0;
 
-        // Input validation
         if (remainingOnTableKg == null) remainingOnTableKg = currentPool - previouslyProcessed;
         if (remainingOnTableKg < 0) remainingOnTableKg = 0.0;
 
-        // Formül: Toplam Havuz - Masada Kalan = Toplam Eritilen (Global)
         double totalConsumedIdeally = currentPool - remainingOnTableKg;
-
-        // Formül: Toplam Eritilen - Daha Önce Dağıtılan = Yeni Eritilen (Delta)
         double newDeltaProcessed = totalConsumedIdeally - previouslyProcessed;
 
         if (newDeltaProcessed < 0) {
-            // "Kalan miktar", "önceki kalan"dan büyük girilmişse matematiksel hata vardır veya iade olmuştur.
-            // Şimdilik 0 kabul edip devam edelim, negatife düşmesin.
             newDeltaProcessed = 0;
         }
 
@@ -307,7 +298,7 @@ public class OperationService {
         if (activeWorkerCount > 0 && newDeltaProcessed > 0) {
             double sharePerWorker = newDeltaProcessed / activeWorkerCount;
 
-            // Herkese payını dağıt (Veritabanında güncelle)
+            // Herkese payını dağıt
             for (ActiveSession s : activeSessions) {
                 double currentOutput = s.getActualOutputKg() != null ? s.getActualOutputKg() : 0.0;
                 s.setActualOutputKg(currentOutput + sharePerWorker);
@@ -321,11 +312,10 @@ public class OperationService {
 
         // 4. Çıkan Kişinin İşlemlerini Tamamla
         LocalDateTime now = LocalDateTime.now();
-        sessionToClose = sessionRepository.findById(sessionId).orElseThrow(); // Güncel halini tekrar çek
+        sessionToClose = sessionRepository.findById(sessionId).orElseThrow();
 
         sessionToClose.setEndTime(now);
         sessionToClose.setCompleted(true);
-        // actualOutputKg zaten yukarıdaki döngüde güncellendi (share eklendi)
 
         long actualDurationMinutes = ChronoUnit.MINUTES.between(sessionToClose.getStartTime(), now);
         if (actualDurationMinutes < 1) actualDurationMinutes = 1;
@@ -334,7 +324,7 @@ public class OperationService {
         LocalDate today = sessionToClose.getStartTime().toLocalDate();
         WorkerDailyLedger ledger = ledgerRepository
                 .findByTenantIdAndWorkerIdAndDate(tenantId, sessionToClose.getWorkerId(), today)
-                .orElse(null); // Hata fırlatma, belki kaydı yoktur.
+                .orElse(null);
 
         if (ledger != null) {
             ledger.setUsedMinutes(ledger.getUsedMinutes() + (int) actualDurationMinutes);
@@ -364,7 +354,7 @@ public class OperationService {
         OperationTable fromTable = tableRepository.findById(request.fromTableId()).orElseThrow();
         OperationTable toTable = tableRepository.findById(request.toTableId()).orElseThrow();
 
-        // Stok Kontrolü (Basit hesap: Toplam - İşlenen)
+        // Stok Kontrolü
         double currentFromPool = fromTable.getTotalPoolKg() != null ? fromTable.getTotalPoolKg() : 0.0;
         double currentFromProcessed = fromTable.getProcessedKg() != null ? fromTable.getProcessedKg() : 0.0;
         double remaining = currentFromPool - currentFromProcessed;
@@ -374,26 +364,24 @@ public class OperationService {
         }
 
         // 1. Masaların Havuzlarını Güncelle
-        // Kaynaktan düş
         fromTable.setTotalPoolKg(currentFromPool - request.amountKg());
         tableRepository.save(fromTable);
 
-        // Hedefe ekle
         double currentToPool = toTable.getTotalPoolKg() != null ? toTable.getTotalPoolKg() : 0.0;
         toTable.setTotalPoolKg(currentToPool + request.amountKg());
         tableRepository.save(toTable);
 
-        // 2. Ticket Logs (İzlenebilirlik için)
+        // 2. Ticket Logs (İzlenebilirlik)
         String user = "System";
         try { user = TenantContextHolder.getCurrentUsername(); } catch (Exception e) {}
 
         OperationTicket outTicket = new OperationTicket();
         outTicket.setTenantId(tenantId);
         outTicket.setTableId(request.fromTableId());
-        outTicket.setAmountKg(-request.amountKg()); // Eksi bakiye
+        outTicket.setAmountKg(-request.amountKg());
         outTicket.setCreatedAt(LocalDateTime.now());
         outTicket.setCreatedBy(user + " (Transfer -> " + toTable.getTableNo() + ")");
-        outTicket.setProcessed(true); // İşlendi kabul ediyoruz, havuzdan düştük
+        outTicket.setProcessed(true);
         ticketRepository.save(outTicket);
 
         OperationTicket inTicket = new OperationTicket();
@@ -402,7 +390,7 @@ public class OperationService {
         inTicket.setAmountKg(request.amountKg());
         inTicket.setCreatedAt(LocalDateTime.now());
         inTicket.setCreatedBy(user + " (Transfer <- " + fromTable.getTableNo() + ")");
-        inTicket.setProcessed(false); // Yeni masa için işlenecek fiş
+        inTicket.setProcessed(false);
         ticketRepository.save(inTicket);
 
         broadcastEvent(tenantId, "TRANSFER", Map.of(
@@ -421,10 +409,7 @@ public class OperationService {
         LocalDateTime now = LocalDateTime.now();
         OperationTable table = tableRepository.findById(tableId).orElseThrow();
 
-        // 1. Son bir "Ara Hakediş" (Final Distribution) yapalım
-        // Kapanışta masada kalan "actualRemainingKg" beyan edildiğine göre,
-        // önceki durum ile bu durum arasındaki farkı mevcut çalışanlara dağıtıp kapatmalıyız.
-
+        // 1. Son bir "Ara Hakediş" (Final Distribution)
         double currentPool = table.getTotalPoolKg() != null ? table.getTotalPoolKg() : 0.0;
         double previouslyProcessed = table.getProcessedKg() != null ? table.getProcessedKg() : 0.0;
 
@@ -467,7 +452,6 @@ public class OperationService {
         }
 
         // 4. Masayı Sıfırla ve Devir Fişi Oluştur
-        // YENİ DÖNEM BAŞLIYOR: Havuz = Devir Miktarı, Processed = 0
         table.setTotalPoolKg(actualRemainingKg);
         table.setProcessedKg(0.0);
         tableRepository.save(table);
@@ -492,21 +476,24 @@ public class OperationService {
         return saved;
     }
 
+    /**
+     * TOPLU KAPATMA - SEÇMELİ
+     * Gelen listedeki masaları kapatır, diğerlerine dokunmaz.
+     */
     @Transactional
-    public void closeAllRemainingTablesWithZero() {
+    public void bulkCloseTables(List<String> tableIds) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
-        List<OperationTable> allTables = tableRepository.findByTenantId(tenantId);
+
+        if (tableIds == null || tableIds.isEmpty()) return;
 
         int closedCount = 0;
-        for (OperationTable table : allTables) {
-            // Eğer masada işlenmemiş fiş varsa veya aktif oturum varsa kapat
-            boolean hasActive = !sessionRepository.findByTableIdAndCompletedFalse(table.getId()).isEmpty();
-            boolean hasPool = (table.getTotalPoolKg() != null && table.getTotalPoolKg() > 0);
 
-            if (hasActive || hasPool) {
-                closeTableAndRollover(table.getId(), 0.0);
-                closedCount++;
-            }
+        List<OperationTable> targetTables = tableRepository.findAllById(tableIds);
+
+        for (OperationTable table : targetTables) {
+            if (!table.getTenantId().equals(tenantId)) continue;
+            closeTableAndRollover(table.getId(), 0.0);
+            closedCount++;
         }
 
         if (closedCount > 0) {
@@ -514,19 +501,13 @@ public class OperationService {
         }
     }
 
+    // --- V5.0 DASHBOARD ANALİTİĞİ ---
+
     public TableStatsDto getTableStats(String tableId) {
         OperationTable table = tableRepository.findById(tableId).orElse(new OperationTable());
-
         double totalPool = table.getTotalPoolKg() != null ? table.getTotalPoolKg() : 0.0;
         double processed = table.getProcessedKg() != null ? table.getProcessedKg() : 0.0;
         double remaining = totalPool - processed;
-
-        // Frontend'e tutarlı veri dönmek için, ActiveSession'lardaki birikmişleri de toplayabiliriz
-        // ama processedKg zaten dağıtılanları tuttuğu için yeterli.
-
-        // Ancak Dashboard'da "Toplam Çıkan" için sessionları toplayabiliriz.
-        // Şimdilik basit matematik:
-
         return new TableStatsDto(tableId, totalPool, processed, remaining);
     }
 
@@ -555,22 +536,11 @@ public class OperationService {
                     name = p.getOnxCode();
                 }
             }
-            // Anlık birikmiş üretimi de gösterelim
             double currentOutput = s.getActualOutputKg() != null ? s.getActualOutputKg() : 0.0;
-
-            return new TableSessionDto(
-                    s.getId(),
-                    s.getWorkerId(),
-                    name,
-                    avatar,
-                    s.getStartTime(),
-                    s.getAssignedDurationMinutes(),
-                    currentOutput // Target yerine anlık kazancı gösterebiliriz veya DTO'yu güncellemek gerekebilir
-            );
+            return new TableSessionDto(s.getId(), s.getWorkerId(), name, avatar, s.getStartTime(), s.getAssignedDurationMinutes(), currentOutput);
         }).collect(Collectors.toList());
     }
 
-    // --- V5.0 DASHBOARD ANALİTİĞİ ---
     public FieldDashboardDto getFieldDashboardStats() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         LocalDate today = LocalDate.now();
@@ -593,36 +563,6 @@ public class OperationService {
             }
         }
 
-        // 1. Günlük Toplam Üretim (Biten Sessionlar + Masada İşlenmiş Ama Henüz Kapanmamış Olanlar)
-        // Bitenler:
-        List<ActiveSession> todayFinished = sessionRepository.findAll().stream()
-                .filter(s -> s.getTenantId().equals(tenantId) && s.isCompleted() && s.getEndTime().isAfter(startOfDay))
-                .toList();
-
-        double completedOutput = todayFinished.stream()
-                .mapToDouble(s -> s.getActualOutputKg() != null ? s.getActualOutputKg() : 0)
-                .sum();
-
-        // Aktif Masalardaki Processed Kısmı (Henüz session kapanmasa da işlendi):
-        double activeProcessed = tables.stream()
-                .mapToDouble(t -> t.getProcessedKg() != null ? t.getProcessedKg() : 0.0)
-                .sum();
-
-        // Not: Burada activeProcessed içinde bugün işlenmeyen (dünden kalan processed) olamaz,
-        // çünkü gün sonu rollover yapıldığında processed sıfırlanıyor.
-        // Yani processedKg = Bugün işlenen miktar.
-
-        double dailyTotalOutput = completedOutput + activeProcessed; // Yaklaşık doğru, ama activeProcessed'in bir kısmı completed sessionlara da gitmiş olabilir.
-        // DÜZELTME: Session'a işlenen rakam ile Table.processedKg senkron gidiyor.
-        // Eğer session kapanırsa completedOutput'a dahil oluyor.
-        // Eğer kapanmazsa activeProcessed içinde duruyor.
-        // Çakışmayı önlemek için Dashboard mantığını basitleştirelim:
-        // Sadece Table.processedKg (Canlı) + Completed Sessions (Arşiv) demek riskli çünkü session kapanınca table.processed düşmüyor (sadece rolloverda düşüyor).
-
-        // EN TEMİZ YÖNTEM: Tüm Sessionları (Aktif + Pasif) topla.
-        // Çünkü releaseWorker metodumuzda activeSession.setActualOutputKg() yapıyoruz.
-        // Yani her işçinin hakkı session objesinde yazılı.
-
         List<ActiveSession> allTodaySessions = sessionRepository.findAll().stream()
                 .filter(s -> s.getTenantId().equals(tenantId) && s.getStartTime().isAfter(startOfDay))
                 .toList();
@@ -630,6 +570,10 @@ public class OperationService {
         double realDailyTotal = allTodaySessions.stream()
                 .mapToDouble(s -> s.getActualOutputKg() != null ? s.getActualOutputKg() : 0)
                 .sum();
+
+        List<ActiveSession> todayFinished = allTodaySessions.stream()
+                .filter(ActiveSession::isCompleted)
+                .toList();
 
         return new FieldDashboardDto(
                 activeTables,
@@ -640,9 +584,8 @@ public class OperationService {
         );
     }
 
-    // DEMO DATA methodunu kısalttım, yer kaplamasın diye, aynı kalabilir.
     @Transactional
     public void generateDemoData() {
-        // Eski mantıkla aynı kalabilir, sadece table.setTotalPoolKg eklemek gerekir.
+        // ... (Eski demo kodları buraya gelebilir, yer kaplamaması için kısalttım)
     }
 }

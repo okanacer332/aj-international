@@ -27,7 +27,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "Aj International | ACRTech",
+    default: "ACRTech | Aj International ",
     template: "%s | ACR Tech"
   },
   description: "ACRTech tarafından geliştirilmiş yeni nesil operasyon yönetim sistemi.",

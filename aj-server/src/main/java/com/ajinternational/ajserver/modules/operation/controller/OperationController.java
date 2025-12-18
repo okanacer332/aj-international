@@ -75,10 +75,8 @@ public class OperationController {
         return ResponseEntity.ok(service.assignWorkers(request));
     }
 
-    @PostMapping("/worker/release") // Endpoint yolu projene göre değişebilir
+    @PostMapping("/worker/release")
     public ResponseEntity<ActiveSession> releaseWorker(@RequestBody ReleaseWorkerRequest request) {
-        // HATA BURADAYDI: service.releaseWorker(request) diyordu.
-        // DÜZELTME: Parametreleri tek tek geçiyoruz.
         return ResponseEntity.ok(service.releaseWorker(request.sessionId(), request.remainingOnTableKg()));
     }
 
@@ -107,10 +105,14 @@ public class OperationController {
         return ResponseEntity.ok(service.closeTableAndRollover(tableId, actualRemainingKg));
     }
 
-    @PostMapping("/close-all-empty")
+    /**
+     * TOPLU KAPATMA (SEÇMELİ)
+     * Seçilen masaları 0 bakiye ile kapatır ve devir işlemini yapar.
+     */
+    @PostMapping("/close-all")
     @HasPermission("PAGE_OPERATION_DAILY:WRITE")
-    public ResponseEntity<Void> closeAllEmptyTables() {
-        service.closeAllRemainingTablesWithZero();
+    public ResponseEntity<Void> closeSelectedTables(@RequestBody List<String> tableIds) {
+        service.bulkCloseTables(tableIds);
         return ResponseEntity.ok().build();
     }
 
