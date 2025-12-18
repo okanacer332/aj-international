@@ -12,13 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { apiFetchAuth, API_BASE } from "@/lib/api-auth";
 import { WorkerAvailability, OperationTable, TableSession } from "@/types/operation";
 import { toast } from "sonner";
-import { Ticket, Loader2, Search, Clock, ArrowRightLeft, PlayCircle, AlertTriangle, Users, Plus, ChevronLeft, UserPlus, Info, CalendarIcon } from "lucide-react";
+import { Ticket, Loader2, Search, Clock, ArrowRightLeft, PlayCircle, AlertTriangle, Users, Plus, ChevronLeft, UserPlus, Info, CalendarIcon, Trash2, Calculator } from "lucide-react";
 import { getInitials, cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { tr } from "date-fns/locale"; // Türkçe tarih formatı için
+import { tr } from "date-fns/locale";
 
 interface Props {
     tableId: string;
@@ -31,6 +31,13 @@ interface Props {
 
 type Mode = "CHECK" | "ENTRY" | "ASSIGN_ONLY" | "TRANSFER";
 
+// Satır bazlı giriş için tip tanımı
+interface TicketRow {
+    id: string;
+    amount: string;
+    date: Date | undefined;
+}
+
 export function SmartTableManager({ tableId, tableName, currentStock, activeSessions, allTables, onSuccess }: Props) {
     const { t } = useTranslation("common");
     const [open, setOpen] = useState(false);
@@ -38,8 +45,6 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
     const [loading, setLoading] = useState(false);
 
     const activeWorkerCount = activeSessions.length;
-
-    // --- HAVUZ SİSTEMİ HESAPLAMASI ---
     const tableData = allTables.find(t => t.id === tableId);
     
     const realStock = tableData && tableData.totalPoolKg !== undefined
@@ -52,15 +57,16 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
     const [selectedWorkerIds, setSelectedWorkerIds] = useState<string[]>([]);
     const [durationHours, setDurationHours] = useState<string>("9");
 
-    // ENTRY STATE
-    const [amount, setAmount] = useState("");
-    const [ticketDate, setTicketDate] = useState<Date | undefined>(new Date()); // Varsayılan: Bugün
+    // --- ÇOKLU GİRİŞ STATE'İ ---
+    const [entries, setEntries] = useState<TicketRow[]>([
+        { id: '1', amount: '', date: new Date() }
+    ]);
+    
     const [assignWorkers, setAssignWorkers] = useState(false);
     const [transferTargetId, setTransferTargetId] = useState<string>("");
 
     const switchMode = (newMode: Mode) => {
-        setAmount("");
-        setTicketDate(new Date()); // Mod değişince tarihi bugüne sıfırla
+        setEntries([{ id: Math.random().toString(), amount: '', date: new Date() }]);
         setAssignWorkers(false);
         setSelectedWorkerIds([]);
         setTransferTargetId("");
@@ -107,7 +113,70 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
         }
     };
 
+    // --- ROW MANIPULATION ---
+    const addRow = () => {
+        setEntries(prev => [
+            ...prev, 
+            { id: Math.random().toString(), amount: '', date: new Date() }
+        ]);
+    };
+
+    const removeRow = (id: string) => {
+        if (entries.length === 1) return;
+        setEntries(prev => prev.filter(e => e.id !== id));
+    };
+
+    const updateRow = (id: string, field: keyof TicketRow, value: any) => {
+        setEntries(prev => prev.map(e => {
+            if (e.id === id) return { ...e, [field]: value };
+            return e;
+        }));
+    };
+
+    const totalEntryAmount = entries.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+
     // --- HANDLERS ---
+    
+    // YENİ: Tek Seferde Paket Gönderim (Batch Entry)
+    const handleEntry = async () => {
+        // Geçerli fişleri filtrele (Miktarı boş olanları at)
+        const validTickets = entries
+            .filter(e => e.amount && parseFloat(e.amount) > 0)
+            .map(e => ({
+                amountKg: parseFloat(e.amount),
+                customDate: e.date ? e.date.toISOString() : null
+            }));
+
+        if (validTickets.length === 0) {
+            toast.error("Lütfen en az bir geçerli miktar giriniz.");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            // Backend'in beklediği Batch DTO yapısı:
+            const payload = {
+                tableId,
+                tickets: validTickets,
+                // İşçiler sadece 1 kere gönderilir, tüm masaya atanır.
+                workerIds: assignWorkers ? selectedWorkerIds : null,
+                durationMinutes: parseFloat(durationHours) * 60
+            };
+
+            await apiFetchAuth("/api/operation/ticket/batch", {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+
+            toast.success(`${validTickets.length} adet fiş başarıyla işlendi.`);
+            setOpen(false);
+            onSuccess();
+        } catch (e) { 
+            toast.error("İşlem sırasında hata oluştu."); 
+        } 
+        finally { setLoading(false); }
+    };
+
     const handleTransfer = async () => {
         if (!transferTargetId) return;
         setLoading(true);
@@ -118,26 +187,6 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
             });
             toast.success(t('operation.common.confirm'));
             switchMode("ENTRY");
-            onSuccess();
-        } catch (e) { toast.error("Error"); } 
-        finally { setLoading(false); }
-    };
-
-    const handleEntry = async () => {
-        setLoading(true);
-        try {
-            await apiFetchAuth("/api/operation/ticket", {
-                method: "POST",
-                body: JSON.stringify({ 
-                    tableId, 
-                    amountKg: parseFloat(amount) || 0,
-                    workerIds: assignWorkers ? selectedWorkerIds : null,
-                    durationMinutes: parseFloat(durationHours) * 60,
-                    customDate: ticketDate ? ticketDate.toISOString() : null // Backend'e tarih gönderiyoruz
-                })
-            });
-            toast.success(t('operation.common.confirm'));
-            setOpen(false);
             onSuccess();
         } catch (e) { toast.error("Error"); } 
         finally { setLoading(false); }
@@ -165,9 +214,9 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
     const targetTables = allTables.filter(t => t.id !== tableId && t.unitType === "PRE_SELECTION");
 
     const isEntryValid = () => {
-        const hasAmount = amount && parseFloat(amount) > 0;
+        const hasValidAmount = totalEntryAmount > 0;
         const hasWorkers = assignWorkers && selectedWorkerIds.length > 0;
-        return hasAmount || hasWorkers;
+        return hasValidAmount || hasWorkers;
     };
 
     // --- RENDER HELPERS ---
@@ -364,56 +413,98 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
                                 <div className="flex items-center justify-between bg-yellow-50 px-3 py-2 rounded border border-yellow-100 text-sm text-yellow-800">
                                     <span>Kalan: <strong>{realStock}</strong></span>
                                     <span>+</span>
-                                    <span>Yeni: <strong>{amount || 0}</strong></span>
+                                    <span>Yeni: <strong>{totalEntryAmount}</strong></span>
                                     <span>=</span>
-                                    <strong>{(realStock + (parseFloat(amount)||0))} {t('operation.common.kg')}</strong>
+                                    <strong>{(realStock + totalEntryAmount)} {t('operation.common.kg')}</strong>
                                 </div>
                             )}
 
-                            {/* --- TARİH SEÇİCİ EKLENDİ --- */}
-                            <div className="space-y-2">
-                                <Label>Fiş Tarihi</Label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant={"outline"}
-                                            className={cn(
-                                                "w-full justify-start text-left font-normal h-12 border-input text-lg",
-                                                !ticketDate && "text-muted-foreground"
-                                            )}
-                                        >
-                                            <CalendarIcon className="mr-2 h-5 w-5" />
-                                            {ticketDate ? format(ticketDate, "d MMMM yyyy", { locale: tr }) : <span>Tarih Seç</span>}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                            mode="single"
-                                            selected={ticketDate}
-                                            onSelect={setTicketDate}
-                                            initialFocus
-                                            locale={tr}
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-
+                            {/* --- ÇOKLU FİŞ GİRİŞ ALANI --- */}
                             <div className="space-y-3">
-                                <Label className="text-base">{t('operation.dialogs.ticket.amountLabel')}</Label>
-                                <div className="relative">
-                                    <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"/>
-                                    <Input 
-                                        type="number" 
-                                        placeholder="0.00" 
-                                        className="text-xl font-bold h-12 pl-10" 
-                                        value={amount} 
-                                        onChange={e => setAmount(e.target.value)} 
-                                        
-                                    />
+                                <div className="flex justify-between items-center">
+                                    <Label className="text-base font-semibold">Fiş Girişleri</Label>
+                                    <Badge variant="secondary" className="font-mono">{entries.length} Satır</Badge>
                                 </div>
+                                
+                                <div className="space-y-2">
+                                    {entries.map((entry, index) => (
+                                        <div key={entry.id} className="flex gap-2 items-start animate-in fade-in slide-in-from-left-2">
+                                            {/* Tarih */}
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant={"outline"}
+                                                        className={cn(
+                                                            "w-[140px] pl-3 text-left font-normal h-10",
+                                                            !entry.date && "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        {entry.date ? format(entry.date, "d MMM", { locale: tr }) : <span>Tarih</span>}
+                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={entry.date}
+                                                        onSelect={(date) => updateRow(entry.id, 'date', date)}
+                                                        initialFocus
+                                                        locale={tr}
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+
+                                            {/* Miktar */}
+                                            <div className="relative flex-1">
+                                                <Ticket className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
+                                                <Input 
+                                                    type="number" 
+                                                    placeholder="Miktar" 
+                                                    className="pl-9 h-10 font-bold" 
+                                                    value={entry.amount} 
+                                                    onChange={e => updateRow(entry.id, 'amount', e.target.value)} 
+                                                />
+                                            </div>
+
+                                            {/* Silme Butonu (Sadece 1 satırdan fazla varsa) */}
+                                            {entries.length > 1 && (
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-10 w-10 text-muted-foreground hover:text-destructive shrink-0"
+                                                    onClick={() => removeRow(entry.id)}
+                                                    tabIndex={-1}
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <Button 
+                                    variant="outline" 
+                                    className="w-full border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary hover:bg-primary/5 h-10 gap-2"
+                                    onClick={addRow}
+                                >
+                                    <Plus className="w-4 h-4" /> Yeni Satır Ekle
+                                </Button>
                             </div>
 
-                            <div className="border rounded-xl p-4 bg-card shadow-sm">
+                            {/* TOPLAM ÖZET */}
+                            {entries.length > 1 && totalEntryAmount > 0 && (
+                                <div className="flex justify-between items-center bg-muted/50 p-3 rounded-lg border">
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <Calculator className="w-4 h-4" />
+                                        <span className="text-sm font-medium">Toplam Giriş</span>
+                                    </div>
+                                    <div className="text-lg font-black text-primary">
+                                        {totalEntryAmount.toLocaleString()} KG
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="border rounded-xl p-4 bg-card shadow-sm mt-4">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center space-x-3">
                                         <Checkbox id="assign-workers" checked={assignWorkers} onCheckedChange={(v) => setAssignWorkers(!!v)} className="w-5 h-5"/>

@@ -86,10 +86,19 @@ public class OperationController {
         return ResponseEntity.ok(service.getTableActiveSessions(tableId));
     }
 
+    // Tekli Fiş Girişi (Eski) - Geriye uyumluluk için kalabilir
     @PostMapping("/ticket")
     @HasPermission("PAGE_OPERATION_DAILY:WRITE")
     public ResponseEntity<OperationTicket> addTicket(@RequestBody TicketEntryRequest request) {
         return ResponseEntity.ok(service.addTicket(request));
+    }
+
+    // --- YENİ: ÇOKLU FİŞ GİRİŞİ (BATCH) ---
+    @PostMapping("/ticket/batch")
+    @HasPermission("PAGE_OPERATION_DAILY:WRITE")
+    public ResponseEntity<Void> addBatchTickets(@RequestBody BatchTicketEntryRequest request) {
+        service.addBatchTickets(request);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/transfer")
@@ -105,10 +114,6 @@ public class OperationController {
         return ResponseEntity.ok(service.closeTableAndRollover(tableId, actualRemainingKg));
     }
 
-    /**
-     * TOPLU KAPATMA (SEÇMELİ)
-     * Seçilen masaları 0 bakiye ile kapatır ve devir işlemini yapar.
-     */
     @PostMapping("/close-all")
     @HasPermission("PAGE_OPERATION_DAILY:WRITE")
     public ResponseEntity<Void> closeSelectedTables(@RequestBody List<String> tableIds) {
@@ -116,7 +121,6 @@ public class OperationController {
         return ResponseEntity.ok().build();
     }
 
-    // V5.0 Endpointler
     @GetMapping("/dashboard/stats")
     @HasPermission("PAGE_FIELD_PANEL:READ")
     public ResponseEntity<FieldDashboardDto> getDashboardStats() {
