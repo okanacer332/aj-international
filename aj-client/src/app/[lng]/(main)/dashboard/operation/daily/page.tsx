@@ -296,15 +296,20 @@ export default function PreSelectionOperationPage() {
                             </div>
                             
                             <div className="mt-auto pt-2 space-y-2 border-t">
-                                <SmartTableManager 
-                                    tableId={table.id} 
-                                    tableName={table.tableNo} 
-                                    currentStock={stats.remainingKg} 
-                                    activeWorkerCount={activeSessions.length}
-                                    allTables={tables} 
-                                    onSuccess={loadData} 
-                                />
-                            </div>
+    <SmartTableManager 
+        tableId={table.id} 
+        tableName={table.tableNo} 
+        currentStock={stats.remainingKg} 
+        
+        // DEĞİŞİKLİK BURADA:
+        // Eski: activeWorkerCount={activeSessions.length}
+        // Yeni:
+        activeSessions={activeSessions} // Tüm listeyi gönderiyoruz
+        
+        allTables={tables} 
+        onSuccess={loadData} 
+    />
+</div>
 
                         </CardContent>
                     </Card>

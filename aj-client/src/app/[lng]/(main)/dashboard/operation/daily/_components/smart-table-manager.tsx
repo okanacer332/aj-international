@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { apiFetchAuth, API_BASE } from "@/lib/api-auth";
-import { WorkerAvailability, OperationTable } from "@/types/operation";
+import { WorkerAvailability, OperationTable, TableSession } from "@/types/operation"; // TableSession eklendi
 import { toast } from "sonner";
 import { Ticket, Loader2, Search, Clock, ArrowRightLeft, PlayCircle, AlertTriangle, Users, Plus, ChevronLeft, UserPlus, Info } from "lucide-react";
 import { getInitials } from "@/lib/utils";
@@ -19,23 +19,25 @@ import { useTranslation } from "react-i18next";
 interface Props {
     tableId: string;
     tableName: string;
-    currentStock: number; // Bu eski yöntemden gelebilir, aşağıda override edeceğiz
-    activeWorkerCount: number;
+    currentStock: number;
+    // DEĞİŞİKLİK: Sadece sayı değil, tüm oturum listesini alıyoruz
+    activeSessions: TableSession[]; 
     allTables: OperationTable[];
     onSuccess: () => void;
 }
 
 type Mode = "CHECK" | "ENTRY" | "ASSIGN_ONLY" | "TRANSFER";
 
-export function SmartTableManager({ tableId, tableName, currentStock, activeWorkerCount, allTables, onSuccess }: Props) {
+export function SmartTableManager({ tableId, tableName, currentStock, activeSessions, allTables, onSuccess }: Props) {
     const { t } = useTranslation("common");
     const [open, setOpen] = useState(false);
     const [mode, setMode] = useState<Mode>("CHECK");
     const [loading, setLoading] = useState(false);
 
-    // --- HAVUZ SİSTEMİ HESAPLAMASI (NEW POOL LOGIC) ---
-    // Backend'den gelen totalPoolKg ve processedKg verilerini kullanarak
-    // anlık gerçek stoğu hesaplıyoruz.
+    // Active Worker Count artık array uzunluğundan geliyor
+    const activeWorkerCount = activeSessions.length;
+
+    // --- HAVUZ SİSTEMİ HESAPLAMASI ---
     const tableData = allTables.find(t => t.id === tableId);
     
     const realStock = tableData && tableData.totalPoolKg !== undefined
@@ -51,8 +53,6 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
     // ENTRY STATE
     const [amount, setAmount] = useState("");
     const [assignWorkers, setAssignWorkers] = useState(false);
-    
-    // TRANSFER STATE
     const [transferTargetId, setTransferTargetId] = useState<string>("");
 
     const switchMode = (newMode: Mode) => {
@@ -65,10 +65,8 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
         setMode(newMode);
     };
 
-    // Dialog açıldığında veya stok değiştiğinde modu belirle
     useEffect(() => {
         if (open) {
-            // Eğer stok varsa önce "CHECK" ekranı gelsin, yoksa direkt "ENTRY"
             switchMode(realStock > 0 ? "CHECK" : "ENTRY");
         }
     }, [open, realStock]);
@@ -105,19 +103,17 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
         }
     };
 
-    // --- HANDLERS ---
-
+    // --- HANDLERS --- (Değişiklik yok, aynı kalıyor)
     const handleTransfer = async () => {
         if (!transferTargetId) return;
         setLoading(true);
         try {
-            // Transfer ederken calculated 'realStock' miktarını gönderiyoruz
             await apiFetchAuth("/api/operation/transfer", {
                 method: "POST",
                 body: JSON.stringify({ fromTableId: tableId, toTableId: transferTargetId, amountKg: realStock })
             });
             toast.success(t('operation.common.confirm'));
-            switchMode("ENTRY"); // Transfer bitince giriş ekranına dön (ya da kapanabilir)
+            switchMode("ENTRY");
             onSuccess();
         } catch (e) { toast.error("Error"); } 
         finally { setLoading(false); }
@@ -126,7 +122,6 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
     const handleEntry = async () => {
         setLoading(true);
         try {
-            // Ticket ekleme backend'de "Havuz"u artırır (Pool += Amount)
             await apiFetchAuth("/api/operation/ticket", {
                 method: "POST",
                 body: JSON.stringify({ 
@@ -164,15 +159,13 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
 
     const targetTables = allTables.filter(t => t.id !== tableId && t.unitType === "PRE_SELECTION");
 
-    // Validasyon: Ya miktar girilmeli ya da işçi seçilmeli (veya her ikisi)
     const isEntryValid = () => {
         const hasAmount = amount && parseFloat(amount) > 0;
         const hasWorkers = assignWorkers && selectedWorkerIds.length > 0;
         return hasAmount || hasWorkers;
     };
 
-    // --- RENDER HELPERS ---
-
+    // --- RENDER HELPERS --- (Aynı kalıyor)
     const renderWorkerList = () => (
         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
             <div className="relative flex gap-2">
@@ -213,6 +206,32 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
         </div>
     );
 
+    // --- YENİ BİLEŞEN: Aktif Çalışanları Göster ---
+    const renderActiveCrew = () => {
+        if (activeSessions.length === 0) return null;
+        return (
+            <div className="bg-blue-50/60 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-lg p-3 mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wide">
+                        Şu An Masada Çalışanlar ({activeSessions.length})
+                    </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {activeSessions.map(session => (
+                        <div key={session.sessionId} className="flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1 shadow-sm">
+                            <Avatar className="h-6 w-6 border">
+                                <AvatarImage src={session.avatarUrl ? `${API_BASE}${session.avatarUrl}` : undefined} />
+                                <AvatarFallback className="text-[9px]">{getInitials(session.workerName)}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs font-medium truncate max-w-[100px]">{session.workerName}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -223,7 +242,6 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
             
             <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
                 
-                {/* 1. MOD: DURUM KONTROL (CHECK) */}
                 {mode === "CHECK" && (
                     <div className="p-6 space-y-6">
                         <DialogHeader>
@@ -236,13 +254,10 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
                             <div className="absolute top-2 right-2 opacity-10"><Info className="w-12 h-12 text-amber-900"/></div>
                             <p className="text-sm text-amber-800 mb-1 font-medium">İşlenmeyi Bekleyen Stok</p>
                             <p className="text-4xl font-black text-amber-900">{realStock.toLocaleString('tr-TR')} {t('operation.common.kg')}</p>
-                            {/* Debug/Bilgi Amaçlı Küçük Yazı (Opsiyonel) */}
-                            {tableData?.totalPoolKg !== undefined && (
-                                <p className="text-[10px] text-amber-700/60 mt-2">
-                                    Havuz: {tableData.totalPoolKg} - İşlenen: {tableData.processedKg || 0}
-                                </p>
-                            )}
                         </div>
+                        
+                        {/* CHECK modunda da kimin çalıştığını görmek faydalı olabilir */}
+                        {renderActiveCrew()}
 
                         <div className="grid grid-cols-1 gap-3 pt-2">
                             <Button variant="outline" className="h-16 justify-start px-4 border-2 hover:border-green-500 hover:bg-green-50 transition-all" onClick={() => switchMode("ENTRY")}>
@@ -272,7 +287,6 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
                     </div>
                 )}
 
-                {/* 2. MOD: SADECE PERSONEL ATA (ASSIGN_ONLY) */}
                 {mode === "ASSIGN_ONLY" && (
                     <>
                         <DialogHeader className="p-4 border-b bg-muted/10">
@@ -284,6 +298,8 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
                             </DialogTitle>
                         </DialogHeader>
                         <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                             {/* Burada da aktif çalışanları gösterelim, kimi ekleyeceğimizi bilelim */}
+                            {renderActiveCrew()}
                             <div className="flex justify-between items-center"><Label>Planlanan Süre</Label>{renderDurationInput()}</div>
                             {renderWorkerList()}
                         </div>
@@ -296,7 +312,6 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
                     </>
                 )}
 
-                {/* 3. MOD: TRANSFER (DEVİR) */}
                 {mode === "TRANSFER" && (
                     <div className="p-6 space-y-6">
                          <DialogHeader>
@@ -327,7 +342,6 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
                     </div>
                 )}
 
-                {/* 4. MOD: FİŞ GİRİŞİ (ENTRY) */}
                 {mode === "ENTRY" && (
                     <>
                         <DialogHeader className="p-4 border-b bg-muted/10">
@@ -342,6 +356,9 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
                         </DialogHeader>
                         
                         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                            {/* AKTİF ÇALIŞANLAR BURADA GÖRÜNECEK */}
+                            {renderActiveCrew()}
+
                             {/* CANLI HESAPLAMA BANNERI */}
                             {realStock > 0 && (
                                 <div className="flex items-center justify-between bg-yellow-50 px-3 py-2 rounded border border-yellow-100 text-sm text-yellow-800">

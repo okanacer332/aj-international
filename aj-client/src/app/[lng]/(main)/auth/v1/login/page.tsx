@@ -9,7 +9,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 
 // Logoları import ediyoruz
 import ajLogo from "@/../public/logos/AJ-LOGO.png";
-import acrtechLogo from "@/../public/logos/acrtech.png";
+import acrtechLogo from "@/../public/logos/acrtech.jpeg";
 
 // YENİ TİP TANIMI: params'ın artık bir Promise olduğunu belirtiyoruz
 type PageProps = {
@@ -66,7 +66,6 @@ export default function LoginV1({ params }: PageProps) {
 
         {/* acrtech Logosu Sayfanın En Altına Konumlandırılıyor (Tüm Ekranlarda) */}
         <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center justify-center pt-4">
-            <p className="text-xs text-muted-foreground/80 mb-2">Powered By</p>
             <Image
                 src={acrtechLogo}
                 alt="acrtech Logo"

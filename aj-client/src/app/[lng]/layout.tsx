@@ -32,10 +32,10 @@ export const metadata: Metadata = {
   },
   description: "ACR Tech tarafından geliştirilmiş yeni nesil operasyon yönetim sistemi.",
   icons: {
-    icon: "/favicon.ico", // Kendi ikonunu koyacağız
-    apple: "/apple-touch-icon.png",
+    icon: "/favicon-dark.svg", // Kendi ikonunu koyacağız
+    apple: "/favicon-dark.svg",
   },
-  authors: [{ name: "ACR Tech", url: "https://acrtech.com" }], // Varsa site adresin
+  authors: [{ name: "ACR Tech", url: "https://acrtech.com.tr" }], // Varsa site adresin
 };
 
 export const viewport = {
