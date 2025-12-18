@@ -17,4 +17,18 @@ public class OperationTable {
     private String tableNo;
     private OperationTableUnit unitType;
     private boolean active = true;
+
+    // --- YENİ EKLENEN ALANLAR (HAVUZ SİSTEMİ) ---
+
+    /**
+     * Masaya giren toplam yük (Devir + Yeni Fişler + Transfer Giren).
+     * Bu rakam, masadaki "Teorik Toplam"dır.
+     */
+    private Double totalPoolKg = 0.0;
+
+    /**
+     * Şu ana kadar "Tamamlandı" olarak beyan edilip işçilere dağıtılan miktar.
+     * Hesaplama Formülü: (TotalPoolKg - MasadaKalanMiktar)
+     */
+    private Double processedKg = 0.0;
 }

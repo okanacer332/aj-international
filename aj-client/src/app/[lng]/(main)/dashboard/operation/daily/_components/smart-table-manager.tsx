@@ -12,14 +12,14 @@ import { Badge } from "@/components/ui/badge";
 import { apiFetchAuth, API_BASE } from "@/lib/api-auth";
 import { WorkerAvailability, OperationTable } from "@/types/operation";
 import { toast } from "sonner";
-import { Ticket, Loader2, Search, Clock, ArrowRightLeft, PlayCircle, AlertTriangle, Users, Plus, ChevronLeft, UserPlus } from "lucide-react";
+import { Ticket, Loader2, Search, Clock, ArrowRightLeft, PlayCircle, AlertTriangle, Users, Plus, ChevronLeft, UserPlus, Info } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
 interface Props {
     tableId: string;
     tableName: string;
-    currentStock: number;
+    currentStock: number; // Bu eski yöntemden gelebilir, aşağıda override edeceğiz
     activeWorkerCount: number;
     allTables: OperationTable[];
     onSuccess: () => void;
@@ -32,6 +32,15 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
     const [open, setOpen] = useState(false);
     const [mode, setMode] = useState<Mode>("CHECK");
     const [loading, setLoading] = useState(false);
+
+    // --- HAVUZ SİSTEMİ HESAPLAMASI (NEW POOL LOGIC) ---
+    // Backend'den gelen totalPoolKg ve processedKg verilerini kullanarak
+    // anlık gerçek stoğu hesaplıyoruz.
+    const tableData = allTables.find(t => t.id === tableId);
+    
+    const realStock = tableData && tableData.totalPoolKg !== undefined
+        ? Math.max(0, tableData.totalPoolKg - (tableData.processedKg || 0))
+        : currentStock;
 
     // ORTAK STATE'LER
     const [workers, setWorkers] = useState<WorkerAvailability[]>([]);
@@ -56,11 +65,13 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
         setMode(newMode);
     };
 
+    // Dialog açıldığında veya stok değiştiğinde modu belirle
     useEffect(() => {
         if (open) {
-            switchMode(currentStock > 0 ? "CHECK" : "ENTRY");
+            // Eğer stok varsa önce "CHECK" ekranı gelsin, yoksa direkt "ENTRY"
+            switchMode(realStock > 0 ? "CHECK" : "ENTRY");
         }
-    }, [open, currentStock]);
+    }, [open, realStock]);
 
     const fetchWorkers = useCallback(async () => {
         try {
@@ -100,12 +111,13 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
         if (!transferTargetId) return;
         setLoading(true);
         try {
+            // Transfer ederken calculated 'realStock' miktarını gönderiyoruz
             await apiFetchAuth("/api/operation/transfer", {
                 method: "POST",
-                body: JSON.stringify({ fromTableId: tableId, toTableId: transferTargetId, amountKg: currentStock })
+                body: JSON.stringify({ fromTableId: tableId, toTableId: transferTargetId, amountKg: realStock })
             });
             toast.success(t('operation.common.confirm'));
-            switchMode("ENTRY");
+            switchMode("ENTRY"); // Transfer bitince giriş ekranına dön (ya da kapanabilir)
             onSuccess();
         } catch (e) { toast.error("Error"); } 
         finally { setLoading(false); }
@@ -114,6 +126,7 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
     const handleEntry = async () => {
         setLoading(true);
         try {
+            // Ticket ekleme backend'de "Havuz"u artırır (Pool += Amount)
             await apiFetchAuth("/api/operation/ticket", {
                 method: "POST",
                 body: JSON.stringify({ 
@@ -151,16 +164,15 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
 
     const targetTables = allTables.filter(t => t.id !== tableId && t.unitType === "PRE_SELECTION");
 
-    // --- VALIDASYON KONTROLÜ (YENİ) ---
-    // Butonun aktif olup olmayacağına karar veren mantık
+    // Validasyon: Ya miktar girilmeli ya da işçi seçilmeli (veya her ikisi)
     const isEntryValid = () => {
         const hasAmount = amount && parseFloat(amount) > 0;
         const hasWorkers = assignWorkers && selectedWorkerIds.length > 0;
-        // Ya miktar girilmiş olmalı YA DA personel seçilmiş olmalı
         return hasAmount || hasWorkers;
     };
 
-    // ... (renderWorkerList ve renderDurationInput kodları aynı)
+    // --- RENDER HELPERS ---
+
     const renderWorkerList = () => (
         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
             <div className="relative flex gap-2">
@@ -211,20 +223,36 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
             
             <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
                 
-                {/* MOD 1 ve 2 (CHECK ve ASSIGN_ONLY) KISIMLARI AYNI KALIYOR... */}
+                {/* 1. MOD: DURUM KONTROL (CHECK) */}
                 {mode === "CHECK" && (
-                    // ... (Mevcut CHECK kodu) ...
                     <div className="p-6 space-y-6">
-                        <DialogHeader><DialogTitle className="text-xl flex items-center gap-2 text-amber-600"><AlertTriangle className="w-6 h-6" /> Masada Mal Var!</DialogTitle></DialogHeader>
-                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-center">
-                            <p className="text-sm text-amber-800 mb-1">Mevcut Stok</p>
-                            <p className="text-4xl font-black text-amber-900">{currentStock} {t('operation.common.kg')}</p>
+                        <DialogHeader>
+                            <DialogTitle className="text-xl flex items-center gap-2 text-amber-600">
+                                <AlertTriangle className="w-6 h-6" /> Masada Mal Var!
+                            </DialogTitle>
+                        </DialogHeader>
+                        
+                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-center relative overflow-hidden">
+                            <div className="absolute top-2 right-2 opacity-10"><Info className="w-12 h-12 text-amber-900"/></div>
+                            <p className="text-sm text-amber-800 mb-1 font-medium">İşlenmeyi Bekleyen Stok</p>
+                            <p className="text-4xl font-black text-amber-900">{realStock.toLocaleString('tr-TR')} {t('operation.common.kg')}</p>
+                            {/* Debug/Bilgi Amaçlı Küçük Yazı (Opsiyonel) */}
+                            {tableData?.totalPoolKg !== undefined && (
+                                <p className="text-[10px] text-amber-700/60 mt-2">
+                                    Havuz: {tableData.totalPoolKg} - İşlenen: {tableData.processedKg || 0}
+                                </p>
+                            )}
                         </div>
+
                         <div className="grid grid-cols-1 gap-3 pt-2">
                             <Button variant="outline" className="h-16 justify-start px-4 border-2 hover:border-green-500 hover:bg-green-50 transition-all" onClick={() => switchMode("ENTRY")}>
                                 <Plus className="w-6 h-6 text-green-600 mr-3" />
-                                <div className="text-left"><div className="font-bold text-green-700">{t('operation.dialogs.smart.addStock')}</div><div className="text-[10px] text-muted-foreground">{t('operation.dialogs.smart.addStockDesc')}</div></div>
+                                <div className="text-left">
+                                    <div className="font-bold text-green-700">{t('operation.dialogs.smart.addStock')}</div>
+                                    <div className="text-[10px] text-muted-foreground">{t('operation.dialogs.smart.addStockDesc')}</div>
+                                </div>
                             </Button>
+                            
                             <Button variant="outline" className="h-16 justify-start px-4 border-2 hover:border-blue-500 hover:bg-blue-50 transition-all" onClick={() => switchMode("ASSIGN_ONLY")}>
                                 {activeWorkerCount > 0 ? <Users className="w-6 h-6 text-blue-600 mr-3" /> : <UserPlus className="w-6 h-6 text-blue-600 mr-3" />}
                                 <div className="text-left">
@@ -232,48 +260,79 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
                                     <div className="text-[10px] text-muted-foreground">{activeWorkerCount > 0 ? t('operation.dialogs.smart.addCrewDesc') : t('operation.dialogs.smart.startCrewDesc')}</div>
                                 </div>
                             </Button>
+                            
                             <Button variant="outline" className="h-16 justify-start px-4 border-2 hover:border-orange-500 hover:bg-orange-50 transition-all" onClick={() => switchMode("TRANSFER")}>
                                 <ArrowRightLeft className="w-6 h-6 text-orange-600 mr-3" />
-                                <div className="text-left"><div className="font-bold text-orange-700">{t('operation.dialogs.smart.transfer')}</div><div className="text-[10px] text-muted-foreground">{t('operation.dialogs.smart.transferDesc')}</div></div>
+                                <div className="text-left">
+                                    <div className="font-bold text-orange-700">{t('operation.dialogs.smart.transfer')}</div>
+                                    <div className="text-[10px] text-muted-foreground">{t('operation.dialogs.smart.transferDesc')}</div>
+                                </div>
                             </Button>
                         </div>
                     </div>
                 )}
 
+                {/* 2. MOD: SADECE PERSONEL ATA (ASSIGN_ONLY) */}
                 {mode === "ASSIGN_ONLY" && (
-                    // ... (Mevcut ASSIGN_ONLY kodu) ...
                     <>
                         <DialogHeader className="p-4 border-b bg-muted/10">
-                            <DialogTitle className="flex items-center gap-2"><Button variant="outline" size="sm" className="gap-1 border-primary/20 text-primary" onClick={() => switchMode("CHECK")}><ChevronLeft className="h-4 w-4" /> {t('operation.common.back')}</Button><span className="ml-2">{t('operation.dialogs.bulkAssign.title')}</span></DialogTitle>
+                            <DialogTitle className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" className="gap-1 border-primary/20 text-primary" onClick={() => switchMode("CHECK")}>
+                                    <ChevronLeft className="h-4 w-4" /> {t('operation.common.back')}
+                                </Button>
+                                <span className="ml-2">{t('operation.dialogs.bulkAssign.title')}</span>
+                            </DialogTitle>
                         </DialogHeader>
                         <div className="flex-1 overflow-y-auto p-6 space-y-4">
                             <div className="flex justify-between items-center"><Label>Planlanan Süre</Label>{renderDurationInput()}</div>
                             {renderWorkerList()}
                         </div>
                         <div className="p-5 border-t bg-muted/10">
-                            <Button className="w-full h-12 text-base font-bold shadow-md" onClick={handleAssignOnly} disabled={loading || selectedWorkerIds.length === 0}>{loading && <Loader2 className="mr-2 animate-spin"/>}{t('operation.dialogs.bulkAssign.btnAssign')}</Button>
+                            <Button className="w-full h-12 text-base font-bold shadow-md" onClick={handleAssignOnly} disabled={loading || selectedWorkerIds.length === 0}>
+                                {loading && <Loader2 className="mr-2 animate-spin"/>}
+                                {t('operation.dialogs.bulkAssign.btnAssign')}
+                            </Button>
                         </div>
                     </>
                 )}
 
+                {/* 3. MOD: TRANSFER (DEVİR) */}
                 {mode === "TRANSFER" && (
-                    // ... (Mevcut TRANSFER kodu) ...
                     <div className="p-6 space-y-6">
-                         <DialogHeader><DialogTitle className="flex items-center gap-2"><Button variant="outline" size="sm" className="gap-1 border-primary/20 text-primary" onClick={() => switchMode("CHECK")}><ChevronLeft className="h-4 w-4" /> {t('operation.common.back')}</Button><span className="ml-2">{t('operation.daily.rollover')}</span></DialogTitle></DialogHeader>
+                         <DialogHeader>
+                             <DialogTitle className="flex items-center gap-2">
+                                 <Button variant="outline" size="sm" className="gap-1 border-primary/20 text-primary" onClick={() => switchMode("CHECK")}>
+                                     <ChevronLeft className="h-4 w-4" /> {t('operation.common.back')}
+                                 </Button>
+                                 <span className="ml-2">{t('operation.daily.rollover')}</span>
+                             </DialogTitle>
+                         </DialogHeader>
                         <div className="space-y-4">
-                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-900 text-sm">Bu işlem, <strong>{tableName}</strong> masasındaki tüm stoğu (<strong>{currentStock} KG</strong>) seçilen masaya aktarır ve bu masayı boşaltır.</div>
-                            <div className="space-y-2"><Label>{t('operation.fieldPanel.activeTables')}</Label><Select onValueChange={setTransferTargetId} value={transferTargetId}><SelectTrigger className="h-12 text-lg"><SelectValue placeholder="Hedef Masa Seç..." /></SelectTrigger><SelectContent>{targetTables.map(t => <SelectItem key={t.id} value={t.id}>{t.tableNo}</SelectItem>)}</SelectContent></Select></div>
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-900 text-sm">
+                                Bu işlem, <strong>{tableName}</strong> masasındaki 
+                                <br/>Kalan Stoğu: <strong className="text-lg">{realStock} KG</strong>
+                                <br/>seçilen masaya aktarır ve bu masayı boşaltır.
+                            </div>
+                            <div className="space-y-2">
+                                <Label>{t('operation.fieldPanel.activeTables')}</Label>
+                                <Select onValueChange={setTransferTargetId} value={transferTargetId}>
+                                    <SelectTrigger className="h-12 text-lg"><SelectValue placeholder="Hedef Masa Seç..." /></SelectTrigger>
+                                    <SelectContent>{targetTables.map(t => <SelectItem key={t.id} value={t.id}>{t.tableNo}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </div>
                         </div>
-                        <Button className="w-full h-12 text-lg font-bold mt-4" onClick={handleTransfer} disabled={loading || !transferTargetId}>{loading && <Loader2 className="mr-2 animate-spin"/>}{t('operation.common.confirm')}</Button>
+                        <Button className="w-full h-12 text-lg font-bold mt-4" onClick={handleTransfer} disabled={loading || !transferTargetId}>
+                            {loading && <Loader2 className="mr-2 animate-spin"/>}{t('operation.common.confirm')}
+                        </Button>
                     </div>
                 )}
 
-                {/* 4. MOD: FİŞ GİRİŞİ (ENTRY) - BURASI DÜZELTİLDİ */}
+                {/* 4. MOD: FİŞ GİRİŞİ (ENTRY) */}
                 {mode === "ENTRY" && (
                     <>
                         <DialogHeader className="p-4 border-b bg-muted/10">
                             <DialogTitle className="flex items-center gap-2">
-                                {currentStock > 0 && (
+                                {realStock > 0 && (
                                     <Button variant="outline" size="sm" className="gap-1 border-primary/20 text-primary" onClick={() => switchMode("CHECK")}>
                                         <ChevronLeft className="h-4 w-4" /> {t('operation.common.back')}
                                     </Button>
@@ -283,9 +342,14 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
                         </DialogHeader>
                         
                         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                            {currentStock > 0 && (
+                            {/* CANLI HESAPLAMA BANNERI */}
+                            {realStock > 0 && (
                                 <div className="flex items-center justify-between bg-yellow-50 px-3 py-2 rounded border border-yellow-100 text-sm text-yellow-800">
-                                    <span>Mevcut: <strong>{currentStock}</strong></span><span>+</span><span>Yeni: <strong>{amount || 0}</strong></span><span>=</span><strong>{(currentStock + (parseFloat(amount)||0))} {t('operation.common.kg')}</strong>
+                                    <span>Kalan: <strong>{realStock}</strong></span>
+                                    <span>+</span>
+                                    <span>Yeni: <strong>{amount || 0}</strong></span>
+                                    <span>=</span>
+                                    <strong>{(realStock + (parseFloat(amount)||0))} {t('operation.common.kg')}</strong>
                                 </div>
                             )}
 
@@ -293,7 +357,14 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
                                 <Label className="text-base">{t('operation.dialogs.ticket.amountLabel')}</Label>
                                 <div className="relative">
                                     <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"/>
-                                    <Input type="number" placeholder="0.00" className="text-xl font-bold h-12 pl-10" value={amount} onChange={e => setAmount(e.target.value)} autoFocus />
+                                    <Input 
+                                        type="number" 
+                                        placeholder="0.00" 
+                                        className="text-xl font-bold h-12 pl-10" 
+                                        value={amount} 
+                                        onChange={e => setAmount(e.target.value)} 
+                                        autoFocus 
+                                    />
                                 </div>
                             </div>
 
@@ -310,7 +381,6 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeWork
                         </div>
 
                         <div className="p-5 border-t bg-muted/10">
-                            {/* DÜZELTME BURADA: disabled={loading || !isEntryValid()} */}
                             <Button className="w-full h-12 text-base font-bold shadow-md" onClick={handleEntry} disabled={loading || !isEntryValid()}>
                                 {loading && <Loader2 className="mr-2 animate-spin"/>}
                                 {assignWorkers ? t('operation.dialogs.ticket.btnSaveStart') : t('operation.dialogs.ticket.btnSaveOnly')}

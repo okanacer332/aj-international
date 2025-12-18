@@ -5,6 +5,9 @@ export interface OperationTable {
   tableNo: string;
   unitType: OperationTableUnit;
   active: boolean;
+  // --- YENİ EKLENEN ALANLAR ---
+  totalPoolKg?: number; // Backend'den null gelebilir, opsiyonel yapalım
+  processedKg?: number;
 }
 
 export interface OperationConfig {
@@ -33,4 +36,5 @@ export interface TableSession {
     startTime: string;
     assignedDurationMinutes: number;
     targetOutputKg: number;
+    actualOutputKg?: number; // Ek olarak bunu da görebilmek iyi olur
 }

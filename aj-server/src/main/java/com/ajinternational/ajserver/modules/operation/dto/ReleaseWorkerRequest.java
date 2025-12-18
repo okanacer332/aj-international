@@ -1,6 +1,8 @@
 package com.ajinternational.ajserver.modules.operation.dto;
 
+import jakarta.validation.constraints.NotNull;
+
 public record ReleaseWorkerRequest(
-        String sessionId,
-        Double actualOutputKg // YENİ EKLENDİ
+        @NotNull String sessionId,
+        Double remainingOnTableKg // Değişen alan: Artık masada kalanı soruyoruz
 ) {}

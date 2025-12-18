@@ -75,10 +75,11 @@ public class OperationController {
         return ResponseEntity.ok(service.assignWorkers(request));
     }
 
-    @PostMapping("/release")
-    @HasPermission("PAGE_OPERATION_DAILY:WRITE")
+    @PostMapping("/worker/release") // Endpoint yolu projene göre değişebilir
     public ResponseEntity<ActiveSession> releaseWorker(@RequestBody ReleaseWorkerRequest request) {
-        return ResponseEntity.ok(service.releaseWorker(request));
+        // HATA BURADAYDI: service.releaseWorker(request) diyordu.
+        // DÜZELTME: Parametreleri tek tek geçiyoruz.
+        return ResponseEntity.ok(service.releaseWorker(request.sessionId(), request.remainingOnTableKg()));
     }
 
     @GetMapping("/tables/{tableId}/sessions")
