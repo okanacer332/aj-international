@@ -27,13 +27,17 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "ACR Tech | Yönetim Paneli",
+    default: "ACRTech | Yönetim Paneli",
     template: "%s | ACR Tech"
   },
-  description: "ACR Tech tarafından geliştirilmiş yeni nesil operasyon yönetim sistemi.",
+  description: "ACRTech tarafından geliştirilmiş yeni nesil operasyon yönetim sistemi.",
   icons: {
-    icon: "/favicon-dark.svg", // Kendi ikonunu koyacağız
-    apple: "/favicon-dark.svg",
+    icon: [
+      // Varsayılan ikon (Light mode için mevcut icon.svg kullanılır)
+      { url: '/icon.svg' },
+      // Yeni eklediğin Dark mode ikonu
+      { url: '/favicon-dark.svg', media: '(prefers-color-scheme: dark)' },
+    ],
   },
   authors: [{ name: "ACR Tech", url: "https://acrtech.com.tr" }], // Varsa site adresin
 };
