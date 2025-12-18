@@ -143,7 +143,6 @@ public class OperationService {
         return dtoList;
     }
 
-    // --- TICKET (FİŞ) & ATAMA ---
     @Transactional
     public OperationTicket addTicket(TicketEntryRequest request) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
@@ -161,13 +160,30 @@ public class OperationService {
         ticket.setTenantId(tenantId);
         ticket.setTableId(request.tableId());
         ticket.setAmountKg(request.amountKg());
-        ticket.setCreatedAt(LocalDateTime.now());
+
+        // --- TARİH AYARLAMASI (YENİ) ---
+        if (request.customDate() != null && !request.customDate().isBlank()) {
+            try {
+                // Frontend ISO string gönderir (örn: 2023-10-27T10:00:00.000Z)
+                // ZonedDateTime olarak parse edip LocalDateTime'a çevirmek en güvenlisidir
+                ticket.setCreatedAt(java.time.ZonedDateTime.parse(request.customDate()).toLocalDateTime());
+            } catch (Exception e) {
+                // Parse hatası olursa fallback olarak şimdiki zaman
+                System.err.println("Tarih formatı hatası: " + e.getMessage());
+                ticket.setCreatedAt(LocalDateTime.now());
+            }
+        } else {
+            ticket.setCreatedAt(LocalDateTime.now());
+        }
+        // -------------------------------
+
         try {
             ticket.setCreatedBy(TenantContextHolder.getCurrentUsername());
         } catch (Exception e) {
             ticket.setCreatedBy("System");
         }
         ticket.setProcessed(false);
+
         OperationTicket savedTicket = ticketRepository.save(ticket);
 
         // Ticker Event
@@ -191,7 +207,6 @@ public class OperationService {
 
         return savedTicket;
     }
-
     @Transactional
     public List<ActiveSession> assignWorkers(AssignWorkerRequest request) {
         String tenantId = TenantContextHolder.getCurrentTenantId();

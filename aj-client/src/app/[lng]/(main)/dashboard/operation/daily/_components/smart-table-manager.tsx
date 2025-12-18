@@ -10,17 +10,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { apiFetchAuth, API_BASE } from "@/lib/api-auth";
-import { WorkerAvailability, OperationTable, TableSession } from "@/types/operation"; // TableSession eklendi
+import { WorkerAvailability, OperationTable, TableSession } from "@/types/operation";
 import { toast } from "sonner";
-import { Ticket, Loader2, Search, Clock, ArrowRightLeft, PlayCircle, AlertTriangle, Users, Plus, ChevronLeft, UserPlus, Info } from "lucide-react";
-import { getInitials } from "@/lib/utils";
+import { Ticket, Loader2, Search, Clock, ArrowRightLeft, PlayCircle, AlertTriangle, Users, Plus, ChevronLeft, UserPlus, Info, CalendarIcon } from "lucide-react";
+import { getInitials, cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { tr } from "date-fns/locale"; // Türkçe tarih formatı için
 
 interface Props {
     tableId: string;
     tableName: string;
     currentStock: number;
-    // DEĞİŞİKLİK: Sadece sayı değil, tüm oturum listesini alıyoruz
     activeSessions: TableSession[]; 
     allTables: OperationTable[];
     onSuccess: () => void;
@@ -34,7 +37,6 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
     const [mode, setMode] = useState<Mode>("CHECK");
     const [loading, setLoading] = useState(false);
 
-    // Active Worker Count artık array uzunluğundan geliyor
     const activeWorkerCount = activeSessions.length;
 
     // --- HAVUZ SİSTEMİ HESAPLAMASI ---
@@ -52,11 +54,13 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
 
     // ENTRY STATE
     const [amount, setAmount] = useState("");
+    const [ticketDate, setTicketDate] = useState<Date | undefined>(new Date()); // Varsayılan: Bugün
     const [assignWorkers, setAssignWorkers] = useState(false);
     const [transferTargetId, setTransferTargetId] = useState<string>("");
 
     const switchMode = (newMode: Mode) => {
         setAmount("");
+        setTicketDate(new Date()); // Mod değişince tarihi bugüne sıfırla
         setAssignWorkers(false);
         setSelectedWorkerIds([]);
         setTransferTargetId("");
@@ -103,7 +107,7 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
         }
     };
 
-    // --- HANDLERS --- (Değişiklik yok, aynı kalıyor)
+    // --- HANDLERS ---
     const handleTransfer = async () => {
         if (!transferTargetId) return;
         setLoading(true);
@@ -128,7 +132,8 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
                     tableId, 
                     amountKg: parseFloat(amount) || 0,
                     workerIds: assignWorkers ? selectedWorkerIds : null,
-                    durationMinutes: parseFloat(durationHours) * 60
+                    durationMinutes: parseFloat(durationHours) * 60,
+                    customDate: ticketDate ? ticketDate.toISOString() : null // Backend'e tarih gönderiyoruz
                 })
             });
             toast.success(t('operation.common.confirm'));
@@ -165,7 +170,7 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
         return hasAmount || hasWorkers;
     };
 
-    // --- RENDER HELPERS --- (Aynı kalıyor)
+    // --- RENDER HELPERS ---
     const renderWorkerList = () => (
         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
             <div className="relative flex gap-2">
@@ -206,7 +211,6 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
         </div>
     );
 
-    // --- YENİ BİLEŞEN: Aktif Çalışanları Göster ---
     const renderActiveCrew = () => {
         if (activeSessions.length === 0) return null;
         return (
@@ -256,7 +260,6 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
                             <p className="text-4xl font-black text-amber-900">{realStock.toLocaleString('tr-TR')} {t('operation.common.kg')}</p>
                         </div>
                         
-                        {/* CHECK modunda da kimin çalıştığını görmek faydalı olabilir */}
                         {renderActiveCrew()}
 
                         <div className="grid grid-cols-1 gap-3 pt-2">
@@ -298,7 +301,6 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
                             </DialogTitle>
                         </DialogHeader>
                         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                             {/* Burada da aktif çalışanları gösterelim, kimi ekleyeceğimizi bilelim */}
                             {renderActiveCrew()}
                             <div className="flex justify-between items-center"><Label>Planlanan Süre</Label>{renderDurationInput()}</div>
                             {renderWorkerList()}
@@ -356,10 +358,8 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
                         </DialogHeader>
                         
                         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                            {/* AKTİF ÇALIŞANLAR BURADA GÖRÜNECEK */}
                             {renderActiveCrew()}
 
-                            {/* CANLI HESAPLAMA BANNERI */}
                             {realStock > 0 && (
                                 <div className="flex items-center justify-between bg-yellow-50 px-3 py-2 rounded border border-yellow-100 text-sm text-yellow-800">
                                     <span>Kalan: <strong>{realStock}</strong></span>
@@ -369,6 +369,34 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
                                     <strong>{(realStock + (parseFloat(amount)||0))} {t('operation.common.kg')}</strong>
                                 </div>
                             )}
+
+                            {/* --- TARİH SEÇİCİ EKLENDİ --- */}
+                            <div className="space-y-2">
+                                <Label>Fiş Tarihi</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full justify-start text-left font-normal h-12 border-input text-lg",
+                                                !ticketDate && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-5 w-5" />
+                                            {ticketDate ? format(ticketDate, "d MMMM yyyy", { locale: tr }) : <span>Tarih Seç</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={ticketDate}
+                                            onSelect={setTicketDate}
+                                            initialFocus
+                                            locale={tr}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
 
                             <div className="space-y-3">
                                 <Label className="text-base">{t('operation.dialogs.ticket.amountLabel')}</Label>
@@ -380,7 +408,7 @@ export function SmartTableManager({ tableId, tableName, currentStock, activeSess
                                         className="text-xl font-bold h-12 pl-10" 
                                         value={amount} 
                                         onChange={e => setAmount(e.target.value)} 
-                                        autoFocus 
+                                        
                                     />
                                 </div>
                             </div>
