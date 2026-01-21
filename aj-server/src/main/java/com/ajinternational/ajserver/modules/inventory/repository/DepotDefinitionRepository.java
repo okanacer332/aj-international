@@ -2,6 +2,8 @@
 package com.ajinternational.ajserver.modules.inventory.repository;
 
 import com.ajinternational.ajserver.modules.inventory.model.DepotDefinition;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,6 +13,10 @@ import java.util.Optional;
 @Repository
 public interface DepotDefinitionRepository extends MongoRepository<DepotDefinition, String> {
     List<DepotDefinition> findByTenantId(String tenantId);
+
+    Page<DepotDefinition> findByTenantId(String tenantId, Pageable pageable);
+
     Optional<DepotDefinition> findByTenantIdAndId(String tenantId, String id);
+
     Optional<DepotDefinition> findByTenantIdAndName(String tenantId, String name);
 }

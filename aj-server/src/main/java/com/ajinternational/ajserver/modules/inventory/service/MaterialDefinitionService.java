@@ -6,6 +6,8 @@ import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
 import com.ajinternational.ajserver.modules.inventory.model.MaterialDefinition;
 import com.ajinternational.ajserver.modules.inventory.repository.MaterialDefinitionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +20,8 @@ public class MaterialDefinitionService {
 
     private final MaterialDefinitionRepository repository;
     private final AuditLogService auditLogService;
-    // TODO: Material'ı silmeden önce InventoryEntry/Dispatch'te kullanılıyor mu diye kontrol et.
+    // TODO: Material'ı silmeden önce InventoryEntry/Dispatch'te kullanılıyor mu
+    // diye kontrol et.
 
     private boolean isSuperAdmin() {
         UserDetails userDetails = TenantContextHolder.getCurrentUserDetails();
@@ -26,6 +29,12 @@ public class MaterialDefinitionService {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
     }
 
+    // Helper for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
+
+    @Cacheable(value = "materials", key = "#root.target.getCurrentTenantIdForCache()")
     public List<MaterialDefinition> findAll() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         if (isSuperAdmin()) {
@@ -44,6 +53,7 @@ public class MaterialDefinitionService {
         }
     }
 
+    @CacheEvict(value = "materials", key = "#root.target.getCurrentTenantIdForCache()")
     public MaterialDefinition save(MaterialDefinition definition) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         String username = TenantContextHolder.getCurrentUsername();
@@ -63,7 +73,6 @@ public class MaterialDefinitionService {
             });
         }
 
-
         if (definition.getId() == null) {
             definition.setTenantId(tenantId);
             logAction = "INVENTORY_MATERIAL_CREATED";
@@ -79,6 +88,7 @@ public class MaterialDefinitionService {
         return saved;
     }
 
+    @CacheEvict(value = "materials", key = "#root.target.getCurrentTenantIdForCache()")
     public void delete(String id) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         String username = TenantContextHolder.getCurrentUsername();
@@ -89,6 +99,7 @@ public class MaterialDefinitionService {
         // TODO: Bağımlılık kontrolü (örn: Stokta bu malzeme var mı?)
 
         repository.delete(definition);
-        auditLogService.logAction(tenantId, username, "INVENTORY_MATERIAL_DELETED", "Malzeme tanımı silindi: " + definition.getName());
+        auditLogService.logAction(tenantId, username, "INVENTORY_MATERIAL_DELETED",
+                "Malzeme tanımı silindi: " + definition.getName());
     }
 }

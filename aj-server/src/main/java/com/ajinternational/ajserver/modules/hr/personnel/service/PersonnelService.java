@@ -17,16 +17,22 @@ import com.ajinternational.ajserver.modules.masterdata.repository.UnitDefinition
 import com.ajinternational.ajserver.modules.masterdata.model.ServiceDefinition;
 import com.ajinternational.ajserver.modules.masterdata.model.SkillDefinition;
 import com.ajinternational.ajserver.modules.masterdata.model.UnitDefinition;
-
-// --- YENİ IMPORTLAR ---
 import com.ajinternational.ajserver.modules.storage.service.FileStorageService;
-import org.springframework.web.multipart.MultipartFile;
-// --- IMPORTLAR SONU ---
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.Objects;
 
 import java.util.List;
 import java.util.Map;
@@ -35,7 +41,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.Optional;
 import java.util.Objects; // Objects importu eklendi (deleteUnit içindeydi)
-
 
 @Service
 @RequiredArgsConstructor
@@ -52,8 +57,13 @@ public class PersonnelService {
     private final SkillDefinitionRepository skillRepository;
     private final ServiceDefinitionRepository serviceRepository;
 
+    // Helper for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
 
     // --- LİSTELEME (DISPLAY FIX) ---
+    @Cacheable(value = "personnel", key = "#root.target.getCurrentTenantIdForCache()")
     public List<Personnel> findAllPersonnel() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
 
@@ -85,6 +95,7 @@ public class PersonnelService {
         return personnelList;
     }
 
+    @CacheEvict(value = "personnel", key = "#root.target.getCurrentTenantIdForCache()")
     @Transactional
     public Personnel createPersonnel(CreatePersonnelRequest request) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
@@ -98,7 +109,8 @@ public class PersonnelService {
         }
 
         Role personnelRole = roleRepository.findByTenantIdAndName(currentTenantId, "PERSONNEL")
-                .orElseThrow(() -> new RuntimeException("PERSONNEL rolü bulunamadı. Lütfen DataInitializer'ı kontrol edin."));
+                .orElseThrow(() -> new RuntimeException(
+                        "PERSONNEL rolü bulunamadı. Lütfen DataInitializer'ı kontrol edin."));
 
         User newUser = new User();
         newUser.setTenantId(currentTenantId);
@@ -134,13 +146,12 @@ public class PersonnelService {
                 currentTenantId,
                 currentUsername,
                 "PERSONNEL_CREATED",
-                "Yeni personel oluşturuldu: " + savedUser.getUsername()
-        );
+                "Yeni personel oluşturuldu: " + savedUser.getUsername());
 
         return savedPersonnel;
     }
 
-
+    @CacheEvict(value = "personnel", key = "#root.target.getCurrentTenantIdForCache()")
     @Transactional
     public Personnel updatePersonnel(String personnelId, UpdatePersonnelRequest request) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
@@ -150,7 +161,8 @@ public class PersonnelService {
                 .orElseThrow(() -> new RuntimeException("Personel kaydı bulunamadı veya yetkiniz yok."));
 
         User user = userRepository.findById(personnel.getUserId())
-                .orElseThrow(() -> new RuntimeException("İlişkili kullanıcı kaydı bulunamadı: " + personnel.getUserId()));
+                .orElseThrow(
+                        () -> new RuntimeException("İlişkili kullanıcı kaydı bulunamadı: " + personnel.getUserId()));
 
         user.setFullName(request.fullName());
         userRepository.save(user);
@@ -176,12 +188,12 @@ public class PersonnelService {
                 currentTenantId,
                 currentUsername,
                 "PERSONNEL_UPDATED",
-                "Personel güncellendi: " + user.getUsername()
-        );
+                "Personel güncellendi: " + user.getUsername());
 
         return updatedPersonnel;
     }
 
+    @CacheEvict(value = "personnel", key = "#root.target.getCurrentTenantIdForCache()")
     @Transactional
     public void deletePersonnel(String personnelId) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
@@ -200,8 +212,7 @@ public class PersonnelService {
                 currentTenantId,
                 currentUsername,
                 "PERSONNEL_DELETED",
-                "Personel ve ilişkili kullanıcı silindi: " + onxCode
-        );
+                "Personel ve ilişkili kullanıcı silindi: " + onxCode);
     }
 
     // --- YENİ METOT: AVATAR GÜNCELLEME ---

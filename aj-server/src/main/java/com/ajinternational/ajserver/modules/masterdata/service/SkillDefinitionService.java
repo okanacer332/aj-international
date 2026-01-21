@@ -5,6 +5,8 @@ import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
 import com.ajinternational.ajserver.modules.masterdata.model.SkillDefinition;
 import com.ajinternational.ajserver.modules.masterdata.repository.SkillDefinitionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +20,13 @@ public class SkillDefinitionService {
     private final SkillDefinitionRepository skillRepository;
     private final AuditLogService auditLogService;
 
+    // Helper for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
+
     // Tenant'a göre listeleme
+    @Cacheable(value = "skills", key = "#root.target.getCurrentTenantIdForCache()")
     public List<SkillDefinition> findAllSkills() {
         UserDetails userDetails = TenantContextHolder.getCurrentUserDetails();
         String tenantId = TenantContextHolder.getCurrentTenantId();
@@ -47,6 +55,7 @@ public class SkillDefinitionService {
     }
 
     // Kaydetme veya Güncelleme
+    @CacheEvict(value = "skills", key = "#root.target.getCurrentTenantIdForCache()")
     public SkillDefinition saveSkill(SkillDefinition skillFromRequest) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();
@@ -87,6 +96,7 @@ public class SkillDefinitionService {
     }
 
     // Silme
+    @CacheEvict(value = "skills", key = "#root.target.getCurrentTenantIdForCache()")
     public void deleteSkill(String id) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();

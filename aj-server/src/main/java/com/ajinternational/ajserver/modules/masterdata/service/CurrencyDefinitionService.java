@@ -5,6 +5,8 @@ import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
 import com.ajinternational.ajserver.modules.masterdata.model.CurrencyDefinition;
 import com.ajinternational.ajserver.modules.masterdata.repository.CurrencyDefinitionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +20,12 @@ public class CurrencyDefinitionService {
     private final CurrencyDefinitionRepository currencyRepository;
     private final AuditLogService auditLogService;
 
+    // Helper for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
+
+    @Cacheable(value = "currencies", key = "#root.target.getCurrentTenantIdForCache()")
     public List<CurrencyDefinition> findAllCurrencies() {
         UserDetails userDetails = TenantContextHolder.getCurrentUserDetails();
         String tenantId = TenantContextHolder.getCurrentTenantId();
@@ -36,6 +44,7 @@ public class CurrencyDefinitionService {
         return currencyRepository.findByTenantIdAndId(tenantId, id);
     }
 
+    @CacheEvict(value = "currencies", key = "#root.target.getCurrentTenantIdForCache()")
     public CurrencyDefinition saveCurrency(CurrencyDefinition currencyFromRequest) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();
@@ -73,6 +82,7 @@ public class CurrencyDefinitionService {
         return savedCurrency;
     }
 
+    @CacheEvict(value = "currencies", key = "#root.target.getCurrentTenantIdForCache()")
     public void deleteCurrency(String id) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();

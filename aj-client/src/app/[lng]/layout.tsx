@@ -7,6 +7,8 @@ import { Inter } from "next/font/google";
 import { supportedLngs } from "@/lib/i18n";
 
 import { Toaster } from "@/components/ui/sonner";
+import { QueryProvider } from "@/components/providers/query-provider";
+import { PWAInstallPrompt } from "@/components/pwa";
 import { APP_CONFIG } from "@/config/app-config";
 import { getPreference } from "@/server/server-actions";
 import { PreferencesStoreProvider } from "@/stores/preferences/preferences-provider";
@@ -81,10 +83,13 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className={`${inter.className} min-h-screen antialiased`}>
-        <PreferencesStoreProvider themeMode={themeMode} themePreset={themePreset}>
-          {children}
-          <Toaster />
-        </PreferencesStoreProvider>
+        <QueryProvider>
+          <PreferencesStoreProvider themeMode={themeMode} themePreset={themePreset}>
+            {children}
+            <Toaster />
+            <PWAInstallPrompt delay={5000} dismissDuration={14} />
+          </PreferencesStoreProvider>
+        </QueryProvider>
       </body>
     </html>
   );

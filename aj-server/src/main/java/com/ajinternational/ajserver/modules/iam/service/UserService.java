@@ -11,6 +11,8 @@ import com.ajinternational.ajserver.modules.iam.model.User;
 import com.ajinternational.ajserver.modules.iam.repository.RoleRepository;
 import com.ajinternational.ajserver.modules.iam.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,6 +33,12 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
 
+    // Helper for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
+
+    @CacheEvict(value = "users", key = "#root.target.getCurrentTenantIdForCache()")
     public User createUser(CreateUserRequest request) {
         // --- GÜNCELLEME BAŞLANGIÇ: Tenant Güvenlik Kontrolü ---
         UserDetails currentUserDetails = TenantContextHolder.getCurrentUserDetails();
@@ -44,11 +52,11 @@ public class UserService {
             // Süper Admin ise, formdan gelen tenantId'yi kullan (TR, RU, DU olabilir)
             targetTenantId = request.tenantId();
         } else {
-            // Süper Admin değilse, formdan ne gelirse gelsin, işlemi yapanın tenantId'sini zorla
+            // Süper Admin değilse, formdan ne gelirse gelsin, işlemi yapanın tenantId'sini
+            // zorla
             targetTenantId = currentTenantId;
         }
         // --- GÜNCELLEME BİTİŞ ---
-
 
         String generatedUsername = generateUsername(request.fullName());
         if (userRepository.existsByUsername(generatedUsername)) {
@@ -68,11 +76,11 @@ public class UserService {
                 savedUser.getTenantId(),
                 TenantContextHolder.getCurrentUsername(),
                 "USER_CREATED",
-                "Yeni kullanıcı oluşturuldu: " + savedUser.getUsername()
-        );
+                "Yeni kullanıcı oluşturuldu: " + savedUser.getUsername());
         return savedUser;
     }
 
+    @CacheEvict(value = "users", key = "#root.target.getCurrentTenantIdForCache()")
     public User updateUser(String userId, UpdateUserRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + userId));
@@ -86,12 +94,14 @@ public class UserService {
             if (!user.getTenantId().equals(currentUserTenantId)) {
                 throw new SecurityException("Bu kullanıcıyı güncelleme yetkiniz yok.");
             }
-            // GÜNCELLENDİ: Normal admin'in, kullanıcının tenant'ını (ülkesini) değiştirmesini engelle
+            // GÜNCELLENDİ: Normal admin'in, kullanıcının tenant'ını (ülkesini)
+            // değiştirmesini engelle
             // (Sadece fullName, email, active, roleIds güncellenebilir)
         }
 
         // Rollerin, güncellenmek istenen kullanıcının tenant'ına ait olduğundan emin ol
-        // (Bu kontrol daha da geliştirilebilir, şimdilik rol ID'lerinin varlığını kontrol ediyoruz)
+        // (Bu kontrol daha da geliştirilebilir, şimdilik rol ID'lerinin varlığını
+        // kontrol ediyoruz)
         long foundRoles = roleRepository.countByIdIn(request.roleIds());
         if (foundRoles != request.roleIds().size()) {
             throw new IllegalArgumentException("Geçersiz veya bulunamayan rol ID'leri gönderildi.");
@@ -102,7 +112,8 @@ public class UserService {
         user.setActive(request.active());
         user.setRoleIds(request.roleIds());
 
-        // GÜNCELLEME: Sadece Süper Admin bir kullanıcının tenant'ını (ülkesini) değiştirebilir.
+        // GÜNCELLEME: Sadece Süper Admin bir kullanıcının tenant'ını (ülkesini)
+        // değiştirebilir.
         // (Şu anki UpdateUserRequest DTO'su tenantId içermiyor, bu yüzden bu risk yok,
         // ancak gelecekte eklenirse diye bu mantık aklımızda bulunmalı.)
 
@@ -112,11 +123,11 @@ public class UserService {
                 updatedUser.getTenantId(),
                 TenantContextHolder.getCurrentUsername(),
                 "USER_UPDATED",
-                "Kullanıcı güncellendi: " + updatedUser.getUsername()
-        );
+                "Kullanıcı güncellendi: " + updatedUser.getUsername());
         return updatedUser;
     }
 
+    @CacheEvict(value = "users", key = "#root.target.getCurrentTenantIdForCache()")
     public void deleteUser(String userId) {
         User userToDelete = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Silinecek kullanıcı bulunamadı: " + userId));
@@ -141,8 +152,7 @@ public class UserService {
                 tenantId,
                 TenantContextHolder.getCurrentUsername(),
                 "USER_DELETED",
-                "Kullanıcı silindi: " + username
-        );
+                "Kullanıcı silindi: " + username);
     }
 
     private String generateUsername(String fullName) {
@@ -152,6 +162,7 @@ public class UserService {
                 .replaceAll("\\s+", ".");
     }
 
+    @Cacheable(value = "users", key = "#root.target.getCurrentTenantIdForCache()")
     public List<User> getAllUsers() {
         UserDetails userDetails = TenantContextHolder.getCurrentUserDetails();
         String tenantId = TenantContextHolder.getCurrentTenantId();
@@ -193,8 +204,7 @@ public class UserService {
                 TenantContextHolder.getCurrentTenantId(),
                 username,
                 "USER_PROFILE_UPDATED",
-                "Kullanıcı kendi profilini güncelledi."
-        );
+                "Kullanıcı kendi profilini güncelledi.");
         return updatedUser;
     }
 
@@ -213,8 +223,7 @@ public class UserService {
                 TenantContextHolder.getCurrentTenantId(),
                 username,
                 "USER_PASSWORD_CHANGED",
-                "Kullanıcı kendi şifresini değiştirdi."
-        );
+                "Kullanıcı kendi şifresini değiştirdi.");
     }
 
     public Optional<User> getUserByUsername(String username) {
@@ -241,7 +250,6 @@ public class UserService {
                 TenantContextHolder.getCurrentTenantId(),
                 username,
                 "USER_AVATAR_UPDATED",
-                "Kullanıcı profil fotoğrafını güncelledi."
-        );
+                "Kullanıcı profil fotoğrafını güncelledi.");
     }
 }

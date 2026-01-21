@@ -9,6 +9,8 @@ import com.ajinternational.ajserver.modules.masterdata.model.ProductionUnitDefin
 import com.ajinternational.ajserver.modules.masterdata.repository.CurrencyDefinitionRepository;
 import com.ajinternational.ajserver.modules.masterdata.repository.ProductionUnitDefinitionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,11 +27,18 @@ public class BonusDefinitionService {
     private final CurrencyDefinitionRepository currencyRepository;
     private final AuditLogService auditLogService;
 
+    // Helper for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
+
+    @Cacheable(value = "bonusDefinitions", key = "#root.target.getCurrentTenantIdForCache()")
     public List<BonusDefinition> findAll() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         List<BonusDefinition> bonuses = repository.findByTenantId(tenantId);
 
-        // İlişkili verilerin isimlerini doldurmak için Map oluşturuyoruz (Performans için toplu çekim)
+        // İlişkili verilerin isimlerini doldurmak için Map oluşturuyoruz (Performans
+        // için toplu çekim)
         Map<String, ProductionUnitDefinition> unitMap = productionUnitRepository.findByTenantId(tenantId).stream()
                 .collect(Collectors.toMap(ProductionUnitDefinition::getId, Function.identity()));
 
@@ -52,27 +61,32 @@ public class BonusDefinitionService {
         return bonuses;
     }
 
+    @CacheEvict(value = "bonusDefinitions", key = "#root.target.getCurrentTenantIdForCache()")
     public BonusDefinition save(BonusDefinition definition) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         String username = TenantContextHolder.getCurrentUsername();
 
         if (definition.getId() == null) {
             definition.setTenantId(tenantId);
-            auditLogService.logAction(tenantId, username, "BONUS_DEF_CREATED", "Yeni prim tanımı: " + definition.getName());
+            auditLogService.logAction(tenantId, username, "BONUS_DEF_CREATED",
+                    "Yeni prim tanımı: " + definition.getName());
         } else {
             // Güncelleme güvenliği: Var olan kaydın tenantId'sini koru
             BonusDefinition existing = repository.findById(definition.getId())
                     .orElseThrow(() -> new RuntimeException("Kayıt bulunamadı."));
             definition.setTenantId(existing.getTenantId());
-            auditLogService.logAction(tenantId, username, "BONUS_DEF_UPDATED", "Prim güncellendi: " + definition.getName());
+            auditLogService.logAction(tenantId, username, "BONUS_DEF_UPDATED",
+                    "Prim güncellendi: " + definition.getName());
         }
 
         return repository.save(definition);
     }
 
+    @CacheEvict(value = "bonusDefinitions", key = "#root.target.getCurrentTenantIdForCache()")
     public void delete(String id) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         repository.deleteById(id);
-        auditLogService.logAction(tenantId, TenantContextHolder.getCurrentUsername(), "BONUS_DEF_DELETED", "Prim silindi ID: " + id);
+        auditLogService.logAction(tenantId, TenantContextHolder.getCurrentUsername(), "BONUS_DEF_DELETED",
+                "Prim silindi ID: " + id);
     }
 }

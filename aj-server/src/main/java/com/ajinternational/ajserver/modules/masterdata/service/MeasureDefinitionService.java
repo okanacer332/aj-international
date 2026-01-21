@@ -5,6 +5,8 @@ import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
 import com.ajinternational.ajserver.modules.masterdata.model.MeasureDefinition;
 import com.ajinternational.ajserver.modules.masterdata.repository.MeasureDefinitionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +20,13 @@ public class MeasureDefinitionService {
     private final MeasureDefinitionRepository measureRepository;
     private final AuditLogService auditLogService;
 
+    // Helper for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
+
     // Tenant'a göre listeleme
+    @Cacheable(value = "measures", key = "#root.target.getCurrentTenantIdForCache()")
     public List<MeasureDefinition> findAllMeasures() {
         UserDetails userDetails = TenantContextHolder.getCurrentUserDetails();
         String tenantId = TenantContextHolder.getCurrentTenantId();
@@ -47,6 +55,7 @@ public class MeasureDefinitionService {
     }
 
     // Kaydetme veya Güncelleme
+    @CacheEvict(value = "measures", key = "#root.target.getCurrentTenantIdForCache()")
     public MeasureDefinition saveMeasure(MeasureDefinition measureFromRequest) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();
@@ -86,6 +95,7 @@ public class MeasureDefinitionService {
     }
 
     // Silme
+    @CacheEvict(value = "measures", key = "#root.target.getCurrentTenantIdForCache()")
     public void deleteMeasure(String id) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();

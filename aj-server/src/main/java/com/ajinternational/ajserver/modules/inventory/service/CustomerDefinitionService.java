@@ -6,6 +6,8 @@ import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
 import com.ajinternational.ajserver.modules.inventory.model.CustomerDefinition;
 import com.ajinternational.ajserver.modules.inventory.repository.CustomerDefinitionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +20,8 @@ public class CustomerDefinitionService {
 
     private final CustomerDefinitionRepository repository;
     private final AuditLogService auditLogService;
-    // TODO: Müşteriyi silmeden önce Sevk Fişlerinde kullanılıyor mu diye kontrol et.
+    // TODO: Müşteriyi silmeden önce Sevk Fişlerinde kullanılıyor mu diye kontrol
+    // et.
 
     private boolean isSuperAdmin() {
         UserDetails userDetails = TenantContextHolder.getCurrentUserDetails();
@@ -26,6 +29,12 @@ public class CustomerDefinitionService {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
     }
 
+    // Helper for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
+
+    @Cacheable(value = "customers", key = "#root.target.getCurrentTenantIdForCache()")
     public List<CustomerDefinition> findAll() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         if (isSuperAdmin()) {
@@ -44,6 +53,7 @@ public class CustomerDefinitionService {
         }
     }
 
+    @CacheEvict(value = "customers", key = "#root.target.getCurrentTenantIdForCache()")
     public CustomerDefinition save(CustomerDefinition definition) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         String username = TenantContextHolder.getCurrentUsername();
@@ -70,6 +80,7 @@ public class CustomerDefinitionService {
         return saved;
     }
 
+    @CacheEvict(value = "customers", key = "#root.target.getCurrentTenantIdForCache()")
     public void delete(String id) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         String username = TenantContextHolder.getCurrentUsername();
@@ -80,6 +91,7 @@ public class CustomerDefinitionService {
         // TODO: Bağımlılık kontrolü
 
         repository.delete(definition);
-        auditLogService.logAction(tenantId, username, "INVENTORY_CUSTOMER_DELETED", "Müşteri tanımı silindi: " + definition.getName());
+        auditLogService.logAction(tenantId, username, "INVENTORY_CUSTOMER_DELETED",
+                "Müşteri tanımı silindi: " + definition.getName());
     }
 }

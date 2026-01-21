@@ -1,0 +1,65 @@
+# =============================================================================
+# AJ-International Backend Configuration Example
+# Copy this file to application.properties and adjust values as needed
+# =============================================================================
+
+# Server Configuration
+server.port=3344
+
+# MongoDB Connection
+spring.data.mongodb.uri=mongodb://localhost:27017/aj_international
+
+# MongoDB Connection Pool Settings (Performance Optimization)
+# Maximum number of connections in the pool
+spring.data.mongodb.max-connections=100
+# Minimum number of connections to maintain
+spring.data.mongodb.min-connections=10
+# Maximum wait time for a connection from the pool (ms)
+spring.data.mongodb.max-wait-time=120000
+# Maximum connection idle time (ms) - 0 means infinite
+spring.data.mongodb.max-connection-idle-time=0
+# Maximum connection life time (ms) - 0 means infinite
+spring.data.mongodb.max-connection-life-time=0
+
+# Redis Cache Configuration
+spring.cache.type=redis
+spring.redis.host=localhost
+spring.redis.port=6379
+spring.redis.password=
+spring.cache.redis.time-to-live=3600000
+
+# JWT Configuration
+jwt.secret=your-256-bit-secret-key-here-change-in-production
+jwt.expiration=86400000
+
+# CORS Configuration
+app.cors.allowed-origins=http://localhost:3000,http://localhost:3001
+
+# Logging
+logging.level.org.springframework.data.mongodb=INFO
+logging.level.com.ajinternational=DEBUG
+
+# Performance Logging
+logging.level.org.springframework.cache=DEBUG
+
+# =============================================================================
+# Production Recommendations:
+# =============================================================================
+# 1. MongoDB Connection Pool:
+#    - Set max-connections based on expected concurrent users
+#    - Rule of thumb: (concurrent users / 10) + buffer
+#    - Example: 1000 users = ~120 connections
+#
+# 2. Redis:
+#    - Use Redis Sentinel or Cluster for HA
+#    - Set appropriate TTLs per cache type
+#
+# 3. JVM Options (add to startup):
+#    -Xms512m -Xmx2g
+#    -XX:+UseG1GC
+#    -XX:MaxGCPauseMillis=200
+#
+# 4. Connection Timeouts:
+#    - Adjust based on network latency
+#    - Lower values for local, higher for cloud
+# =============================================================================

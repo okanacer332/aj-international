@@ -1,6 +1,8 @@
 package com.ajinternational.ajserver.modules.hr.personnel.repository;
 
 import com.ajinternational.ajserver.modules.hr.personnel.model.Personnel;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,6 +13,8 @@ import java.util.Optional;
 public interface PersonnelRepository extends MongoRepository<Personnel, String> {
 
     List<Personnel> findByTenantId(String tenantId);
+
+    Page<Personnel> findByTenantId(String tenantId, Pageable pageable);
 
     Optional<Personnel> findByTenantIdAndId(String tenantId, String id);
 

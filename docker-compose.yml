@@ -1,0 +1,179 @@
+services:
+  # ============================================
+  # DATABASE SERVICES
+  # ============================================
+  mongodb:
+    image: mongo:7.0
+    container_name: aj-mongodb
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: aj_mongo_pass_2024
+      MONGO_INITDB_DATABASE: ajinternational
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - aj-network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: aj-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - aj-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # APPLICATION SERVICES
+  # ============================================
+  aj-server:
+    build:
+      context: ./aj-server
+      dockerfile: Dockerfile
+    container_name: aj-server
+    restart: unless-stopped
+    ports:
+      - "3344:8080"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://admin:aj_mongo_pass_2024@mongodb:27017/ajinternational?authSource=admin
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_PROFILES_ACTIVE: docker
+      # Actuator endpoints for monitoring
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics,prometheus
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
+      MANAGEMENT_PROMETHEUS_METRICS_EXPORT_ENABLED: "true"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - aj-network
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  aj-client:
+    build:
+      context: ./aj-client
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080
+    container_name: aj-client
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3344
+      BACKEND_INTERNAL_URL: http://aj-server:8080
+    depends_on:
+      - aj-server
+    networks:
+      - aj-network
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # MONITORING SERVICES
+  # ============================================
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: aj-prometheus
+    restart: unless-stopped
+    ports:
+      - "9094:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - aj-network
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: aj-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: aj_grafana_2024
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: http://localhost:3001
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - aj-network
+
+  # Redis Exporter for Prometheus
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.55.0
+    container_name: aj-redis-exporter
+    restart: unless-stopped
+    ports:
+      - "9121:9121"
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    depends_on:
+      - redis
+    networks:
+      - aj-network
+
+  # MongoDB Exporter for Prometheus
+  mongodb-exporter:
+    image: percona/mongodb_exporter:0.40.0
+    container_name: aj-mongodb-exporter
+    restart: unless-stopped
+    ports:
+      - "9216:9216"
+    environment:
+      MONGODB_URI: mongodb://admin:aj_mongo_pass_2024@mongodb:27017/admin
+    depends_on:
+      - mongodb
+    networks:
+      - aj-network
+
+# ============================================
+# NETWORKS & VOLUMES
+# ============================================
+networks:
+  aj-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:

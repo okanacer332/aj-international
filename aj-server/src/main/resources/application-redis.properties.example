@@ -1,0 +1,26 @@
+# ==============================================================================
+# Redis Configuration for AJ International Performance Optimization
+# ==============================================================================
+# Add these properties to your application.properties file
+#
+# This file is NOT used directly - it's a reference for configuration.
+# Copy these values to your application.properties
+# ==============================================================================
+
+# Redis Server Configuration
+spring.redis.host=localhost
+spring.redis.port=6379
+# spring.redis.password=your_password_here
+
+# Cache Configuration
+spring.cache.type=redis
+spring.cache.redis.time-to-live=3600000
+
+# Redis Connection Pool (Lettuce)
+spring.redis.lettuce.pool.max-active=8
+spring.redis.lettuce.pool.max-idle=8
+spring.redis.lettuce.pool.min-idle=0
+spring.redis.lettuce.pool.max-wait=-1ms
+
+# Connection Timeout
+spring.redis.timeout=2000ms

@@ -5,6 +5,8 @@ import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
 import com.ajinternational.ajserver.modules.masterdata.model.ServiceDefinition;
 import com.ajinternational.ajserver.modules.masterdata.repository.ServiceDefinitionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +20,13 @@ public class ServiceDefinitionService {
     private final ServiceDefinitionRepository serviceRepository;
     private final AuditLogService auditLogService;
 
-    // Tenant'a göre listeleme
+    // Helper method for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
+
+    // Tenant'a göre listeleme - Cached for 24 hours
+    @Cacheable(value = "services", key = "#root.target.getCurrentTenantIdForCache()")
     public List<ServiceDefinition> findAllServices() {
         UserDetails userDetails = TenantContextHolder.getCurrentUserDetails();
         String tenantId = TenantContextHolder.getCurrentTenantId();
@@ -46,7 +54,8 @@ public class ServiceDefinitionService {
         }
     }
 
-    // Kaydetme veya Güncelleme
+    // Kaydetme veya Güncelleme - Evicts cache on save
+    @CacheEvict(value = "services", key = "#root.target.getCurrentTenantIdForCache()")
     public ServiceDefinition saveService(ServiceDefinition serviceFromRequest) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();
@@ -88,7 +97,8 @@ public class ServiceDefinitionService {
         return savedService;
     }
 
-    // Silme
+    // Silme - Evicts cache on delete
+    @CacheEvict(value = "services", key = "#root.target.getCurrentTenantIdForCache()")
     public void deleteService(String id) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();

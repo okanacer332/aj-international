@@ -1,5 +1,6 @@
 package com.ajinternational.ajserver.modules.masterdata.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,8 +15,7 @@ import java.util.Optional;
 
 @Data
 @NoArgsConstructor
-@Document(collection = "master_production_units") // Yeni koleksiyon adı
-// Bir tenant içinde, aynı ebeveyn (Grup) altında aynı isimde Bölüm olamaz
+@Document(collection = "master_production_units")
 @CompoundIndex(name = "tenant_prod_parent_name_idx", def = "{'tenantId' : 1, 'parentProductionUnitId' : 1, 'name' : 1}", unique = true)
 public class ProductionUnitDefinition {
 
@@ -26,14 +26,15 @@ public class ProductionUnitDefinition {
     private String tenantId;
 
     @NotBlank(message = "Ad (Grup/Bölüm) boş olamaz")
-    private String name; // Örn: "Baby" (Grup) veya "Kalite" (Bölüm)
+    private String name;
 
     @Indexed
-    private String parentProductionUnitId; // Bu null ise "Grup", doluysa "Bölüm"dür.
+    private String parentProductionUnitId;
 
-    // Bu alan veritabanına kaydedilmez, hiyerarşiyi göstermek için kullanılır
+    // Redis cache serialization için ignore edilmeli
     @Transient
-    private List<ProductionUnitDefinition> subUnits; // Alt Bölümler (Grup ise)
+    @JsonIgnore
+    private List<ProductionUnitDefinition> subUnits;
 
     public ProductionUnitDefinition(String tenantId, String name, String parentProductionUnitId) {
         this.tenantId = tenantId;
@@ -41,7 +42,11 @@ public class ProductionUnitDefinition {
         this.parentProductionUnitId = parentProductionUnitId;
     }
 
-    public Optional<String> getParentProductionUnitId() {
+    // Lombok will generate getParentProductionUnitId() returning String - correct
+    // for serialization
+    // Use this helper method for Optional access (not a getter pattern)
+    @JsonIgnore
+    public Optional<String> parentProductionUnitIdOptional() {
         return Optional.ofNullable(parentProductionUnitId);
     }
 }

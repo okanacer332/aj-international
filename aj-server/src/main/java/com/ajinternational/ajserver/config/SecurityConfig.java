@@ -46,6 +46,9 @@ public class SecurityConfig {
                         // WebSocket Handshake işlemi için bu yolun açık olması şarttır.
                         .requestMatchers("/ws-operation/**").permitAll()
 
+                        // 5. Actuator endpoints for Prometheus monitoring
+                        .requestMatchers("/actuator/**").permitAll()
+
                         // 5. Geriye kalan tüm istekler için kimlik doğrulaması iste.
                         .anyRequest().authenticated()
                 )

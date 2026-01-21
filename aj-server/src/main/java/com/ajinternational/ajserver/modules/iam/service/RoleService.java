@@ -1,11 +1,13 @@
 package com.ajinternational.ajserver.modules.iam.service;
 
-import com.ajinternational.ajserver.config.TenantContextHolder; // Eklendi
-import com.ajinternational.ajserver.modules.audit.service.AuditLogService; // Eklendi
+import com.ajinternational.ajserver.config.TenantContextHolder;
+import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
 import com.ajinternational.ajserver.modules.iam.model.Role;
 import com.ajinternational.ajserver.modules.iam.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails; // Eklendi
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,6 +20,12 @@ public class RoleService {
     private final RoleRepository roleRepository;
     private final AuditLogService auditLogService; // Eklendi
 
+    // Helper for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
+
+    @CacheEvict(value = "roles", key = "#root.target.getCurrentTenantIdForCache()")
     public Role createRole(Role role) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();
@@ -33,11 +41,13 @@ public class RoleService {
         Role savedRole = roleRepository.save(role);
 
         // EKLENDİ: Loglama
-        auditLogService.logAction(currentTenantId, currentUsername, "ROLE_CREATED", "Yeni rol oluşturuldu: " + savedRole.getName());
+        auditLogService.logAction(currentTenantId, currentUsername, "ROLE_CREATED",
+                "Yeni rol oluşturuldu: " + savedRole.getName());
 
         return savedRole;
     }
 
+    @Cacheable(value = "roles", key = "#root.target.getCurrentTenantIdForCache()")
     public List<Role> getAllRoles() {
         // GÜNCELLENDİ: Multi-tenant izolasyon
         UserDetails userDetails = TenantContextHolder.getCurrentUserDetails();
@@ -68,13 +78,16 @@ public class RoleService {
         }
     }
 
+    @CacheEvict(value = "roles", key = "#root.target.getCurrentTenantIdForCache()")
     public Role updateRole(String id, Role roleDetails) {
         // GÜNCELLENDİ: getRoleById metodu artık tenant güvenli.
         Role role = this.getRoleById(id)
                 .orElseThrow(() -> new RuntimeException("Rol bulunamadı veya bu role erişim yetkiniz yok: " + id));
 
-        // Rol adının başka bir rolde kullanılıp kullanılmadığını (kendi tenant'ı içinde) kontrol et
-        Optional<Role> existingRoleWithName = roleRepository.findByTenantIdAndName(role.getTenantId(), roleDetails.getName());
+        // Rol adının başka bir rolde kullanılıp kullanılmadığını (kendi tenant'ı
+        // içinde) kontrol et
+        Optional<Role> existingRoleWithName = roleRepository.findByTenantIdAndName(role.getTenantId(),
+                roleDetails.getName());
         if (existingRoleWithName.isPresent() && !existingRoleWithName.get().getId().equals(id)) {
             throw new IllegalArgumentException("Bu rol adı zaten başka bir role ait: " + roleDetails.getName());
         }
@@ -89,12 +102,12 @@ public class RoleService {
                 role.getTenantId(),
                 TenantContextHolder.getCurrentUsername(),
                 "ROLE_UPDATED",
-                "Rol güncellendi: " + updatedRole.getName()
-        );
+                "Rol güncellendi: " + updatedRole.getName());
 
         return updatedRole;
     }
 
+    @CacheEvict(value = "roles", key = "#root.target.getCurrentTenantIdForCache()")
     public void deleteRole(String id) {
         // GÜNCELLENDİ: getRoleById metodu artık tenant güvenli.
         Role roleToDelete = this.getRoleById(id)
@@ -103,7 +116,8 @@ public class RoleService {
         String roleName = roleToDelete.getName();
         String tenantId = roleToDelete.getTenantId();
 
-        // Not: Bu rolü kullanan kullanıcılar varsa ne yapılacağına dair iş mantığı eklenebilir.
+        // Not: Bu rolü kullanan kullanıcılar varsa ne yapılacağına dair iş mantığı
+        // eklenebilir.
         // Şimdilik direkt siliyoruz.
         roleRepository.deleteById(id);
 
@@ -112,7 +126,6 @@ public class RoleService {
                 tenantId,
                 TenantContextHolder.getCurrentUsername(),
                 "ROLE_DELETED",
-                "Rol silindi: " + roleName
-        );
+                "Rol silindi: " + roleName);
     }
 }

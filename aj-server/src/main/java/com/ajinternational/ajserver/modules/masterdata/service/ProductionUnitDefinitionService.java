@@ -7,6 +7,8 @@ import com.ajinternational.ajserver.modules.masterdata.repository.ProductionUnit
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +26,8 @@ public class ProductionUnitDefinitionService {
 
     private final ProductionUnitDefinitionRepository productionUnitRepository;
     private final AuditLogService auditLogService;
-    // TODO: Bağımlılık kontrolü için (örn: PersonnelRepository) eklenebilir, şimdilik gerek yok.
+    // TODO: Bağımlılık kontrolü için (örn: PersonnelRepository) eklenebilir,
+    // şimdilik gerek yok.
 
     private boolean isSuperAdmin() {
         UserDetails userDetails = TenantContextHolder.getCurrentUserDetails();
@@ -32,6 +35,12 @@ public class ProductionUnitDefinitionService {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
     }
 
+    // Helper for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
+
+    @Cacheable(value = "productionUnits", key = "#root.target.getCurrentTenantIdForCache()")
     public List<ProductionUnitDefinition> findAllHierarchicalUnits() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
 
@@ -49,13 +58,14 @@ public class ProductionUnitDefinitionService {
 
         List<ProductionUnitDefinition> rootUnits = new ArrayList<>();
         allUnits.forEach(unit -> {
-            Optional<String> parentIdOpt = unit.getParentProductionUnitId().filter(s -> !s.trim().isEmpty());
+            Optional<String> parentIdOpt = unit.parentProductionUnitIdOptional().filter(s -> !s.trim().isEmpty());
             if (parentIdOpt.isPresent()) {
                 ProductionUnitDefinition parent = unitMap.get(parentIdOpt.get());
                 if (parent != null) {
                     parent.getSubUnits().add(unit);
                 } else {
-                    logger.warn("Alt birim '{}' ({}) için ana birim ID'si '{}' bulundu ancak map'te yok!", unit.getName(), unit.getId(), parentIdOpt.get());
+                    logger.warn("Alt birim '{}' ({}) için ana birim ID'si '{}' bulundu ancak map'te yok!",
+                            unit.getName(), unit.getId(), parentIdOpt.get());
                 }
             } else {
                 rootUnits.add(unit);
@@ -72,15 +82,20 @@ public class ProductionUnitDefinitionService {
                 : productionUnitRepository.findByTenantIdAndId(tenantId, id);
     }
 
+    @CacheEvict(value = "productionUnits", key = "#root.target.getCurrentTenantIdForCache()")
     public ProductionUnitDefinition saveUnit(ProductionUnitDefinition unitFromRequest) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();
 
-        String rawParentId = unitFromRequest.getParentProductionUnitId().orElse(null);
-        String finalParentId = (rawParentId != null && !rawParentId.trim().isEmpty() && !rawParentId.equals("null")) ? rawParentId.trim() : null;
+        String rawParentId = unitFromRequest.parentProductionUnitIdOptional().orElse(null);
+        String finalParentId = (rawParentId != null && !rawParentId.trim().isEmpty() && !rawParentId.equals("null"))
+                ? rawParentId.trim()
+                : null;
         unitFromRequest.setParentProductionUnitId(finalParentId);
 
-        productionUnitRepository.findByTenantIdAndParentProductionUnitIdAndName(currentTenantId, finalParentId, unitFromRequest.getName())
+        productionUnitRepository
+                .findByTenantIdAndParentProductionUnitIdAndName(currentTenantId, finalParentId,
+                        unitFromRequest.getName())
                 .ifPresent(existing -> {
                     if (unitFromRequest.getId() == null || !existing.getId().equals(unitFromRequest.getId())) {
                         throw new IllegalArgumentException("Bu Grup/Bölüm adı bu seviyede zaten kayıtlı.");
@@ -95,7 +110,8 @@ public class ProductionUnitDefinitionService {
             unitToSave = unitFromRequest;
             unitToSave.setTenantId(currentTenantId);
             logAction = "PRODUCTION_UNIT_CREATED";
-            logDetails = (finalParentId == null ? "Yeni Üretim Grubu: " : "Yeni Üretim Bölümü: ") + unitToSave.getName();
+            logDetails = (finalParentId == null ? "Yeni Üretim Grubu: " : "Yeni Üretim Bölümü: ")
+                    + unitToSave.getName();
         } else {
             unitToSave = findById(unitFromRequest.getId())
                     .orElseThrow(() -> new RuntimeException("Birim bulunamadı veya yetkiniz yok."));
@@ -113,6 +129,7 @@ public class ProductionUnitDefinitionService {
         return savedUnit;
     }
 
+    @CacheEvict(value = "productionUnits", key = "#root.target.getCurrentTenantIdForCache()")
     public void deleteUnit(String id) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();
@@ -122,7 +139,8 @@ public class ProductionUnitDefinitionService {
 
         List<ProductionUnitDefinition> children = productionUnitRepository.findByParentProductionUnitId(id);
         if (!children.isEmpty()) {
-            throw new IllegalStateException("Bu Grubun ('" + unitToDelete.getName() + "') altında tanımlı " + children.size() + " adet bölüm bulunmaktadır. Silmeden önce bu bölümleri silmelisiniz.");
+            throw new IllegalStateException("Bu Grubun ('" + unitToDelete.getName() + "') altında tanımlı "
+                    + children.size() + " adet bölüm bulunmaktadır. Silmeden önce bu bölümleri silmelisiniz.");
         }
 
         // TODO: Bu birime bağlı üretim emri vb. var mı? Kontrolü eklenebilir.
@@ -130,7 +148,8 @@ public class ProductionUnitDefinitionService {
 
         productionUnitRepository.delete(unitToDelete);
 
-        String logDetails = (unitToDelete.getParentProductionUnitId() == null ? "Üretim Grubu silindi: " : "Üretim Bölümü silindi: ") + unitToDelete.getName();
+        String logDetails = (unitToDelete.getParentProductionUnitId() == null ? "Üretim Grubu silindi: "
+                : "Üretim Bölümü silindi: ") + unitToDelete.getName();
         auditLogService.logAction(currentTenantId, currentUsername, "PRODUCTION_UNIT_DELETED", logDetails);
     }
 }

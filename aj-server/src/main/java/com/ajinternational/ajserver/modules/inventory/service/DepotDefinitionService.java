@@ -6,6 +6,8 @@ import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
 import com.ajinternational.ajserver.modules.inventory.model.DepotDefinition;
 import com.ajinternational.ajserver.modules.inventory.repository.DepotDefinitionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +28,12 @@ public class DepotDefinitionService {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
     }
 
+    // Helper method for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
+
+    @Cacheable(value = "depots", key = "#root.target.getCurrentTenantIdForCache()")
     public List<DepotDefinition> findAll() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         if (isSuperAdmin()) {
@@ -44,6 +52,7 @@ public class DepotDefinitionService {
         }
     }
 
+    @CacheEvict(value = "depots", key = "#root.target.getCurrentTenantIdForCache()")
     public DepotDefinition save(DepotDefinition definition) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         String username = TenantContextHolder.getCurrentUsername();
@@ -70,6 +79,7 @@ public class DepotDefinitionService {
         return saved;
     }
 
+    @CacheEvict(value = "depots", key = "#root.target.getCurrentTenantIdForCache()")
     public void delete(String id) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         String username = TenantContextHolder.getCurrentUsername();
@@ -80,6 +90,7 @@ public class DepotDefinitionService {
         // TODO: Bağımlılık kontrolü (Stokta bu depo kullanılıyor mu?)
 
         repository.delete(definition);
-        auditLogService.logAction(tenantId, username, "INVENTORY_DEPOT_DELETED", "Depo tanımı silindi: " + definition.getName());
+        auditLogService.logAction(tenantId, username, "INVENTORY_DEPOT_DELETED",
+                "Depo tanımı silindi: " + definition.getName());
     }
 }

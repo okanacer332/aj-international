@@ -2,12 +2,14 @@ package com.ajinternational.ajserver.modules.masterdata.service;
 
 import com.ajinternational.ajserver.config.TenantContextHolder;
 import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
-import com.ajinternational.ajserver.modules.hr.personnel.repository.PersonnelRepository; // Personel bağımlılığı eklendi
+import com.ajinternational.ajserver.modules.hr.personnel.repository.PersonnelRepository;
 import com.ajinternational.ajserver.modules.masterdata.model.UnitDefinition;
 import com.ajinternational.ajserver.modules.masterdata.repository.UnitDefinitionRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -28,9 +30,16 @@ public class UnitDefinitionService {
     private final AuditLogService auditLogService;
     private final PersonnelRepository personnelRepository; // Bağımlılık kontrolü için eklendi
 
+    // Helper for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
+
     /**
-     * Hiyerarşik olarak tüm birimleri (Departmanlar ve altındaki üniteler) döndürür.
+     * Hiyerarşik olarak tüm birimleri (Departmanlar ve altındaki üniteler)
+     * döndürür.
      */
+    @Cacheable(value = "units", key = "#root.target.getCurrentTenantIdForCache()")
     public List<UnitDefinition> findAllUnits() {
         UserDetails userDetails = TenantContextHolder.getCurrentUserDetails();
         String tenantId = TenantContextHolder.getCurrentTenantId();
@@ -55,13 +64,15 @@ public class UnitDefinitionService {
 
         List<UnitDefinition> rootUnits = new ArrayList<>();
         for (UnitDefinition unit : allUnits) {
-            Optional<String> parentIdOpt = unit.getParentUnitId().filter(s -> !s.trim().isEmpty());
+            Optional<String> parentIdOpt = unit.parentUnitIdOptional().filter(s -> !s.trim().isEmpty());
             if (parentIdOpt.isPresent()) {
                 UnitDefinition parent = unitMap.get(parentIdOpt.get());
                 if (parent != null) {
                     parent.getSubUnits().add(unit);
                 } else {
-                    logger.warn("Alt birim '{}' ({}) için ana birim ID'si '{}' bulundu ancak ilgili ana birim map'te bulunamadı!", unit.getName(), unit.getId(), parentIdOpt.get());
+                    logger.warn(
+                            "Alt birim '{}' ({}) için ana birim ID'si '{}' bulundu ancak ilgili ana birim map'te bulunamadı!",
+                            unit.getName(), unit.getId(), parentIdOpt.get());
                 }
             } else {
                 rootUnits.add(unit);
@@ -86,13 +97,17 @@ public class UnitDefinitionService {
     }
 
     // Kaydetme veya Güncelleme
+    @CacheEvict(value = "units", key = "#root.target.getCurrentTenantIdForCache()")
     public UnitDefinition saveUnit(UnitDefinition unitFromRequest) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();
 
-        // Gelen 'parentUnitId' değerini temizle (boş string, "null" string vs. yerine 'null' object kullan)
-        String rawParentId = unitFromRequest.getParentUnitId().orElse(null);
-        String finalParentId = (rawParentId != null && !rawParentId.trim().isEmpty() && !rawParentId.equals("null")) ? rawParentId.trim() : null;
+        // Gelen 'parentUnitId' değerini temizle (boş string, "null" string vs. yerine
+        // 'null' object kullan)
+        String rawParentId = unitFromRequest.parentUnitIdOptional().orElse(null);
+        String finalParentId = (rawParentId != null && !rawParentId.trim().isEmpty() && !rawParentId.equals("null"))
+                ? rawParentId.trim()
+                : null;
         unitFromRequest.setParentUnitId(finalParentId);
 
         // Benzersizlik kontrolü (Aynı ebeveyn altında aynı isim olamaz)
@@ -133,6 +148,7 @@ public class UnitDefinitionService {
     }
 
     // Silme
+    @CacheEvict(value = "units", key = "#root.target.getCurrentTenantIdForCache()")
     public void deleteUnit(String id) {
         String currentTenantId = TenantContextHolder.getCurrentTenantId();
         String currentUsername = TenantContextHolder.getCurrentUsername();
@@ -143,30 +159,35 @@ public class UnitDefinitionService {
         // 1. Güvenlik Kontrolü: Alt birimleri var mı?
         List<UnitDefinition> children = unitRepository.findByParentUnitId(id);
         if (!children.isEmpty()) {
-            throw new IllegalStateException("Bu departmanın (" + unitToDelete.getName() + ") altında tanımlı " + children.size() + " adet ünite bulunmaktadır. Silmeden önce bu üniteleri silmelisiniz.");
+            throw new IllegalStateException("Bu departmanın (" + unitToDelete.getName() + ") altında tanımlı "
+                    + children.size() + " adet ünite bulunmaktadır. Silmeden önce bu üniteleri silmelisiniz.");
         }
 
         // 2. Güvenlik Kontrolü: Bu birime atanmış personel var mı?
         // (PersonelRepository'de bu metodu eklemeliyiz)
-        // Yorum: Şimdilik bu metot (existsByUnitDefinitionId) PersonnelRepository'de yok, ama eklenmeli.
+        // Yorum: Şimdilik bu metot (existsByUnitDefinitionId) PersonnelRepository'de
+        // yok, ama eklenmeli.
         // Ekleme varsayımıyla devam ediyorum:
         /*
-        if (personnelRepository.existsByTenantIdAndUnitDefinitionId(currentTenantId, id)) {
-             throw new IllegalStateException("Bu birime ("+ unitToDelete.getName() +") atanmış personel bulunmaktadır. Silme işlemi yapılamaz.");
-        }
-        */
+         * if (personnelRepository.existsByTenantIdAndUnitDefinitionId(currentTenantId,
+         * id)) {
+         * throw new IllegalStateException("Bu birime ("+ unitToDelete.getName()
+         * +") atanmış personel bulunmaktadır. Silme işlemi yapılamaz.");
+         * }
+         */
 
         // Şimdilik (yukarıdaki metot eklenene kadar) manuel kontrol edelim:
         boolean personnelExists = personnelRepository.findByTenantId(currentTenantId).stream()
                 .anyMatch(p -> Objects.equals(p.getUnitDefinitionId(), id));
-        if(personnelExists) {
-            throw new IllegalStateException("Bu birime ("+ unitToDelete.getName() +") atanmış personel bulunmaktadır. Silme işlemi yapılamaz.");
+        if (personnelExists) {
+            throw new IllegalStateException("Bu birime (" + unitToDelete.getName()
+                    + ") atanmış personel bulunmaktadır. Silme işlemi yapılamaz.");
         }
-
 
         unitRepository.delete(unitToDelete);
 
-        String logDetails = (unitToDelete.getParentUnitId() == null ? "Departman silindi: " : "Ünite silindi: ") + unitToDelete.getName();
+        String logDetails = (unitToDelete.getParentUnitId() == null ? "Departman silindi: " : "Ünite silindi: ")
+                + unitToDelete.getName();
         auditLogService.logAction(currentTenantId, currentUsername, "UNIT_DEFINITION_DELETED", logDetails);
     }
 }

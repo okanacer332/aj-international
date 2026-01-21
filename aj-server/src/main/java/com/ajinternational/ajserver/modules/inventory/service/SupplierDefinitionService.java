@@ -6,6 +6,8 @@ import com.ajinternational.ajserver.modules.audit.service.AuditLogService;
 import com.ajinternational.ajserver.modules.inventory.model.SupplierDefinition;
 import com.ajinternational.ajserver.modules.inventory.repository.SupplierDefinitionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +20,8 @@ public class SupplierDefinitionService {
 
     private final SupplierDefinitionRepository repository;
     private final AuditLogService auditLogService;
-    // TODO: Tedarikçiyi silmeden önce Giriş Fişlerinde kullanılıyor mu diye kontrol et.
+    // TODO: Tedarikçiyi silmeden önce Giriş Fişlerinde kullanılıyor mu diye kontrol
+    // et.
 
     private boolean isSuperAdmin() {
         UserDetails userDetails = TenantContextHolder.getCurrentUserDetails();
@@ -26,6 +29,12 @@ public class SupplierDefinitionService {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
     }
 
+    // Helper for cache key generation
+    public String getCurrentTenantIdForCache() {
+        return TenantContextHolder.getCurrentTenantId();
+    }
+
+    @Cacheable(value = "suppliers", key = "#root.target.getCurrentTenantIdForCache()")
     public List<SupplierDefinition> findAll() {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         if (isSuperAdmin()) {
@@ -44,6 +53,7 @@ public class SupplierDefinitionService {
         }
     }
 
+    @CacheEvict(value = "suppliers", key = "#root.target.getCurrentTenantIdForCache()")
     public SupplierDefinition save(SupplierDefinition definition) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         String username = TenantContextHolder.getCurrentUsername();
@@ -70,6 +80,7 @@ public class SupplierDefinitionService {
         return saved;
     }
 
+    @CacheEvict(value = "suppliers", key = "#root.target.getCurrentTenantIdForCache()")
     public void delete(String id) {
         String tenantId = TenantContextHolder.getCurrentTenantId();
         String username = TenantContextHolder.getCurrentUsername();
@@ -80,6 +91,7 @@ public class SupplierDefinitionService {
         // TODO: Bağımlılık kontrolü
 
         repository.delete(definition);
-        auditLogService.logAction(tenantId, username, "INVENTORY_SUPPLIER_DELETED", "Tedarikçi tanımı silindi: " + definition.getName());
+        auditLogService.logAction(tenantId, username, "INVENTORY_SUPPLIER_DELETED",
+                "Tedarikçi tanımı silindi: " + definition.getName());
     }
 }
